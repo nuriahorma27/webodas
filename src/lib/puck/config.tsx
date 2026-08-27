@@ -6,6 +6,7 @@ import { StylePicker, LIST_STYLE_ICONS, AGENDA_STYLE_ICONS } from "@/components/
 import { CardStrip } from "@/components/card-strip";
 import { FormatToggle, formatStyle, type TextFormat } from "@/components/format-toggle";
 import { NudgeField, offsetTransform, type Offset } from "@/components/nudge-field";
+import { RangeField } from "@/components/range-field";
 import { RichEditor } from "@/components/rich-editor";
 import { RsvpForm } from "@/components/rsvp-form";
 import { SiteNav } from "@/components/site-nav";
@@ -152,6 +153,7 @@ type Props = {
     imageMode: string;
     imageSize: string;
     imageOffset: Offset;
+    overlay: number;
   };
   RichText: {
     texts: {
@@ -166,6 +168,7 @@ type Props = {
     imageMode: string;
     imageSize: string;
     imageOffset: Offset;
+    overlay: number;
   };
   MediaText: {
     title: string;
@@ -402,6 +405,18 @@ export const puckConfig: Config<Props, RootProps> = {
             <NudgeField value={value as Offset} onChange={onChange} label="Mover la foto" />
           ),
         },
+        overlay: {
+          type: "custom",
+          label: "Oscurecer la foto",
+          render: ({ onChange, value }) => (
+            <RangeField
+              value={value as number}
+              onChange={onChange}
+              label="Oscurecer la foto (para leer el texto)"
+              max={80}
+            />
+          ),
+        },
         image: {
           type: "custom",
           label: "Imagen",
@@ -421,8 +436,9 @@ export const puckConfig: Config<Props, RootProps> = {
         imageMode: "background",
         imageSize: "full",
         imageOffset: { x: 0, y: 0 },
+        overlay: 35,
       },
-      render: ({ coupleNames, date, subtitle, image, align, textColor, colorBg, imageMode, imageSize, imageOffset }) => {
+      render: ({ coupleNames, date, subtitle, image, align, textColor, colorBg, imageMode, imageSize, imageOffset, overlay }) => {
         const mode = imageMode ?? "background";
         const hasImg = Boolean(image) && mode !== "none";
         const onDark = hasImg && mode === "background";
@@ -430,6 +446,7 @@ export const puckConfig: Config<Props, RootProps> = {
         const fullImg = (imageSize ?? "full") === "full";
         const imgTransform = offsetTransform(imageOffset);
         const bgPos = `calc(50% + ${imageOffset?.x ?? 0}px) calc(50% + ${imageOffset?.y ?? 0}px)`;
+        const ov = (overlay ?? 35) / 100;
 
         const texts = (
           <>
@@ -530,7 +547,7 @@ export const puckConfig: Config<Props, RootProps> = {
               color: textColor || (onDark ? "#fff" : "var(--wf-accent)"),
               padding: "24px clamp(24px, 8vw, 96px)",
               backgroundImage: onDark
-                ? `linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)), url(${image})`
+                ? `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url(${image})`
                 : undefined,
               backgroundColor: onDark ? undefined : colorBg || "var(--wf-bg)",
               backgroundSize: "cover",
@@ -623,6 +640,13 @@ export const puckConfig: Config<Props, RootProps> = {
             <NudgeField value={value as Offset} onChange={onChange} label="Mover la foto" />
           ),
         },
+        overlay: {
+          type: "custom",
+          label: "Oscurecer la foto",
+          render: ({ onChange, value }) => (
+            <RangeField value={value as number} onChange={onChange} label="Oscurecer la foto de fondo" max={80} />
+          ),
+        },
         image: {
           type: "custom",
           label: "Imagen",
@@ -641,8 +665,9 @@ export const puckConfig: Config<Props, RootProps> = {
         imageMode: "none",
         imageSize: "m",
         imageOffset: { x: 0, y: 0 },
+        overlay: 40,
       },
-      render: ({ texts, colorBg, image, imageMode, imageSize, imageOffset }) => {
+      render: ({ texts, colorBg, image, imageMode, imageSize, imageOffset, overlay }) => {
         const mode = imageMode ?? "none";
         const hasImg = Boolean(image) && mode !== "none";
         const isz = IMG_SIZE[imageSize] ?? IMG_SIZE.m;
@@ -650,6 +675,7 @@ export const puckConfig: Config<Props, RootProps> = {
         const imgTransform = offsetTransform(imageOffset);
         const bgPos = `calc(50% + ${imageOffset?.x ?? 0}px) calc(50% + ${imageOffset?.y ?? 0}px)`;
         const onDark = hasImg && mode === "background" && fullImg;
+        const ov = (overlay ?? 40) / 100;
 
         const textEl = (
           <div style={{ display: "grid", gap: 14 }}>
@@ -690,7 +716,7 @@ export const puckConfig: Config<Props, RootProps> = {
                 justifyContent: "center",
                 minHeight: 340,
                 padding: "72px 24px",
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)), url(${image})`,
+                backgroundImage: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url(${image})`,
                 backgroundSize: "cover",
                 backgroundPosition: bgPos,
               }}

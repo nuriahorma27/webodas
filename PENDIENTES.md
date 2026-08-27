@@ -13,6 +13,7 @@
 - [ ] `src/app/api/stripe/connect` — guardar `account.id` en la boda del usuario (Supabase). Hoy solo crea la cuenta y redirige.
 - [ ] `src/app/api/stripe/checkout` — leer el `stripe_account_id` de la boda y pasarlo en `transfer_data.destination`. Hoy usa `STRIPE_DEMO_CONNECTED_ACCOUNT`.
 - [ ] `src/app/api/stripe/webhook` — al recibir `checkout.session.completed`, insertar en `contributions` y sumar al regalo. Configurar el endpoint en el dashboard de Stripe y obtener el signing secret.
+- [ ] **Emails automáticos al confirmarse una aportación**: (a) al invitado que ha pagado (confirmación/recibo), (b) a los novios (aviso "X ha contribuido con Y € a Z"). Enviar desde el webhook. Elegir proveedor (Resend, Supabase Auth SMTP, SendGrid…).
 - [ ] Tablas Supabase: `contributions`, y en `weddings`: `stripe_account_id`, `stripe_charges_enabled`.
 - [ ] Comisión de plataforma: hoy 0 (`applicationFee()` en `src/lib/stripe.ts`). Definir modelo (% o cuota fija) más adelante.
 
