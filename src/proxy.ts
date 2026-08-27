@@ -1,11 +1,9 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { NextResponse, type NextRequest } from "next/server";
 
-// Autenticación real con Supabase: protege /panel y /editor.
-export async function proxy(request: NextRequest) {
-  return updateSession(request);
+// La protección de /panel y /editor se hace en sus layouts (servidor).
+// Aquí solo dejamos pasar; evita depender de env vars en el edge.
+export function proxy(_request: NextRequest) {
+  return NextResponse.next();
 }
 
-export const config = {
-  matcher: ["/panel/:path*", "/editor/:path*", "/inicio", "/registro"],
-};
+export const config = { matcher: [] };

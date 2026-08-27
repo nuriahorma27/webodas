@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Salir } from "@/components/salir";
+import { createClient } from "@/lib/supabase/server";
 
 const nav = [
   { href: "/panel", label: "Inicio" },
@@ -8,7 +10,13 @@ const nav = [
   { href: "/panel/gestion", label: "Gestión" },
 ];
 
-export default function PanelLayout({ children }: { children: React.ReactNode }) {
+export default async function PanelLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/inicio");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-line bg-surface">
