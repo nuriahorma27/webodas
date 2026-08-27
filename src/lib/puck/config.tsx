@@ -127,6 +127,125 @@ const colorFields = {
 
 const colorDefaults = { colorText: "", colorBg: "" };
 
+// --- Bloques de texto libres: cualquier sección puede tener varios
+//     títulos / párrafos de distintos tipos, como en "Texto". ---
+type TextBlock = {
+  variant: string;
+  content: string;
+  align?: "left" | "center" | "right";
+  colorText?: string;
+  format?: TextFormat;
+};
+
+const textBlocksField = {
+  type: "array" as const,
+  label: "Textos",
+  getItemSummary: (t: TextBlock) =>
+    (t.content ? t.content.replace(/<[^>]+>/g, "").slice(0, 24) : "Texto") +
+    (t.variant && t.variant !== "p" ? ` · ${VARIANT_LABEL[t.variant] ?? ""}` : ""),
+  arrayFields: {
+    variant: {
+      type: "select" as const,
+      label: "Tipo",
+      options: [
+        { label: "Título grande", value: "h1" },
+        { label: "Título", value: "h2" },
+        { label: "Subtítulo", value: "h3" },
+        { label: "Texto", value: "p" },
+        { label: "Texto pequeño", value: "small" },
+      ],
+    },
+    content: {
+      type: "custom" as const,
+      label: "Contenido",
+      render: ({ onChange, value }: { onChange: (v: string) => void; value: unknown }) => (
+        <RichEditor value={value as string} onChange={onChange} label="Contenido" />
+      ),
+    },
+    align: {
+      type: "radio" as const,
+      label: "Alineación",
+      options: [
+        { label: "Izq.", value: "left" },
+        { label: "Centro", value: "center" },
+        { label: "Der.", value: "right" },
+      ],
+    },
+    colorText: {
+      type: "custom" as const,
+      label: "Color de la letra",
+      render: ({ onChange, value }: { onChange: (v: string) => void; value: unknown }) => (
+        <ColorField value={value as string} onChange={onChange} label="Color de la letra" />
+      ),
+    },
+    format: {
+      type: "custom" as const,
+      label: "Formato",
+      render: ({ onChange, value }: { onChange: (v: TextFormat) => void; value: unknown }) => (
+        <FormatToggle value={value as TextFormat} onChange={onChange} />
+      ),
+    },
+  },
+  defaultItemProps: {
+    variant: "p",
+    content: "Nuevo texto",
+    format: {},
+    align: "center" as const,
+    colorText: "",
+  },
+};
+
+function TextBlocks({
+  texts,
+  onDark,
+  gap = 14,
+}: {
+  texts?: TextBlock[];
+  onDark?: boolean;
+  gap?: number;
+}) {
+  return (
+    <div style={{ display: "grid", gap }}>
+      {(texts ?? []).map((t, i) => {
+        const V = TEXT_VARIANTS[t.variant] ?? TEXT_VARIANTS.p;
+        const Tag = (V.tag ?? "p") as React.ElementType;
+        return (
+          <Tag
+            key={i}
+            style={{
+              textAlign: (t.align ?? "center") as React.CSSProperties["textAlign"],
+              fontFamily: V.font,
+              fontSize: `calc(${V.size}px * var(--wf-scale, 1))`,
+              fontWeight: V.weight,
+              letterSpacing: V.spacing,
+              lineHeight: V.line,
+              color: t.colorText || (onDark ? "#fff" : V.color),
+              whiteSpace: "pre-wrap",
+              margin: 0,
+              ...formatStyle(t.format),
+            }}
+          >
+            {parseInline(t.content)}
+          </Tag>
+        );
+      })}
+    </div>
+  );
+}
+
+// Convierte los campos antiguos (titulo/subtitulo/texto) a bloques.
+function legadoATextos(p: {
+  titulo?: string;
+  subtitulo?: string;
+  texto?: string;
+}): TextBlock[] {
+  const out: TextBlock[] = [];
+  if (p.titulo) out.push({ variant: "h2", content: p.titulo, align: "center" });
+  if (p.subtitulo) out.push({ variant: "h3", content: p.subtitulo, align: "center" });
+  if (p.texto) out.push({ variant: "p", content: p.texto, align: "center" });
+  return out;
+}
+
 /* ---------- tipos ---------- */
 
 type RootProps = {
@@ -224,11 +343,20 @@ type Props = {
     colorBg: string;
   };
   GiftList: {
-    titulo: string;
-    subtitulo: string;
-    texto: string;
+    textos: {
+      variant: string;
+      content: string;
+      align?: "left" | "center" | "right";
+      colorText?: string;
+      format?: TextFormat;
+    }[];
+    mostrar: "tarjetas" | "boton";
     buttonLabel: string;
     buttonUrl: string;
+    // legado (webs guardadas antes de la migración)
+    titulo?: string;
+    subtitulo?: string;
+    texto?: string;
     colorText: string;
     colorBg: string;
   };
@@ -1649,28 +1777,16 @@ export const puckConfig: Config<Props, RootProps> = {
     GiftList: {
       label: "Lista de regalos",
       fields: {
-        titulo: {
-          type: "custom",
-          label: "Texto principal",
-          render: ({ onChange, value }) => (
-            <RichEditor value={value as string} onChange={onChange} label="Texto principal" singleLine />
-          ),
+        textos: textBlocksField,
+        mostrar: {
+          type: "radio",
+          label: "Qué mostrar",
+          options: [
+            { label: "Las tarjetas de regalos", value: "tarjetas" },
+            { label: "Solo un botón que lleva a la lista", value: "boton" },
+          ],
         },
-        subtitulo: {
-          type: "custom",
-          label: "Subtexto",
-          render: ({ onChange, value }) => (
-            <RichEditor value={value as string} onChange={onChange} label="Subtexto" singleLine />
-          ),
-        },
-        texto: {
-          type: "custom",
-          label: "Texto",
-          render: ({ onChange, value }) => (
-            <RichEditor value={value as string} onChange={onChange} label="Texto" />
-          ),
-        },
-        buttonLabel: { type: "text", label: "Texto del botón" },
+        buttonLabel: { type: "text", label: "Texto del botón (vacío = sin botón)" },
         buttonUrl: {
           type: "text",
           label: "Enlace del botón (deja /lista/ana-y-leo para abrir vuestra lista real)",
@@ -1678,33 +1794,37 @@ export const puckConfig: Config<Props, RootProps> = {
         ...colorFields,
       },
       defaultProps: {
-        titulo: "Lista de regalos",
-        subtitulo: "Vuestra presencia es nuestro mejor regalo",
-        texto: "…pero si además queréis tener un detalle, aquí van algunas ideas. Cualquier aportación, por pequeña que sea, nos hace mucha ilusión.",
+        textos: [
+          { variant: "h2", content: "Lista de regalos", format: {}, align: "center", colorText: "" },
+          {
+            variant: "h3",
+            content: "Vuestra presencia es nuestro mejor regalo",
+            format: {},
+            align: "center",
+            colorText: "",
+          },
+          {
+            variant: "p",
+            content:
+              "…pero si además queréis tener un detalle, aquí van algunas ideas. Cualquier aportación, por pequeña que sea, nos hace mucha ilusión.",
+            format: {},
+            align: "center",
+            colorText: "",
+          },
+        ],
+        mostrar: "tarjetas",
         buttonLabel: "Ver la lista de regalos",
         buttonUrl: "/lista/ana-y-leo",
         ...colorDefaults,
       },
-      render: ({ titulo, subtitulo, texto, buttonLabel, buttonUrl, colorText, colorBg }) => (
+      render: ({ textos, mostrar, titulo, subtitulo, texto, buttonLabel, buttonUrl, colorText, colorBg }) => {
+        const blocks = textos && textos.length ? textos : legadoATextos({ titulo, subtitulo, texto });
+        return (
         <div style={{ background: colorBg || undefined }}>
           <div style={{ ...section, color: colorText || section.color }}>
-            <h2 style={{ ...heading, color: colorText || heading.color, marginBottom: 8 }}>
-              {parseInline(titulo)}
-            </h2>
-            {subtitulo && (
-              <p
-                style={{
-                  fontFamily: "var(--wf-heading)",
-                  fontSize: "calc(20px * var(--wf-scale, 1))",
-                  marginBottom: 12,
-                }}
-              >
-                {parseInline(subtitulo)}
-              </p>
-            )}
-            {texto && <p style={{ ...body, maxWidth: 560, margin: "0 auto 8px" }}>{parseInline(texto)}</p>}
+            <TextBlocks texts={blocks} />
 
-            <SiteGiftCards />
+            {(mostrar ?? "tarjetas") === "tarjetas" && <SiteGiftCards />}
 
             {buttonLabel && (
               <a
@@ -1727,7 +1847,8 @@ export const puckConfig: Config<Props, RootProps> = {
             )}
           </div>
         </div>
-      ),
+        );
+      },
     },
 
     FAQ: {
