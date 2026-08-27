@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Salir } from "@/components/salir";
 
 const nav = [
   { href: "/panel", label: "Inicio" },
@@ -23,7 +24,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             ))}
           </nav>
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted sm:inline">Ana</span>
+            <Salir />
             <div className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft font-display text-accent">
               A
             </div>

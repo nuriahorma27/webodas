@@ -1,15 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function InicioPage() {
   const router = useRouter();
   const [modo, setModo] = useState<"entrar" | "crear">("entrar");
+  const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Prototipo: cualquier email/contraseña entra.
+    const form = e.target as HTMLFormElement;
+    const email = (form.elements.namedItem("email") as HTMLInputElement)?.value.trim();
+    const pass = (form.elements.namedItem("password") as HTMLInputElement)?.value;
+    if (!email || !pass) {
+      setError("Introduce email y contraseña.");
+      return;
+    }
+    // Prototipo: sesión de acceso guardada en una cookie.
+    document.cookie = `wb_session=1; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
     router.push("/panel");
   }
 
@@ -17,7 +27,9 @@ export default function InicioPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Panel de marca */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-[#1c1a17] p-12 text-[#fbf9f6] lg:flex">
-        <span className="font-display text-2xl">webodas</span>
+        <Link href="/" className="font-display text-2xl">
+          webodas
+        </Link>
         <div>
           <h1 className="font-display text-5xl leading-tight">
             Toda tu boda,
@@ -48,10 +60,12 @@ export default function InicioPage() {
 
           <form onSubmit={onSubmit} className="mt-7 space-y-4">
             {modo === "crear" && (
-              <Field label="Nombre" type="text" placeholder="Ana" />
+              <Field label="Nombre" name="nombre" type="text" placeholder="Ana" />
             )}
-            <Field label="Email" type="text" placeholder="ana@email.com" defaultValue="xxx" />
-            <Field label="Contraseña" type="text" placeholder="••••••••" defaultValue="xxx" />
+            <Field label="Email" name="email" type="text" placeholder="ana@email.com" defaultValue="xxx" />
+            <Field label="Contraseña" name="password" type="password" placeholder="••••••••" defaultValue="xxx" />
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <button
               type="submit"
