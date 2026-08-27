@@ -50,7 +50,20 @@ export function SiteGiftCards() {
               )}
             </div>
             <div style={{ padding: "10px 12px 12px" }}>
-              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>{g.nombre}</p>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  minHeight: "2.6em",
+                }}
+              >
+                {g.nombre}
+              </p>
               <p style={{ fontSize: 11, opacity: 0.6, marginBottom: 8 }}>{g.tipo}</p>
               {g.objetivo > 0 && (
                 <div

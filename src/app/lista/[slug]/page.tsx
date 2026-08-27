@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { parseInline } from "@/lib/rich-text";
-import { loadLista, type ListaRegalos, type Gift } from "@/lib/regalos";
+import { loadLista, contribuir, type ListaRegalos, type Gift } from "@/lib/regalos";
 import { ContribuirModal } from "@/components/contribuir-modal";
 import { boda, eur } from "@/lib/mock";
 
 export default function ListaPublicaPage() {
   const [lista, setLista] = useState<ListaRegalos | null>(null);
   const [gift, setGift] = useState<Gift | null>(null);
+  const [gracias, setGracias] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setLista(loadLista());
@@ -16,6 +17,35 @@ export default function ListaPublicaPage() {
     window.addEventListener("webodas:regalos", sync);
     return () => window.removeEventListener("webodas:regalos", sync);
   }, []);
+
+  // Vuelta de Stripe Checkout: confirmar el pago y registrar la aportación.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("pago") !== "ok" || !p.get("session")) return;
+    const sid = p.get("session")!;
+    (async () => {
+      try {
+        const res = await fetch(`/api/stripe/session?id=${encodeURIComponent(sid)}`);
+        const d = await res.json();
+        if (!d.paid) return;
+        contribuir(d.giftId, {
+          id: "sess-" + sid,
+          nombre: d.nombre,
+          email: d.email,
+          mensaje: d.mensaje,
+          importe: d.amount,
+          estado: "confirmada",
+          metodo: "stripe",
+        });
+        setGracias(`¡Gracias! Aportación de ${eur(d.amount)} registrada.`);
+      } catch {
+        /* noop */
+      } finally {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    })();
+  }, []);
+
   if (!lista) return null;
 
   const bg = lista.colorBg || undefined;
@@ -43,41 +73,56 @@ export default function ListaPublicaPage() {
           )}
         </div>
 
+        {gracias && (
+          <p className="mt-6 rounded-md bg-green-50 px-4 py-3 text-center text-sm text-green-700">
+            {gracias}
+          </p>
+        )}
+
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {lista.gifts.map((g) => {
             const pct = g.objetivo ? Math.min(100, (g.aportado / g.objetivo) * 100) : 60;
             const completo = g.objetivo > 0 && pct >= 100;
             return (
-              <div key={g.id} className="overflow-hidden rounded-xl border border-line bg-surface text-foreground">
-                <div className="h-48 bg-accent-soft">
+              <div
+                key={g.id}
+                className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface text-foreground"
+              >
+                <div className="h-48 shrink-0 bg-accent-soft">
                   {g.imagen && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={g.imagen} alt="" className="h-full w-full object-cover" />
                   )}
                 </div>
-                <div className="p-4">
-                  <p className="font-medium leading-tight">{g.nombre}</p>
+                <div className="flex flex-1 flex-col p-4">
+                  <p className="line-clamp-2 min-h-[2.6em] font-medium leading-tight">{g.nombre}</p>
                   <p className="text-xs text-muted">{g.tipo}</p>
-                  {g.objetivo > 0 && (
-                    <div className="mt-2">
-                      <div className="h-1 overflow-hidden rounded-full bg-accent-soft">
-                        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-                      </div>
-                      <p className="mt-1 text-[10px] text-muted">
-                        {eur(g.aportado)} / {eur(g.objetivo)}
-                      </p>
-                    </div>
-                  )}
-                  {completo ? (
-                    <p className="mt-2 text-[11px] text-muted">¡Completado!</p>
-                  ) : (
-                    <button
-                      onClick={() => setGift(g)}
-                      className="mt-2 w-full rounded-md bg-foreground py-1.5 text-xs font-medium text-white"
-                    >
-                      Contribuir
-                    </button>
-                  )}
+
+                  <div className="mt-2 min-h-[1.9em]">
+                    {g.objetivo > 0 && (
+                      <>
+                        <div className="h-1 overflow-hidden rounded-full bg-accent-soft">
+                          <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="mt-1 text-[10px] text-muted">
+                          {eur(g.aportado)} / {eur(g.objetivo)}
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-auto pt-3">
+                    {completo ? (
+                      <p className="text-center text-[11px] text-muted">¡Completado!</p>
+                    ) : (
+                      <button
+                        onClick={() => setGift(g)}
+                        className="w-full rounded-md bg-foreground py-1.5 text-xs font-medium text-white"
+                      >
+                        Contribuir
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

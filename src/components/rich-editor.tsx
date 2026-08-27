@@ -58,48 +58,68 @@ export function RichEditor({
     onChange(el.innerHTML);
   };
 
-  const wrap = (make: () => HTMLElement) => {
+  const restoreSelection = () => {
     const el = ref.current;
     const r = savedRange.current;
-    if (!el || !r || r.collapsed || !el.contains(r.commonAncestorContainer)) return;
-    const wrapper = make();
+    if (!el || !r || !el.contains(r.commonAncestorContainer)) return false;
+    const sel = document.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+    return true;
+  };
+
+  // Negrita / cursiva / subrayado / tachado: execCommand SÍ alterna bien.
+  const exec = (cmd: string) => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    if (!restoreSelection()) return;
     try {
-      wrapper.appendChild(r.extractContents());
-      r.insertNode(wrapper);
-      // reseleccionar el contenido envuelto
-      const sel = document.getSelection();
-      const nr = document.createRange();
-      nr.selectNodeContents(wrapper);
-      sel?.removeAllRanges();
-      sel?.addRange(nr);
-      savedRange.current = nr.cloneRange();
+      document.execCommand("styleWithCSS", false, "false");
+      document.execCommand(cmd);
     } catch {
-      /* rangos complejos: ignorar */
+      /* noop */
     }
     emit();
   };
 
-  const tag = (name: string) => wrap(() => document.createElement(name));
-  const styled = (css: Partial<CSSStyleDeclaration>) =>
-    wrap(() => {
-      const s = document.createElement("span");
-      Object.assign(s.style, css);
-      return s;
-    });
-
   const clearFormat = () => {
     const el = ref.current;
-    const r = savedRange.current;
-    if (!el || !r || r.collapsed) return;
-    const text = r.toString();
-    r.deleteContents();
-    r.insertNode(document.createTextNode(text));
+    if (!el) return;
+    el.focus();
+    if (!restoreSelection()) return;
+    try {
+      document.execCommand("removeFormat");
+    } catch {
+      /* noop */
+    }
     emit();
   };
 
+  // Color: envolver la selección en un <span style="color">.
   const applyColor = (c: string) => {
-    styled({ color: c });
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    if (!restoreSelection()) return;
+    const sel = document.getSelection();
+    const r = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (!r || r.collapsed) return;
+    try {
+      const span = document.createElement("span");
+      span.style.color = c;
+      span.appendChild(r.extractContents());
+      r.insertNode(span);
+      const nr = document.createRange();
+      nr.selectNodeContents(span);
+      sel!.removeAllRanges();
+      sel!.addRange(nr);
+      savedRange.current = nr.cloneRange();
+    } catch {
+      /* rangos complejos: ignorar */
+    }
     rememberColor(c);
+    emit();
   };
 
   const btn = (content: React.ReactNode, onClick: () => void, title: string) => (
@@ -117,10 +137,10 @@ export function RichEditor({
   return (
     <FieldLabel label={label ?? "Texto"}>
       <div className="mb-1 flex flex-wrap items-center gap-1">
-        {btn(<b>B</b>, () => tag("strong"), "Negrita")}
-        {btn(<i>I</i>, () => tag("em"), "Cursiva")}
-        {btn(<u>U</u>, () => styled({ textDecoration: "underline" }), "Subrayado")}
-        {btn(<s>S</s>, () => styled({ textDecoration: "line-through" }), "Tachado")}
+        {btn(<b>B</b>, () => exec("bold"), "Negrita")}
+        {btn(<i>I</i>, () => exec("italic"), "Cursiva")}
+        {btn(<u>U</u>, () => exec("underline"), "Subrayado")}
+        {btn(<s>S</s>, () => exec("strikeThrough"), "Tachado")}
         {btn("↺", clearFormat, "Quitar formato de la selección")}
       </div>
       <div className="mb-1.5 flex flex-wrap items-center gap-1">

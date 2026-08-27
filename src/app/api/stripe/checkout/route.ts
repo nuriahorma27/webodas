@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         transfer_data: { destination: stripeAccountId },
       },
       metadata: { giftId, nombre: nombre ?? "", email: email ?? "", mensaje: mensaje ?? "" },
-      success_url: `${SITE_URL}/lista/ana-y-leo?pago=ok`,
+      success_url: `${SITE_URL}/lista/ana-y-leo?pago=ok&session={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/lista/ana-y-leo?pago=cancelado`,
     });
 

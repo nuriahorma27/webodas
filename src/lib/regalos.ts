@@ -93,9 +93,12 @@ export function loadAportaciones(): Aportacion[] {
 // Registra la aportación. Si está confirmada (pago Stripe ok), suma al regalo.
 export function contribuir(
   giftId: string,
-  a: Omit<Aportacion, "id" | "fecha" | "giftId" | "giftNombre">,
+  a: Omit<Aportacion, "id" | "fecha" | "giftId" | "giftNombre"> & { id?: string },
 ) {
   try {
+    const existentes = loadAportaciones();
+    if (a.id && existentes.some((x) => x.id === a.id)) return; // ya registrada
+
     const lista = loadLista();
     const gift = lista.gifts.find((g) => g.id === giftId);
     if (!gift) return;
@@ -104,13 +107,13 @@ export function contribuir(
       saveLista(lista);
     }
     const ap: Aportacion = {
-      id: crypto.randomUUID(),
+      id: a.id ?? crypto.randomUUID(),
       fecha: new Date().toISOString().slice(0, 10),
       giftId,
       giftNombre: gift.nombre,
       ...a,
     };
-    localStorage.setItem(AP_KEY, JSON.stringify([ap, ...loadAportaciones()]));
+    localStorage.setItem(AP_KEY, JSON.stringify([ap, ...existentes]));
     window.dispatchEvent(new Event("webodas:regalos"));
   } catch {
     /* noop */
