@@ -351,8 +351,8 @@ type Props = {
       format?: TextFormat;
     }[];
     mostrar: "tarjetas" | "boton";
+    imagenes: { src: string }[];
     buttonLabel: string;
-    buttonUrl: string;
     // legado (webs guardadas antes de la migración)
     titulo?: string;
     subtitulo?: string;
@@ -1786,11 +1786,22 @@ export const puckConfig: Config<Props, RootProps> = {
             { label: "Solo un botón que lleva a la lista", value: "boton" },
           ],
         },
-        buttonLabel: { type: "text", label: "Texto del botón (vacío = sin botón)" },
-        buttonUrl: {
-          type: "text",
-          label: "Enlace del botón (deja /lista/ana-y-leo para abrir vuestra lista real)",
+        imagenes: {
+          type: "array",
+          label: "Imágenes (opcional)",
+          getItemSummary: (_i, idx) => `Imagen ${(idx ?? 0) + 1}`,
+          arrayFields: {
+            src: {
+              type: "custom",
+              label: "Imagen",
+              render: ({ onChange, value }) => (
+                <ImageUploadField value={value as string} onChange={onChange} label="Imagen" />
+              ),
+            },
+          },
+          defaultItemProps: { src: "" },
         },
+        buttonLabel: { type: "text", label: "Texto del botón (vacío = sin botón)" },
         ...colorFields,
       },
       defaultProps: {
@@ -1813,23 +1824,47 @@ export const puckConfig: Config<Props, RootProps> = {
           },
         ],
         mostrar: "tarjetas",
+        imagenes: [],
         buttonLabel: "Ver la lista de regalos",
-        buttonUrl: "/lista/ana-y-leo",
         ...colorDefaults,
       },
-      render: ({ textos, mostrar, titulo, subtitulo, texto, buttonLabel, buttonUrl, colorText, colorBg }) => {
+      render: ({ textos, mostrar, imagenes, titulo, subtitulo, texto, buttonLabel, colorText, colorBg }) => {
         const blocks = textos && textos.length ? textos : legadoATextos({ titulo, subtitulo, texto });
         return (
         <div style={{ background: colorBg || undefined }}>
           <div style={{ ...section, color: colorText || section.color }}>
             <TextBlocks texts={blocks} />
 
+            {(imagenes ?? []).some((im) => im?.src) && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  justifyContent: "center",
+                  margin: "24px 0",
+                }}
+              >
+                {(imagenes ?? [])
+                  .filter((im) => im?.src)
+                  .map((im, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={i}
+                      src={im.src}
+                      alt=""
+                      style={{ width: 240, height: 160, objectFit: "cover", borderRadius: 6 }}
+                    />
+                  ))}
+              </div>
+            )}
+
             {(mostrar ?? "tarjetas") === "tarjetas" && <SiteGiftCards />}
 
             {buttonLabel && (
               <a
-                href={buttonUrl || "/lista/ana-y-leo"}
-                target={(buttonUrl || "/lista/ana-y-leo").startsWith("#") ? undefined : "_blank"}
+                href="/lista/ana-y-leo"
+                target="_blank"
                 rel="noreferrer"
                 style={{
                   display: "inline-block",
