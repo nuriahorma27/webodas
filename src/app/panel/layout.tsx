@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Salir } from "@/components/salir";
+import { PerfilBoda } from "@/components/perfil-boda";
 import { createClient } from "@/lib/supabase/server";
 
 const nav = [
@@ -33,9 +34,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </nav>
           <div className="flex items-center gap-3 text-sm">
             <Salir />
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft font-display text-accent">
-              A
-            </div>
+            <PerfilBoda />
           </div>
         </div>
       </header>

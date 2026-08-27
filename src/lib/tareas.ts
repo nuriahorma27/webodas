@@ -114,6 +114,18 @@ export const FASES = [
   "Sin fecha asignada",
 ];
 
+// Meses antes de la boda en que la fase debería estar terminada.
+export const FASE_MESES: Record<string, number> = {
+  "12 meses antes": 12,
+  "10-11 meses antes": 11,
+  "8-9 meses antes": 9,
+  "6-7 meses antes": 7,
+  "4-5 meses antes": 5,
+  "2-3 meses antes": 3,
+  "Último mes": 1,
+  "Sin fecha asignada": Infinity,
+};
+
 type Def = [titulo: string, fase: string, tipo: string, nota?: string];
 
 const DATA: Record<string, Def[]> = {

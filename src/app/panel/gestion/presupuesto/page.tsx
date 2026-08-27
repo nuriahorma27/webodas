@@ -1,4 +1,5 @@
 import { Card, Stat, Progress, Button } from "@/components/ui";
+import { CampoBoda } from "@/components/campo-boda";
 import { presupuesto, eur } from "@/lib/mock";
 
 export default function PresupuestoPage() {
@@ -7,8 +8,11 @@ export default function PresupuestoPage() {
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
+      </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Presupuesto total" value={eur(presupuesto.total)} />
+        <Stat label="Presupuesto de referencia" value={eur(presupuesto.total)} />
         <Stat label="Estimado (partidas)" value={eur(estimado)} sub={`${eur(presupuesto.total - estimado)} sin asignar`} />
         <Stat label="Pagado" value={eur(pagado)} sub={`${eur(estimado - pagado)} pendiente`} />
       </div>

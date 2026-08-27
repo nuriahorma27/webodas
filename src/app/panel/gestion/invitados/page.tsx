@@ -1,4 +1,5 @@
 import { Card, Stat, Badge, Button } from "@/components/ui";
+import { CampoBoda } from "@/components/campo-boda";
 import { invitados } from "@/lib/mock";
 
 const tono = (estado: string) =>
@@ -12,6 +13,9 @@ export default function InvitadosPage() {
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <CampoBoda campo="invitadosAprox" label="Invitados aproximados" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Invitaciones" value={`${invitados.length}`} sub="grupos" />
         <Stat label="Personas" value={`${personas}`} sub="en total" />
