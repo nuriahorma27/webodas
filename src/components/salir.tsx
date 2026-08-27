@@ -1,18 +1,9 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import { signout } from "@/lib/auth-actions";
 
 export function Salir() {
-  const router = useRouter();
   return (
-    <button
-      onClick={() => {
-        document.cookie = "wb_session=; path=/; max-age=0";
-        router.push("/");
-      }}
-      className="hidden text-muted hover:text-foreground sm:inline"
-    >
-      Salir
-    </button>
+    <form action={signout}>
+      <button className="hidden text-muted hover:text-foreground sm:inline">Salir</button>
+    </form>
   );
 }

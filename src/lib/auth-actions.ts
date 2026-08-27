@@ -37,7 +37,7 @@ export async function registro(_prev: unknown, formData: FormData) {
 export async function signout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect("/inicio");
 }
 
 function traducir(msg: string) {
