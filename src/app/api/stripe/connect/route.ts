@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStripe, SITE_URL } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 
-// Connect API v2 · Express + direct charges.
-// El pago se hace en la cuenta de la pareja (son el "merchant of record"),
-// webodas NO cobra comisión (sin application_fee).
+// Connect API v2 · Express + "recipient" (solo recibe dinero, NO procesa pagos).
+// El onboarding de la pareja es ligero (nombre, DNI, IBAN) — sin datos de empresa.
+// webodas cobra el pago y transfiere el 100% a la pareja (sin comisión).
 export async function GET(req: Request) {
   const stripe = getStripe();
   if (!stripe) {
@@ -15,7 +16,14 @@ export async function GET(req: Request) {
     let accountId = url.searchParams.get("acct") ?? "";
 
     if (!accountId) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const email = user?.email ?? url.searchParams.get("email") ?? "pareja@webodas.app";
+
       const account = await stripe.v2.core.accounts.create({
+        contact_email: email,
         dashboard: "express",
         identity: { country: "es", entity_type: "individual" },
         defaults: {
@@ -26,8 +34,10 @@ export async function GET(req: Request) {
           },
         },
         configuration: {
-          merchant: {
-            capabilities: { card_payments: { requested: true } },
+          recipient: {
+            capabilities: {
+              stripe_balance: { stripe_transfers: { requested: true } },
+            },
           },
         },
       });
@@ -39,7 +49,7 @@ export async function GET(req: Request) {
       use_case: {
         type: "account_onboarding",
         account_onboarding: {
-          configurations: ["merchant"],
+          configurations: ["recipient"],
           return_url: `${SITE_URL}/panel/regalos?stripe=ok&acct=${accountId}`,
           refresh_url: `${SITE_URL}/api/stripe/connect?acct=${accountId}`,
         },

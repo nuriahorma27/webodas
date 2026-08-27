@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStripe, SITE_URL } from "@/lib/stripe";
 
-// Direct charge: la sesión de Checkout se crea EN la cuenta de la pareja.
-// Sin application_fee → webodas no cobra nada.
+// Destination charge: el pago se cobra en la cuenta de webodas y se transfiere
+// el 100% a la cuenta de la pareja. Sin application_fee → webodas no cobra nada.
 export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) {
@@ -17,26 +17,26 @@ export async function POST(req: Request) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.create(
-      {
-        mode: "payment",
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              currency: "eur",
-              unit_amount: cts,
-              product_data: { name: `Regalo de boda: ${giftNombre}` },
-            },
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "eur",
+            unit_amount: cts,
+            product_data: { name: `Regalo de boda: ${giftNombre}` },
           },
-        ],
-        customer_email: email,
-        metadata: { giftId, nombre: nombre ?? "", email: email ?? "", mensaje: mensaje ?? "" },
-        success_url: `${SITE_URL}/lista/ana-y-leo?pago=ok`,
-        cancel_url: `${SITE_URL}/lista/ana-y-leo?pago=cancelado`,
+        },
+      ],
+      customer_email: email,
+      payment_intent_data: {
+        transfer_data: { destination: stripeAccountId },
       },
-      { stripeAccount: stripeAccountId },
-    );
+      metadata: { giftId, nombre: nombre ?? "", email: email ?? "", mensaje: mensaje ?? "" },
+      success_url: `${SITE_URL}/lista/ana-y-leo?pago=ok`,
+      cancel_url: `${SITE_URL}/lista/ana-y-leo?pago=cancelado`,
+    });
 
     return NextResponse.json({ url: session.url });
   } catch (e) {
