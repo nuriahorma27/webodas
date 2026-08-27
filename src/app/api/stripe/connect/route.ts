@@ -24,10 +24,14 @@ export async function GET(req: Request) {
 
       const account = await stripe.v2.core.accounts.create({
         contact_email: email,
+        display_name: "Lista de regalos de boda",
         dashboard: "express",
         identity: { country: "es", entity_type: "individual" },
         defaults: {
           currency: "eur",
+          profile: {
+            product_description: "Aportaciones de invitados a la lista de regalos de nuestra boda.",
+          },
           responsibilities: {
             fees_collector: "application",
             losses_collector: "application",
@@ -50,6 +54,7 @@ export async function GET(req: Request) {
         type: "account_onboarding",
         account_onboarding: {
           configurations: ["recipient"],
+          collection_options: { fields: "currently_due", future_requirements: "omit" },
           return_url: `${SITE_URL}/panel/regalos?stripe=ok&acct=${accountId}`,
           refresh_url: `${SITE_URL}/api/stripe/connect?acct=${accountId}`,
         },
