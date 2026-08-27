@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { saveBoda, type BodaPerfil } from "@/lib/boda";
+import { saveBoda, type BodaPerfil, type Persona } from "@/lib/boda";
+
+const field =
+  "mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent";
 
 export function OnboardingBoda({
   inicial,
@@ -11,19 +14,23 @@ export function OnboardingBoda({
   onClose?: () => void;
 }) {
   const editar = Boolean(onClose);
-  const [pareja, setPareja] = useState(inicial.pareja);
+  const [p1, setP1] = useState<Persona>(inicial.p1);
+  const [p2, setP2] = useState<Persona>(inicial.p2);
   const [fecha, setFecha] = useState(inicial.fecha);
   const [sinFecha, setSinFecha] = useState(!inicial.fecha);
   const [lugar, setLugar] = useState(inicial.lugar);
+  const [sinLugar, setSinLugar] = useState(!inicial.lugar && editar ? false : !inicial.lugar);
 
   const guardar = (e: React.FormEvent) => {
     e.preventDefault();
-    saveBoda({ pareja: pareja.trim(), fecha: sinFecha ? "" : fecha, lugar: lugar.trim() });
+    saveBoda({
+      p1: trim(p1),
+      p2: trim(p2),
+      fecha: sinFecha ? "" : fecha,
+      lugar: sinLugar ? "" : lugar.trim(),
+    });
     onClose?.();
   };
-
-  const field =
-    "mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent";
 
   return (
     <div
@@ -33,14 +40,10 @@ export function OnboardingBoda({
       <form
         onSubmit={guardar}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-xl bg-surface p-6 shadow-xl"
+        className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface p-6 shadow-xl"
       >
         {editar && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 text-xl text-neutral-400"
-          >
+          <button type="button" onClick={onClose} className="absolute right-4 top-4 text-xl text-neutral-400">
             ×
           </button>
         )}
@@ -48,46 +51,39 @@ export function OnboardingBoda({
           {editar ? "Datos de la boda" : "Contadnos de vuestra boda"}
         </h2>
         {!editar && (
-          <p className="mt-1 text-sm text-muted">
-            Con esto preparamos vuestro panel. Podéis cambiarlo luego.
-          </p>
+          <p className="mt-1 text-sm text-muted">Con esto preparamos vuestro panel. Podéis cambiarlo luego.</p>
         )}
 
-        <div className="mt-5 space-y-4">
-          <label className="block">
-            <span className="text-sm font-medium">Nombres de la pareja</span>
-            <input
-              value={pareja}
-              onChange={(e) => setPareja(e.target.value)}
-              placeholder="Ana y Leo"
-              required
-              className={field}
-            />
+        <PersonaFields titulo="Persona 1" p={p1} set={setP1} />
+        <PersonaFields titulo="Persona 2" p={p2} set={setP2} />
+
+        <div className="mt-5">
+          <span className="text-sm font-medium">Fecha de la boda</span>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            disabled={sinFecha}
+            className={`${field} disabled:opacity-50`}
+          />
+          <label className="mt-1.5 flex items-center gap-2 text-xs text-muted">
+            <input type="checkbox" checked={sinFecha} onChange={(e) => setSinFecha(e.target.checked)} />
+            Todavía no la tenemos
           </label>
+        </div>
 
-          <div>
-            <span className="text-sm font-medium">Fecha de la boda</span>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              disabled={sinFecha}
-              className={`${field} disabled:opacity-50`}
-            />
-            <label className="mt-1.5 flex items-center gap-2 text-xs text-muted">
-              <input type="checkbox" checked={sinFecha} onChange={(e) => setSinFecha(e.target.checked)} />
-              Todavía no la tenemos
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="text-sm font-medium">Lugar (opcional)</span>
-            <input
-              value={lugar}
-              onChange={(e) => setLugar(e.target.value)}
-              placeholder="Finca Los Olivos, Madrid"
-              className={field}
-            />
+        <div className="mt-4">
+          <span className="text-sm font-medium">Lugar de la celebración</span>
+          <input
+            value={lugar}
+            onChange={(e) => setLugar(e.target.value)}
+            disabled={sinLugar}
+            placeholder="Finca Los Olivos, Madrid"
+            className={`${field} disabled:opacity-50`}
+          />
+          <label className="mt-1.5 flex items-center gap-2 text-xs text-muted">
+            <input type="checkbox" checked={sinLugar} onChange={(e) => setSinLugar(e.target.checked)} />
+            Todavía no lo tenemos
           </label>
         </div>
 
@@ -101,3 +97,44 @@ export function OnboardingBoda({
     </div>
   );
 }
+
+function PersonaFields({
+  titulo,
+  p,
+  set,
+}: {
+  titulo: string;
+  p: Persona;
+  set: (p: Persona) => void;
+}) {
+  return (
+    <fieldset className="mt-5 rounded-lg border border-line p-3">
+      <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">{titulo}</legend>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium">Nombre</span>
+          <input value={p.nombre} onChange={(e) => set({ ...p, nombre: e.target.value })} required className={field} />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Apellidos</span>
+          <input value={p.apellidos} onChange={(e) => set({ ...p, apellidos: e.target.value })} className={field} />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium">Apodo (opcional)</span>
+          <input
+            value={p.apodo}
+            onChange={(e) => set({ ...p, apodo: e.target.value })}
+            placeholder="Cómo os llaman"
+            className={field}
+          />
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
+const trim = (p: Persona): Persona => ({
+  nombre: p.nombre.trim(),
+  apellidos: p.apellidos.trim(),
+  apodo: p.apodo.trim(),
+});

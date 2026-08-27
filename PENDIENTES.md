@@ -7,6 +7,9 @@
 - [ ] Subida de imágenes real a Supabase Storage (bucket `wedding-media` ya creado) en vez de data URLs.
 - [ ] Dominios / subdominios para las webs publicadas.
 
+## Editor de la web
+- [ ] **Menú de navegación de la web editable**: hoy los enlaces del menú (Portada, Historia, Cómo llegar, RSVP, Lista de regalos…) salen fijos. Hay que poder renombrar cada entrada, ocultarla o reordenarla, y que apunte a la sección/ancla correcta.
+
 ## Pagos (Stripe)
 - [ ] Crear cuenta de Stripe de webodas + activar **Connect (Express)** y **Bizum** como método de pago.
 - [ ] Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`.

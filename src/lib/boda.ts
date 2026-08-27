@@ -1,17 +1,22 @@
 // Perfil de la boda (prototipo: en el navegador).
 
+export type Persona = { nombre: string; apellidos: string; apodo: string };
+
 export type BodaPerfil = {
-  pareja: string;
+  p1: Persona;
+  p2: Persona;
   fecha: string; // ISO "2026-09-12" o "" si aún no se sabe
-  lugar: string;
+  lugar: string; // "" si aún no se sabe
   invitadosAprox: number | null;
   presupuestoTotal: number | null;
 };
 
 const KEY = "webodas:boda";
 
+const PERSONA: Persona = { nombre: "", apellidos: "", apodo: "" };
 const VACIO: BodaPerfil = {
-  pareja: "",
+  p1: { ...PERSONA },
+  p2: { ...PERSONA },
   fecha: "",
   lugar: "",
   invitadosAprox: null,
@@ -21,7 +26,14 @@ const VACIO: BodaPerfil = {
 export function loadBoda(): BodaPerfil {
   try {
     const r = localStorage.getItem(KEY);
-    return r ? { ...VACIO, ...(JSON.parse(r) as Partial<BodaPerfil>) } : VACIO;
+    if (!r) return VACIO;
+    const raw = JSON.parse(r) as Partial<BodaPerfil> & { pareja?: string };
+    return {
+      ...VACIO,
+      ...raw,
+      p1: { ...PERSONA, ...raw.p1 },
+      p2: { ...PERSONA, ...raw.p2 },
+    };
   } catch {
     return VACIO;
   }
@@ -37,15 +49,23 @@ export function saveBoda(patch: Partial<BodaPerfil>) {
   }
 }
 
+const nombreCorto = (p: Persona) => p.apodo.trim() || p.nombre.trim();
+
+export function nombrePareja(b: BodaPerfil): string {
+  const a = nombreCorto(b.p1);
+  const c = nombreCorto(b.p2);
+  if (a && c) return `${a} & ${c}`;
+  return a || c || "Vuestra boda";
+}
+
 export function configurada(b: BodaPerfil): boolean {
-  return b.pareja.trim().length > 0;
+  return b.p1.nombre.trim().length > 0 && b.p2.nombre.trim().length > 0;
 }
 
 // Días que faltan; null si no hay fecha.
 export function diasRestantes(b: BodaPerfil): number | null {
   if (!b.fecha) return null;
-  const d = Math.ceil((new Date(b.fecha).getTime() - Date.now()) / 86400000);
-  return d;
+  return Math.ceil((new Date(b.fecha).getTime() - Date.now()) / 86400000);
 }
 
 export function mesesRestantes(b: BodaPerfil): number | null {

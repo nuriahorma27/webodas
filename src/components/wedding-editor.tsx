@@ -10,8 +10,8 @@ const ROOT_ZONE = "root:default-zone";
 
 // Orden en el que se ofrecen las secciones al añadir.
 const SECTION_ORDER = [
-  "Hero",
   "RichText",
+  "Hero",
   "MediaText",
   "List",
   "Schedule",
@@ -119,7 +119,11 @@ function SectionsSidebar() {
         {adding ? (
           <div className="space-y-1">
             <p className="px-1 pb-1 text-xs uppercase tracking-wider text-neutral-500">
-              Elige una sección
+              Elige qué añadir
+            </p>
+            <p className="px-1 pb-2 text-[11px] leading-snug text-neutral-500">
+              «Texto» es un bloque libre: dentro puedes añadir varios títulos y
+              párrafos con estilos distintos.
             </p>
             {SECTION_ORDER.map((type) => (
               <button
@@ -142,7 +146,7 @@ function SectionsSidebar() {
             onClick={() => setAdding(true)}
             className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
           >
-            + Añadir sección
+            + Añadir sección o texto
           </button>
         )}
       </div>

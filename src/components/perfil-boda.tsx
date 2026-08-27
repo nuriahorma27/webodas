@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { OnboardingBoda } from "@/components/onboarding-boda";
-import { loadBoda, type BodaPerfil } from "@/lib/boda";
+import { loadBoda, nombrePareja, type BodaPerfil } from "@/lib/boda";
 
 export function PerfilBoda() {
   const [boda, setBoda] = useState<BodaPerfil | null>(null);
@@ -15,13 +15,15 @@ export function PerfilBoda() {
     return () => window.removeEventListener("webodas:boda", sync);
   }, []);
 
-  const inicial = (boda?.pareja || "AL")
-    .split(/\s|&|y/i)
-    .filter(Boolean)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const inicial = boda
+    ? nombrePareja(boda)
+        .split("&")
+        .map((s) => s.trim()[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "";
 
   return (
     <>

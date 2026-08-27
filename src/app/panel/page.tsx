@@ -11,6 +11,7 @@ import {
   diasRestantes,
   mesesRestantes,
   fechaLarga,
+  nombrePareja,
   type BodaPerfil,
 } from "@/lib/boda";
 import {
@@ -84,7 +85,7 @@ export default function PanelPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle eyebrow={fechaLarga(boda)} title={`Hola, ${boda.pareja}`} />
+      <PageTitle eyebrow={fechaLarga(boda)} title={`Hola, ${nombrePareja(boda)}`} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat

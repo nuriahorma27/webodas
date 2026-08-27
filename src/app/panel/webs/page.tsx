@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
-import { boda } from "@/lib/mock";
+import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { TEMPLATES } from "@/lib/puck/config";
 
 const previews: Record<string, React.ReactNode> = {
@@ -39,6 +39,7 @@ const previews: Record<string, React.ReactNode> = {
 
 export default function WebsPage() {
   const [hasWeb, setHasWeb] = useState<boolean | null>(null);
+  const boda = loadBoda();
 
   useEffect(() => {
     try {
@@ -69,12 +70,12 @@ export default function WebsPage() {
           <h2 className="font-display text-xl">Tu web</h2>
           <Card className="flex items-center justify-between">
             <div>
-              <p className="font-display text-lg">{boda.pareja}</p>
-              <p className="text-sm text-muted">{boda.fechaLarga}</p>
+              <p className="font-display text-lg">{nombrePareja(boda)}</p>
+              <p className="text-sm text-muted">{fechaLarga(boda)}</p>
             </div>
             <div className="flex items-center gap-4">
               <a
-                href={`/w/${boda.slug}`}
+                href="/w/ana-y-leo"
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm text-muted underline"

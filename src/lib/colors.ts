@@ -1,12 +1,25 @@
 // Paleta de colores compartida por todo el editor (secciones y textos).
-// Solo se muestran los colores que la persona ya ha usado (guardados en el navegador).
+// Hay una paleta base fija + los colores que la persona añade (máx. 6, en el navegador).
 
 const STORE_KEY = "webodas:colors";
+
+// Paleta base: siempre visible, no se acumula.
+export const BASE_PALETTE = [
+  "#ffffff",
+  "#1f2937",
+  "#4b6b43",
+  "#e6b8b8",
+  "#7c4a4a",
+  "#c8a96a",
+];
+
+const norm = (c: string) => c.trim().toLowerCase();
 
 export function loadSavedColors(): string[] {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    const list = raw ? (JSON.parse(raw) as string[]) : [];
+    return list.filter((c) => !BASE_PALETTE.map(norm).includes(norm(c)));
   } catch {
     return [];
   }
@@ -14,19 +27,19 @@ export function loadSavedColors(): string[] {
 
 export function rememberColor(color: string) {
   try {
-    const c = color.toLowerCase();
-    if (!c) return;
-    if (loadSavedColors().includes(c)) return;
-    const next = [c, ...loadSavedColors().filter((x) => x !== c)].slice(0, 8);
+    const c = norm(color);
+    if (!c || BASE_PALETTE.map(norm).includes(c)) return;
+    if (loadSavedColors().map(norm).includes(c)) return;
+    const next = [c, ...loadSavedColors().filter((x) => norm(x) !== c)].slice(0, 6);
     localStorage.setItem(STORE_KEY, JSON.stringify(next));
-    // Diferido para no re-renderizar en medio del click que lo provocó.
     setTimeout(() => window.dispatchEvent(new Event("webodas:colors")), 0);
   } catch {
     /* noop */
   }
 }
 
-// Muestras visibles = solo las que ya se han usado. Vacío al principio.
+// Base fija + las que ya se han usado.
 export function paletteColors(): string[] {
-  return loadSavedColors();
+  const saved = loadSavedColors();
+  return [...BASE_PALETTE, ...saved];
 }

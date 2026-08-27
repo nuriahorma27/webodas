@@ -1670,16 +1670,19 @@ export const puckConfig: Config<Props, RootProps> = {
             <RichEditor value={value as string} onChange={onChange} label="Texto" />
           ),
         },
-        buttonLabel: { type: "text", label: "Texto del botón (opcional)" },
-        buttonUrl: { type: "text", label: "Enlace del botón" },
+        buttonLabel: { type: "text", label: "Texto del botón" },
+        buttonUrl: {
+          type: "text",
+          label: "Enlace del botón (deja /lista/ana-y-leo para abrir vuestra lista real)",
+        },
         ...colorFields,
       },
       defaultProps: {
         titulo: "Lista de regalos",
         subtitulo: "Vuestra presencia es nuestro mejor regalo",
         texto: "…pero si además queréis tener un detalle, aquí van algunas ideas. Cualquier aportación, por pequeña que sea, nos hace mucha ilusión.",
-        buttonLabel: "",
-        buttonUrl: "",
+        buttonLabel: "Ver la lista de regalos",
+        buttonUrl: "/lista/ana-y-leo",
         ...colorDefaults,
       },
       render: ({ titulo, subtitulo, texto, buttonLabel, buttonUrl, colorText, colorBg }) => (
@@ -1705,7 +1708,9 @@ export const puckConfig: Config<Props, RootProps> = {
 
             {buttonLabel && (
               <a
-                href={buttonUrl || "#"}
+                href={buttonUrl || "/lista/ana-y-leo"}
+                target={(buttonUrl || "/lista/ana-y-leo").startsWith("#") ? undefined : "_blank"}
+                rel="noreferrer"
                 style={{
                   display: "inline-block",
                   marginTop: 28,
