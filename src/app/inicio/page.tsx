@@ -1,11 +1,23 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { login, registro } from "@/lib/auth-actions";
 
 export default function InicioPage() {
-  const [modo, setModo] = useState<"entrar" | "crear">("entrar");
+  return (
+    <Suspense fallback={null}>
+      <Inicio />
+    </Suspense>
+  );
+}
+
+function Inicio() {
+  const params = useSearchParams();
+  const [modo, setModo] = useState<"entrar" | "crear">(
+    params.get("crear") !== null ? "crear" : "entrar",
+  );
   const action = modo === "entrar" ? login : registro;
   const [state, formAction, pending] = useActionState(action, undefined);
 

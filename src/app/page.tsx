@@ -52,7 +52,7 @@ export default function Landing() {
         </p>
         <div className="mt-8 flex justify-center gap-3">
           <Link
-            href="/inicio"
+            href="/inicio?crear=1"
             className="rounded-md bg-foreground px-6 py-3 text-sm font-medium text-white hover:opacity-90"
           >
             Empezar gratis
@@ -107,7 +107,7 @@ export default function Landing() {
         </ol>
         <div className="mt-10">
           <Link
-            href="/inicio"
+            href="/inicio?crear=1"
             className="rounded-md bg-foreground px-6 py-3 text-sm font-medium text-white hover:opacity-90"
           >
             Empezar ahora
