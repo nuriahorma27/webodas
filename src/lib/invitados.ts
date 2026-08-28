@@ -7,7 +7,7 @@ export const VIENE_OPCIONES: Viene[] = ["Pendiente", "Sí", "No"];
 export type TipoInvitado = "Adulto" | "Niño";
 export const TIPO_OPCIONES: TipoInvitado[] = ["Adulto", "Niño"];
 
-export const GRUPOS_SUGERIDOS = [
+export const GRUPOS_DEFAULT = [
   "Familia de la novia",
   "Familia del novio",
   "Amigos de la novia",
@@ -16,6 +16,7 @@ export const GRUPOS_SUGERIDOS = [
   "Trabajo",
   "Otros",
 ];
+export const SUBGRUPOS_DEFAULT: string[] = [];
 
 // Columnas extra que se pueden añadir. tipo: texto libre o sí/no.
 export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: "texto" | "sino" }[] = [
@@ -58,6 +59,34 @@ export type ColumnaInvitado = { id: string; nombre: string; tipo: "texto" | "sin
 
 const KEY = "webodas:invitados";
 const COLS_KEY = "webodas:invitados-columnas";
+const GRUPOS_KEY = "webodas:invitados-grupos";
+const SUBGRUPOS_KEY = "webodas:invitados-subgrupos";
+
+/* ---------- grupos y subgrupos (configurables) ---------- */
+
+function loadLista(key: string, def: string[]): string[] {
+  try {
+    const r = localStorage.getItem(key);
+    if (!r) return def;
+    const arr = JSON.parse(r) as string[];
+    return Array.isArray(arr) ? arr : def;
+  } catch {
+    return def;
+  }
+}
+function saveLista(key: string, list: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+    window.dispatchEvent(new Event("webodas:invitados"));
+  } catch {
+    /* noop */
+  }
+}
+
+export const loadGrupos = () => loadLista(GRUPOS_KEY, GRUPOS_DEFAULT);
+export const saveGrupos = (l: string[]) => saveLista(GRUPOS_KEY, l);
+export const loadSubgrupos = () => loadLista(SUBGRUPOS_KEY, SUBGRUPOS_DEFAULT);
+export const saveSubgrupos = (l: string[]) => saveLista(SUBGRUPOS_KEY, l);
 
 /* ---------- invitados ---------- */
 
@@ -111,6 +140,35 @@ export function removeInvitado(id: string) {
   saveInvitados(loadInvitados().filter((i) => i.id !== id));
 }
 
+// Añade una lista de {nombre, apellido}; ignora los que ya existen. Devuelve cuántos añadió.
+export function importarInvitados(filas: { nombre: string; apellido: string }[]): number {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const list = loadInvitados();
+  const existentes = new Set(list.map((i) => `${norm(i.nombre)}|${norm(i.apellido)}`));
+  let n = 0;
+  for (const f of filas) {
+    const nombre = (f.nombre || "").trim();
+    const apellido = (f.apellido || "").trim();
+    if (!nombre && !apellido) continue;
+    const clave = `${norm(nombre)}|${norm(apellido)}`;
+    if (existentes.has(clave)) continue;
+    existentes.add(clave);
+    list.push({
+      id: crypto.randomUUID(),
+      nombre,
+      apellido,
+      viene: "Pendiente",
+      grupo: "",
+      subgrupo: "",
+      tipo: "Adulto",
+      extra: {},
+    });
+    n++;
+  }
+  saveInvitados(list);
+  return n;
+}
+
 /* ---------- columnas personalizadas ---------- */
 
 // Columnas que aparecen de serie la primera vez.
@@ -157,6 +215,19 @@ export function addColumna(nombre: string, tipo: "texto" | "sino" = "texto"): Co
   const col = { id: crypto.randomUUID(), nombre: nombre.trim() || "Columna", tipo };
   saveColumnas([...loadColumnas(), col]);
   return col;
+}
+
+export function moveColumna(id: string, dir: -1 | 1) {
+  const list = loadColumnas();
+  const i = list.findIndex((c) => c.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  saveColumnas(list);
+}
+
+export function resetColumnas() {
+  saveColumnas(COLUMNAS_INICIALES.map((c) => ({ id: crypto.randomUUID(), ...c })));
 }
 
 export function removeColumna(id: string) {

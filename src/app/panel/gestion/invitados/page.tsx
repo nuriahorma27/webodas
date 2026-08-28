@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Stat } from "@/components/ui";
 import { CampoBoda } from "@/components/campo-boda";
+import { leerNombresExcel } from "@/lib/import-excel";
 import {
   loadInvitados,
   loadColumnas,
+  loadGrupos,
+  saveGrupos,
+  loadSubgrupos,
+  saveSubgrupos,
   addInvitado,
   updateInvitado,
   updateInvitadoExtra,
   removeInvitado,
   addColumna,
   removeColumna,
+  moveColumna,
+  resetColumnas,
+  importarInvitados,
   resumenInvitados,
   VIENE_OPCIONES,
   TIPO_OPCIONES,
-  GRUPOS_SUGERIDOS,
   COLUMNAS_SUGERIDAS,
   type Invitado,
   type ColumnaInvitado,
@@ -29,13 +36,37 @@ const cell =
 export default function InvitadosPage() {
   const [inv, setInv] = useState<Invitado[] | null>(null);
   const [cols, setCols] = useState<ColumnaInvitado[]>([]);
+  const [grupos, setGrupos] = useState<string[]>([]);
+  const [subgrupos, setSubgrupos] = useState<string[]>([]);
   const [filtro, setFiltro] = useState<"" | Viene>("");
   const [modalCol, setModalCol] = useState(false);
+  const [ajustes, setAjustes] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const importar = async (file: File) => {
+    try {
+      const filas = await leerNombresExcel(file);
+      if (filas.length === 0) {
+        alert("No se han encontrado nombres en el archivo.");
+        return;
+      }
+      const n = importarInvitados(filas);
+      alert(
+        n > 0
+          ? `Se han añadido ${n} invitado${n === 1 ? "" : "s"}.`
+          : "Todos los invitados del archivo ya estaban en la lista.",
+      );
+    } catch {
+      alert("No se ha podido leer el archivo. Asegúrate de que es un Excel (.xlsx) o CSV.");
+    }
+  };
 
   useEffect(() => {
     const sync = () => {
       setInv(loadInvitados());
       setCols(loadColumnas());
+      setGrupos(loadGrupos());
+      setSubgrupos(loadSubgrupos());
     };
     sync();
     window.addEventListener("webodas:invitados", sync);
@@ -72,7 +103,81 @@ export default function InvitadosPage() {
             {e === "" ? "Todos" : e === "Sí" ? "Vienen" : e === "No" ? "No vienen" : "Pendientes"}
           </button>
         ))}
+        <button
+          onClick={() => setAjustes((v) => !v)}
+          className="ml-auto rounded-full border border-dashed border-line px-3 py-1 text-xs text-muted hover:text-accent"
+        >
+          ⚙ Ajustes de la lista
+        </button>
       </div>
+
+      {ajustes && (
+        <Card className="space-y-5">
+          <ListaEditable
+            titulo="Grupos"
+            items={grupos}
+            onChange={saveGrupos}
+            placeholder="Nuevo grupo (p. ej. Familia de la novia)"
+          />
+          <ListaEditable
+            titulo="Subgrupos"
+            items={subgrupos}
+            onChange={saveSubgrupos}
+            placeholder="Nuevo subgrupo (p. ej. Tíos, Primos, Universidad)"
+          />
+          <div>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Columnas</h4>
+              <button
+                onClick={() => {
+                  if (confirm("¿Volver a las columnas estándar? Se pierden las que hayas añadido.")) resetColumnas();
+                }}
+                className="text-xs text-muted underline hover:text-foreground"
+              >
+                Restablecer estándar
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Nombre, Apellido, ¿Viene?, Grupo, Subgrupo y Adulto/Niño son fijas. Estas se pueden
+              quitar, reordenar o añadir:
+            </p>
+            <ul className="mt-2 divide-y divide-line">
+              {cols.map((c, i) => (
+                <li key={c.id} className="flex items-center gap-2 py-1.5 text-sm">
+                  <span className="flex-1">{c.nombre}</span>
+                  <span className="text-xs text-muted">{c.tipo === "sino" ? "sí/no" : "texto"}</span>
+                  <button
+                    onClick={() => moveColumna(c.id, -1)}
+                    disabled={i === 0}
+                    className="text-xs text-muted hover:text-foreground disabled:opacity-25"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveColumna(c.id, 1)}
+                    disabled={i === cols.length - 1}
+                    className="text-xs text-muted hover:text-foreground disabled:opacity-25"
+                  >
+                    ▼
+                  </button>
+                  <button
+                    onClick={() => removeColumna(c.id)}
+                    className="text-muted hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setModalCol(true)}
+              className="mt-2 text-sm font-medium text-accent"
+            >
+              + Añadir columna
+            </button>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-0">
         <div className="overflow-x-auto">
@@ -151,21 +256,38 @@ export default function InvitadosPage() {
                     </select>
                   </td>
                   <td className="px-0">
-                    <input
-                      list="grupos-invitados"
-                      defaultValue={i.grupo}
-                      placeholder="—"
-                      onBlur={(e) => updateInvitado(i.id, { grupo: e.target.value })}
+                    <select
+                      value={i.grupo}
+                      onChange={(e) => updateInvitado(i.id, { grupo: e.target.value })}
                       className={`${cell} text-muted`}
-                    />
+                    >
+                      <option value="">—</option>
+                      {grupos.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                      {i.grupo && !grupos.includes(i.grupo) && (
+                        <option value={i.grupo}>{i.grupo}</option>
+                      )}
+                    </select>
                   </td>
                   <td className="px-0">
-                    <input
-                      defaultValue={i.subgrupo}
-                      placeholder="—"
-                      onBlur={(e) => updateInvitado(i.id, { subgrupo: e.target.value })}
+                    <select
+                      value={i.subgrupo}
+                      onChange={(e) => updateInvitado(i.id, { subgrupo: e.target.value })}
                       className={`${cell} text-muted`}
-                    />
+                    >
+                      <option value="">—</option>
+                      {subgrupos.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                      {i.subgrupo && !subgrupos.includes(i.subgrupo) && (
+                        <option value={i.subgrupo}>{i.subgrupo}</option>
+                      )}
+                    </select>
                   </td>
                   <td className="px-0">
                     <select
@@ -224,18 +346,34 @@ export default function InvitadosPage() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3">
+        <div className="flex flex-wrap items-center gap-4 px-5 py-3">
           <button onClick={() => addInvitado()} className="text-sm font-medium text-accent">
             + Añadir invitado
           </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="text-sm font-medium text-accent"
+          >
+            ↑ Importar de Excel
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importar(f);
+              e.target.value = "";
+            }}
+          />
         </div>
+        <p className="px-5 pb-3 text-xs text-muted">
+          El Excel debe tener los <strong>nombres en la columna A</strong> y los{" "}
+          <strong>apellidos en la columna B</strong>, empezando en la fila 1. Los que ya estén en la
+          lista no se duplican.
+        </p>
       </Card>
-
-      <datalist id="grupos-invitados">
-        {GRUPOS_SUGERIDOS.map((g) => (
-          <option key={g} value={g} />
-        ))}
-      </datalist>
 
       {modalCol && (
         <ModalColumna
@@ -307,6 +445,62 @@ function ModalColumna({
             Añadir
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ListaEditable({
+  titulo,
+  items,
+  onChange,
+  placeholder,
+}: {
+  titulo: string;
+  items: string[];
+  onChange: (list: string[]) => void;
+  placeholder: string;
+}) {
+  const [nuevo, setNuevo] = useState("");
+  const add = () => {
+    const v = nuevo.trim();
+    if (v && !items.some((x) => x.toLowerCase() === v.toLowerCase())) onChange([...items, v]);
+    setNuevo("");
+  };
+  return (
+    <div>
+      <h4 className="text-sm font-semibold">{titulo}</h4>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {items.length === 0 && <span className="text-xs text-muted">Ninguno todavía.</span>}
+        {items.map((it) => (
+          <span
+            key={it}
+            className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs"
+          >
+            {it}
+            <button
+              onClick={() => onChange(items.filter((x) => x !== it))}
+              className="text-muted hover:text-red-600"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder={placeholder}
+          className="flex-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+        />
+        <button
+          onClick={add}
+          className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
+        >
+          Añadir
+        </button>
       </div>
     </div>
   );
