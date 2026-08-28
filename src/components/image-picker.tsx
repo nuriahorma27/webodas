@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { subirImagen } from "@/lib/media";
 
-// Selector de imagen sencillo (sin Puck). Guarda data URL o URL pegada.
+// Selector de imagen: sube el archivo a Storage y guarda la URL.
 export function ImagePicker({
   value,
   onChange,
@@ -13,17 +14,22 @@ export function ImagePicker({
   className?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const onFile = (file: File) => {
+  const onFile = async (file: File) => {
     setError(null);
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Máx. 5 MB");
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Máx. 15 MB");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.onerror = () => setError("No se pudo leer");
-    reader.readAsDataURL(file);
+    setBusy(true);
+    try {
+      onChange(await subirImagen(file));
+    } catch {
+      setError("No se pudo subir");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -59,6 +65,7 @@ export function ImagePicker({
               Quitar
             </button>
           )}
+          {busy && <p className="text-xs text-muted">Subiendo…</p>}
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       </div>

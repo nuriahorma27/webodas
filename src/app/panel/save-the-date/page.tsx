@@ -6,6 +6,7 @@ import { PageTitle, Card } from "@/components/ui";
 import { SaveTheDateView } from "@/components/save-the-date-view";
 import { SaveTheDateFrame } from "@/components/save-the-date-frame";
 import { CompartirEnlace } from "@/components/compartir-enlace";
+import { subirImagen } from "@/lib/media";
 import {
   loadStd,
   setStd,
@@ -37,14 +38,16 @@ export default function SaveTheDatePage() {
 
   if (!std) return null;
 
-  const subirImagen = (file: File) => {
-    if (file.size > 6 * 1024 * 1024) {
-      alert("La imagen no puede pasar de 6 MB.");
+  const subirFoto = async (file: File) => {
+    if (file.size > 15 * 1024 * 1024) {
+      alert("La imagen no puede pasar de 15 MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setStd({ imagen: String(reader.result) });
-    reader.readAsDataURL(file);
+    try {
+      setStd({ imagen: await subirImagen(file) });
+    } catch {
+      alert("No se ha podido subir la imagen. Vuelve a intentarlo.");
+    }
   };
 
   const nudge = (dx: number, dy: number) => {
@@ -327,7 +330,7 @@ export default function SaveTheDatePage() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) subirImagen(f);
+                if (f) subirFoto(f);
                 e.target.value = "";
               }}
             />

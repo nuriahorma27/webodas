@@ -29,16 +29,84 @@ let empujando = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let uid: string | null = null;
 
+const esClaveSync = (k: string | null): k is string =>
+  !!k && k.startsWith(PREFIX) && !k.startsWith("webodas:__");
+
 function estadoLocal(): Record<string, string> {
   const out: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith(PREFIX) && k !== MARK) {
+    if (esClaveSync(k)) {
       const v = localStorage.getItem(k);
       if (v != null) out[k] = v;
     }
   }
   return out;
+}
+
+// Migra imágenes en base64 (data URL) que quedaran guardadas dentro del
+// contenido a archivos en Storage (una sola vez por navegador).
+async function migrarImagenes() {
+  if (localStorage.getItem("webodas:__img-migrado")) return;
+  try {
+    const { subirDataUrl, esDataUrl } = await import("@/lib/media");
+    const rec = async (v: unknown): Promise<{ valor: unknown; cambio: boolean }> => {
+      if (esDataUrl(v)) {
+        try {
+          return { valor: await subirDataUrl(v), cambio: true };
+        } catch {
+          return { valor: "", cambio: true }; // data URL rota → quitarla
+        }
+      }
+      if (Array.isArray(v)) {
+        let c = false;
+        const out = [];
+        for (const it of v) {
+          const r = await rec(it);
+          out.push(r.valor);
+          c = c || r.cambio;
+        }
+        return { valor: out, cambio: c };
+      }
+      if (v && typeof v === "object") {
+        let c = false;
+        const out: Record<string, unknown> = {};
+        for (const [k, val] of Object.entries(v)) {
+          const r = await rec(val);
+          out[k] = r.valor;
+          c = c || r.cambio;
+        }
+        return { valor: out, cambio: c };
+      }
+      return { valor: v, cambio: false };
+    };
+
+    let algo = false;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!esClaveSync(k)) continue;
+      const raw = localStorage.getItem(k);
+      if (!raw || !raw.includes("data:image")) continue;
+      let obj: unknown;
+      try {
+        obj = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      const r = await rec(obj);
+      if (r.cambio) {
+        localStorage.setItem(k, JSON.stringify(r.valor));
+        algo = true;
+      }
+    }
+    localStorage.setItem("webodas:__img-migrado", "1");
+    if (algo) {
+      for (const ev of EVENTOS) window.dispatchEvent(new Event(ev));
+      programarEmpuje();
+    }
+  } catch {
+    /* se reintenta en la siguiente carga */
+  }
 }
 
 async function empujar() {
@@ -117,7 +185,7 @@ export async function startCloudSync() {
     const clavesNube = new Set(Object.keys(nube));
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(PREFIX) && k !== MARK && !clavesNube.has(k)) {
+      if (esClaveSync(k) && !clavesNube.has(k)) {
         localStorage.removeItem(k);
       }
     }
@@ -132,13 +200,15 @@ export async function startCloudSync() {
   const setItem = localStorage.setItem.bind(localStorage);
   localStorage.setItem = (k: string, v: string) => {
     setItem(k, v);
-    if (k.startsWith(PREFIX) && k !== MARK) programarEmpuje();
+    if (esClaveSync(k)) programarEmpuje();
   };
   const removeItem = localStorage.removeItem.bind(localStorage);
   localStorage.removeItem = (k: string) => {
     removeItem(k);
-    if (k.startsWith(PREFIX) && k !== MARK) programarEmpuje();
+    if (esClaveSync(k)) programarEmpuje();
   };
+
+  migrarImagenes();
 
   // 3) Guardar al salir / cambiar de pestaña
   window.addEventListener("visibilitychange", () => {
@@ -161,7 +231,7 @@ export function importarDatos(json: string): boolean {
     const datos = parsed.datos ?? (parsed as unknown as Record<string, string>);
     if (!datos || typeof datos !== "object") return false;
     for (const [k, v] of Object.entries(datos)) {
-      if (k.startsWith(PREFIX) && typeof v === "string") localStorage.setItem(k, v);
+      if (esClaveSync(k) && typeof v === "string") localStorage.setItem(k, v);
     }
     for (const ev of EVENTOS) window.dispatchEvent(new Event(ev));
     programarEmpuje();

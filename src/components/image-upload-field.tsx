@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { FieldLabel } from "@measured/puck";
+import { subirImagen } from "@/lib/media";
 
-// Prototipo: la imagen se guarda como data URL en el propio contenido.
-// Más adelante se subirá a almacenamiento y se guardará solo la URL.
+// La imagen se sube a Storage y se guarda solo la URL.
 export function ImageUploadField({
   value,
   onChange,
@@ -17,23 +17,20 @@ export function ImageUploadField({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
     setError(null);
-    if (file.size > 5 * 1024 * 1024) {
-      setError("La imagen es muy pesada (máx. 5 MB).");
+    if (file.size > 15 * 1024 * 1024) {
+      setError("La imagen es muy pesada (máx. 15 MB).");
       return;
     }
     setBusy(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      onChange(String(reader.result));
+    try {
+      onChange(await subirImagen(file));
+    } catch {
+      setError("No se pudo subir la imagen. Inténtalo de nuevo.");
+    } finally {
       setBusy(false);
-    };
-    reader.onerror = () => {
-      setError("No se pudo leer la imagen.");
-      setBusy(false);
-    };
-    reader.readAsDataURL(file);
+    }
   }
 
   return (
