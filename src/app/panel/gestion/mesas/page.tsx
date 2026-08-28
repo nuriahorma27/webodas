@@ -527,22 +527,22 @@ function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[]
     for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 94 });
     return out;
   }
-  const perSide = Math.ceil(n / 4);
+  // cuadrada: repartir lo más parejo posible entre los 4 lados, sin sillas en las esquinas.
+  const base = Math.floor(n / 4);
+  const rem = n % 4;
+  const counts = [0, 1, 2, 3].map((k) => base + (k < rem ? 1 : 0)); // t, r, b, l
   const out: { x: number; y: number }[] = [];
-  const sides: ("t" | "r" | "b" | "l")[] = ["t", "r", "b", "l"];
-  let placed = 0;
-  for (const s of sides) {
-    const count = Math.min(perSide, n - placed);
+  const spread = (i: number, count: number) =>
+    count === 1 ? 50 : 30 + (i * 40) / (count - 1); // 30%..70%, lejos de las esquinas
+  counts.forEach((count, side) => {
     for (let i = 0; i < count; i++) {
-      const t = pct(i, count);
-      if (s === "t") out.push({ x: t, y: 6 });
-      else if (s === "b") out.push({ x: t, y: 94 });
-      else if (s === "l") out.push({ x: 6, y: t });
-      else out.push({ x: 94, y: t });
+      const t = spread(i, count);
+      if (side === 0) out.push({ x: t, y: 6 }); // top
+      else if (side === 1) out.push({ x: 94, y: t }); // right
+      else if (side === 2) out.push({ x: t, y: 94 }); // bottom
+      else out.push({ x: 6, y: t }); // left
     }
-    placed += count;
-    if (placed >= n) break;
-  }
+  });
   return out;
 }
 
