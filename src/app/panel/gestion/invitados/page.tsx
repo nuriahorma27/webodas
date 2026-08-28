@@ -34,6 +34,9 @@ import {
   TIPO_OPCIONES,
   TIPO_COLUMNA_LABEL,
   COLUMNAS_SUGERIDAS,
+  COLUMNAS_FIJAS,
+  loadFijasOcultas,
+  toggleFija,
   type Invitado,
   type ColumnaInvitado,
   type TipoColumna,
@@ -55,7 +58,9 @@ export default function InvitadosPage() {
   const [ajustes, setAjustes] = useState(false);
   const [vista, setVista] = useState<"gestion" | "respuestas">("gestion");
   const [respuestas, setRespuestas] = useState<RsvpResponse[]>([]);
+  const [fijasOcultas, setFijasOcultas] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const verFija = (k: string) => !fijasOcultas.includes(k);
 
   const importar = async (file: File) => {
     try {
@@ -83,6 +88,7 @@ export default function InvitadosPage() {
       setSubgrupos(loadSubgrupos());
       setPreguntas(labelsFormulario());
       setRespuestas(loadResponses("demo"));
+      setFijasOcultas(loadFijasOcultas());
     };
     sync();
     window.addEventListener("webodas:invitados", sync);
@@ -194,8 +200,27 @@ export default function InvitadosPage() {
             />
           </div>
           <div className="rounded-lg border border-line bg-surface p-4">
+            <h4 className="text-sm font-semibold">Columnas fijas</h4>
+            <p className="text-xs text-muted">
+              Nombre y Apellido siempre están. Estas puedes mostrarlas u ocultarlas:
+            </p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {COLUMNAS_FIJAS.map((f) => (
+                <label key={f.key} className="flex items-center gap-1.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={verFija(f.key)}
+                    onChange={() => toggleFija(f.key)}
+                  />
+                  {f.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Columnas</h4>
+              <h4 className="text-sm font-semibold">Columnas añadidas</h4>
               <button
                 onClick={() => {
                   if (confirm("¿Volver a las columnas estándar? Se pierden las que hayas añadido.")) resetColumnas();
@@ -206,8 +231,7 @@ export default function InvitadosPage() {
               </button>
             </div>
             <p className="mt-1 text-xs text-muted">
-              Nombre, Apellido, ¿Viene?, Grupo, Subgrupo y Adulto/Niño son fijas. Estas se pueden
-              quitar, reordenar, añadir y <strong>asociar a una pregunta del cuestionario</strong>{" "}
+              Se pueden quitar, reordenar, y <strong>asociar a una pregunta del formulario</strong>{" "}
               (la respuesta se guardará sola en esa columna).
             </p>
             <p className="mt-2 text-xs text-muted">Usa ▲ ▼ para cambiar el orden de las columnas.</p>
@@ -265,7 +289,7 @@ export default function InvitadosPage() {
                     🗑
                   </button>
                   <label className="flex w-full items-center gap-2 text-xs text-muted">
-                    Se rellena con la pregunta:
+                    Se rellena con la pregunta del formulario:
                     <select
                       value={c.preguntaRsvp ?? ""}
                       onChange={(e) => {
@@ -330,24 +354,15 @@ export default function InvitadosPage() {
               <tr className="whitespace-nowrap [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-line [&>th]:bg-surface">
                 <th className="!z-20 left-0 w-36 px-2.5 py-2.5">Nombre</th>
                 <th className="!z-20 left-36 w-36 px-2.5 py-2.5">Apellido</th>
-                <th className="px-2.5 py-2.5">¿Viene?</th>
-                <th className="bg-emerald-50/60 px-2.5 py-2.5">Grupo</th>
-                <th className="bg-emerald-50/60 px-2.5 py-2.5">Subgrupo</th>
-                <th className="px-2.5 py-2.5">Adulto/Niño</th>
+                {verFija("viene") && <th className="px-2.5 py-2.5">¿Viene?</th>}
+                {verFija("grupo") && <th className="bg-emerald-50/60 px-2.5 py-2.5">Grupo</th>}
+                {verFija("subgrupo") && (
+                  <th className="bg-emerald-50/60 px-2.5 py-2.5">Subgrupo</th>
+                )}
+                {verFija("tipo") && <th className="px-2.5 py-2.5">Adulto/Niño</th>}
                 {cols.map((c) => (
                   <th key={c.id} className="px-2.5 py-2.5">
-                    <span className="inline-flex items-center gap-1">
-                      {c.nombre}
-                      <button
-                        onClick={() => {
-                          if (confirm(`¿Quitar la columna "${c.nombre}"?`)) removeColumna(c.id);
-                        }}
-                        className="text-muted hover:text-red-600"
-                        title="Quitar columna"
-                      >
-                        ×
-                      </button>
-                    </span>
+                    {c.nombre}
                   </th>
                 ))}
                 <th className="w-10 px-2.5 py-2.5" />
@@ -372,6 +387,7 @@ export default function InvitadosPage() {
                       className="w-full bg-transparent px-2.5 py-2 text-sm outline-none"
                     />
                   </td>
+                  {verFija("viene") && (
                   <td className="px-0">
                     <select
                       value={i.viene}
@@ -391,6 +407,8 @@ export default function InvitadosPage() {
                       ))}
                     </select>
                   </td>
+                  )}
+                  {verFija("grupo") && (
                   <td className="border-l border-line bg-emerald-50/40 px-0">
                     <select
                       value={i.grupo}
@@ -408,6 +426,8 @@ export default function InvitadosPage() {
                       )}
                     </select>
                   </td>
+                  )}
+                  {verFija("subgrupo") && (
                   <td className="border-r border-line bg-emerald-50/40 px-0">
                     <select
                       value={i.subgrupo}
@@ -425,6 +445,8 @@ export default function InvitadosPage() {
                       )}
                     </select>
                   </td>
+                  )}
+                  {verFija("tipo") && (
                   <td className="px-0">
                     <select
                       value={i.tipo}
@@ -440,6 +462,7 @@ export default function InvitadosPage() {
                       ))}
                     </select>
                   </td>
+                  )}
                   {cols.map((c) => (
                     <td key={c.id} className="px-0">
                       {c.tipo === "sino" ? (
@@ -500,7 +523,7 @@ export default function InvitadosPage() {
               ))}
               {filas.length === 0 && (
                 <tr>
-                  <td colSpan={7 + cols.length} className="px-5 py-8 text-center text-sm text-muted">
+                  <td colSpan={3 + COLUMNAS_FIJAS.filter((f) => verFija(f.key)).length + cols.length} className="px-5 py-8 text-center text-sm text-muted">
                     {filtro ? "Nadie en este estado." : "Aún no has añadido invitados."}
                   </td>
                 </tr>

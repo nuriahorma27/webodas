@@ -33,7 +33,6 @@ export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: TipoColumna }[] = [
   { nombre: "Save the date enviado", tipo: "sino" },
   { nombre: "Invitación enviada", tipo: "sino" },
   { nombre: "Invitación entregada", tipo: "sino" },
-  { nombre: "Confirmado por teléfono", tipo: "sino" },
   { nombre: "Detalle entregado", tipo: "sino" },
   { nombre: "Menú confirmado", tipo: "sino" },
   { nombre: "Alojamiento reservado", tipo: "sino" },
@@ -76,6 +75,37 @@ const KEY = "webodas:invitados";
 const COLS_KEY = "webodas:invitados-columnas:v2";
 const GRUPOS_KEY = "webodas:invitados-grupos";
 const SUBGRUPOS_KEY = "webodas:invitados-subgrupos";
+const FIJAS_KEY = "webodas:invitados-fijas-ocultas";
+
+// Columnas fijas que se pueden ocultar (Nombre y Apellido siempre están).
+export const COLUMNAS_FIJAS = [
+  { key: "viene", label: "¿Viene?" },
+  { key: "grupo", label: "Grupo" },
+  { key: "subgrupo", label: "Subgrupo" },
+  { key: "tipo", label: "Adulto / Niño" },
+] as const;
+export type ClaveFija = (typeof COLUMNAS_FIJAS)[number]["key"];
+
+export function loadFijasOcultas(): string[] {
+  try {
+    const r = localStorage.getItem(FIJAS_KEY);
+    const arr = r ? (JSON.parse(r) as string[]) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+export function toggleFija(key: string) {
+  const list = loadFijasOcultas();
+  const next = list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
+  try {
+    localStorage.setItem(FIJAS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("webodas:invitados"));
+  } catch {
+    /* noop */
+  }
+}
 
 /* ---------- grupos y subgrupos (configurables) ---------- */
 
