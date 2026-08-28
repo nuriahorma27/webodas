@@ -97,10 +97,24 @@ export default function PresupuestoPage() {
               : "define el presupuesto total"
           }
         />
-        <Stat label="Pagado" value={eur(tot.pagado)} sub={`${eur(tot.estimado - tot.pagado)} pendiente`} />
+        <Card>
+          <p className="text-xs uppercase tracking-[0.15em] text-muted">Pagado</p>
+          <p className="mt-2 font-display text-3xl">
+            {eur(tot.pagado)}
+            {tot.estimado > 0 && (
+              <span className="ml-2 align-middle text-base text-muted">
+                {Math.round((tot.pagado / tot.estimado) * 100)}%
+              </span>
+            )}
+          </p>
+          <div className="mt-2">
+            <Progress value={tot.estimado ? (tot.pagado / tot.estimado) * 100 : 0} />
+          </div>
+        </Card>
         <Stat
-          label="Avance de pago"
-          value={tot.estimado ? `${Math.round((tot.pagado / tot.estimado) * 100)}%` : "—"}
+          label="Pendiente de pago"
+          value={eur(tot.estimado - tot.pagado)}
+          sub="lo que queda por abonar"
         />
       </div>
 
