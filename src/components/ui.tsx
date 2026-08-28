@@ -36,12 +36,28 @@ export function Card({
   );
 }
 
-export function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function Stat({
+  label,
+  value,
+  sub,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "muted" | "positive" | "negative";
+}) {
+  const subColor =
+    tone === "positive"
+      ? "text-emerald-700"
+      : tone === "negative"
+        ? "text-[#7b2233]"
+        : "text-muted";
   return (
     <Card>
       <p className="text-xs uppercase tracking-[0.15em] text-muted">{label}</p>
       <p className="mt-2 font-display text-3xl">{value}</p>
-      {sub && <p className="mt-1 text-sm text-muted">{sub}</p>}
+      {sub && <p className={`mt-1 text-sm ${subColor}`}>{sub}</p>}
     </Card>
   );
 }

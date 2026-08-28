@@ -90,6 +90,7 @@ export default function PresupuestoPage() {
         <Stat
           label="Estimado"
           value={eur(tot.estimado)}
+          tone={referencia ? (sinAsignar >= 0 ? "positive" : "negative") : "muted"}
           sub={
             referencia
               ? `${eur(Math.abs(sinAsignar))} ${sinAsignar >= 0 ? "sin asignar" : "por encima"}`
