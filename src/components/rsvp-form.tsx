@@ -19,7 +19,7 @@ export function RsvpForm({
     return () => window.removeEventListener("webodas:formulario", sync);
   }, []);
   const questions: PreguntaForm[] = cfg.preguntas;
-  const pack = cfg.pack;
+  const est = cfg.estandar;
 
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
@@ -180,30 +180,35 @@ export function RsvpForm({
             ) : (
               <form onSubmit={submit} style={{ display: "grid", gap: 16 }}>
                 <h3 style={{ fontFamily: "var(--wf-heading)", fontSize: 24, marginBottom: 2 }}>Confirmar asistencia</h3>
+                {cfg.intro && <p style={{ fontSize: 14, color: "#666", marginTop: -6 }}>{cfg.intro}</p>}
 
-                <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
+                <div style={{ display: "grid", gap: 12, gridTemplateColumns: est.apellidos ? "1fr 1fr" : "1fr" }}>
                   <div>
                     <label style={lab}>Nombre</label>
                     <input style={field} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
                   </div>
+                  {est.apellidos && (
+                    <div>
+                      <label style={lab}>Apellidos</label>
+                      <input style={field} value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
+                    </div>
+                  )}
+                </div>
+
+                {est.email && (
                   <div>
-                    <label style={lab}>Apellidos</label>
-                    <input style={field} value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
+                    <label style={lab}>Email</label>
+                    <input
+                      type="email"
+                      style={field}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label style={lab}>Email</label>
-                  <input
-                    type="email"
-                    style={field}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                {pack && (
+                {est.asiste && (
                   <div>
                     <label style={lab}>¿Asistirás?</label>
                     <select style={field} value={asiste} onChange={(e) => setAsiste(e.target.value)}>
@@ -213,7 +218,7 @@ export function RsvpForm({
                   </div>
                 )}
 
-                {pack && asiste === "Sí" && (
+                {est.acompanante && (!est.asiste || asiste === "Sí") && (
                   <>
                     <div>
                       <label style={lab}>¿Vienes con acompañante?</label>
@@ -238,7 +243,7 @@ export function RsvpForm({
                   </>
                 )}
 
-                {(!pack || asiste === "Sí") &&
+                {(!est.asiste || asiste === "Sí") &&
                   questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
 
                 <button

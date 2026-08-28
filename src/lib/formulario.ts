@@ -10,13 +10,27 @@ export type PreguntaForm = {
   condValue: string; // respuesta que activa esta pregunta
 };
 
+export type DatosEstandar = {
+  apellidos: boolean;
+  email: boolean;
+  asiste: boolean; // ¿Asistirás? (Sí/No)
+  acompanante: boolean; // ¿Vienes con acompañante? (Sí/No) + nombre y apellidos si Sí
+};
+
 export type FormularioConfig = {
-  pack: boolean; // pide nombre, apellidos, asistencia y acompañante
   intro: string;
+  estandar: DatosEstandar;
   preguntas: PreguntaForm[];
 };
 
 const KEY = "webodas:formulario";
+
+const ESTANDAR_DEFAULT: DatosEstandar = {
+  apellidos: true,
+  email: true,
+  asiste: true,
+  acompanante: true,
+};
 
 const nueva = (label = "Nueva pregunta"): PreguntaForm => ({
   id: crypto.randomUUID(),
@@ -27,12 +41,15 @@ const nueva = (label = "Nueva pregunta"): PreguntaForm => ({
   condValue: "",
 });
 
+// Texto de ejemplo (placeholder) para la introducción.
+export const INTRO_EJEMPLO = "Confírmanos tu asistencia antes del 1 de agosto.";
+
 let DEFAULT: FormularioConfig | null = null;
 function def(): FormularioConfig {
   if (!DEFAULT)
     DEFAULT = {
-      pack: true,
-      intro: "Confírmanos tu asistencia antes del 1 de agosto.",
+      intro: "",
+      estandar: { ...ESTANDAR_DEFAULT },
       preguntas: [
         { ...nueva("Menú"), qtype: "opcion", options: "Normal, Vegetariano, Sin gluten, Infantil" },
         { ...nueva("Alergias / intolerancias") },
@@ -46,10 +63,16 @@ export function loadFormulario(): FormularioConfig {
   try {
     const r = localStorage.getItem(KEY);
     if (!r) return def();
-    const c = JSON.parse(r) as FormularioConfig;
+    const c = JSON.parse(r) as Partial<FormularioConfig> & { pack?: boolean };
+    // migración: antes había un único `pack: boolean`
+    const estandar =
+      c.estandar ??
+      (c.pack === false
+        ? { apellidos: false, email: false, asiste: false, acompanante: false }
+        : { ...ESTANDAR_DEFAULT });
     return {
-      pack: c.pack ?? true,
       intro: c.intro ?? "",
+      estandar: { ...ESTANDAR_DEFAULT, ...estandar },
       preguntas: Array.isArray(c.preguntas) ? c.preguntas : [],
     };
   } catch {
@@ -94,8 +117,9 @@ export function movePregunta(id: string, dir: -1 | 1) {
   saveFormulario({ ...c, preguntas: list });
 }
 
-export function setPack(pack: boolean) {
-  saveFormulario({ ...loadFormulario(), pack });
+export function setEstandar(patch: Partial<DatosEstandar>) {
+  const c = loadFormulario();
+  saveFormulario({ ...c, estandar: { ...c.estandar, ...patch } });
 }
 
 export function setIntro(intro: string) {
@@ -105,7 +129,9 @@ export function setIntro(intro: string) {
 // Etiquetas de todas las preguntas (para asociarlas a columnas de invitados).
 export function labelsFormulario(): string[] {
   const c = loadFormulario();
-  const pack = c.pack ? ["¿Asistirás?", "¿Vienes con acompañante?"] : [];
+  const pack: string[] = [];
+  if (c.estandar.asiste) pack.push("¿Asistirás?");
+  if (c.estandar.acompanante) pack.push("¿Vienes con acompañante?");
   return [...pack, ...c.preguntas.map((p) => p.label).filter(Boolean)];
 }
 

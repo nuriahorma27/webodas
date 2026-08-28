@@ -10,16 +10,15 @@ import {
   updatePregunta,
   removePregunta,
   movePregunta,
-  setPack,
+  setEstandar,
   setIntro,
+  INTRO_EJEMPLO,
   type FormularioConfig,
   type PreguntaForm,
 } from "@/lib/formulario";
 
 const box =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
-
-const PACK = ["Nombre", "Apellidos", "Email", "¿Asistirás?", "¿Vienes con acompañante? (+ nombre y apellidos)"];
 
 export default function FormularioPage() {
   const [cfg, setCfg] = useState<FormularioConfig | null>(null);
@@ -33,64 +32,87 @@ export default function FormularioPage() {
 
   if (!cfg) return null;
 
+  const est = cfg.estandar;
+  const item = (k: keyof typeof est, texto: string, nota?: string) => (
+    <label className="flex items-start gap-2.5 py-1.5 text-sm">
+      <input
+        type="checkbox"
+        checked={est[k]}
+        onChange={(e) => setEstandar({ [k]: e.target.checked })}
+        className="mt-0.5"
+      />
+      <span>
+        {texto}
+        {nota && <span className="block text-xs text-muted">{nota}</span>}
+      </span>
+    </label>
+  );
+
   return (
     <div className="space-y-6">
       <Card>
-        <h2 className="font-display text-lg">Cómo funciona</h2>
-        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted">
-          <li>
-            Antes de nada, ten tu{" "}
-            <Link href="/panel/gestion/invitados" className="text-accent underline">
-              lista de invitados
-            </Link>{" "}
-            y sus columnas listas.
-          </li>
-          <li>Aquí defines las preguntas del formulario.</li>
-          <li>
-            En <Link href="/panel/gestion/invitados" className="text-accent underline">Invitados → ⚙ Ajustes</Link>{" "}
-            asocias cada pregunta a una columna, para que las respuestas se vuelquen solas.
-          </li>
-          <li>
-            En el <Link href="/panel/webs" className="text-accent underline">editor de tu web</Link> añades el
-            bloque «Confirmación (RSVP)»: solo pone el botón que abre este formulario.
-          </li>
-        </ol>
+        <h2 className="font-display text-lg">Cómo funciona el formulario</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {[
+            ["1", "Prepara tu lista", "Ten lista tu lista de invitados y sus columnas.", "/panel/gestion/invitados"],
+            ["2", "Crea las preguntas", "Aquí eliges qué se pregunta en el formulario.", null],
+            ["3", "Conecta las respuestas", "En Invitados → ⚙ Ajustes asocia cada pregunta a una columna.", "/panel/gestion/invitados"],
+            ["4", "Ponlo en tu web", "Añade el bloque «Confirmación (RSVP)»: solo pone el botón.", "/panel/webs"],
+          ].map(([n, t, d, href]) => (
+            <div key={n as string} className="flex gap-3 rounded-lg border border-line p-3">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                {n}
+              </span>
+              <div>
+                <p className="text-sm font-medium">{t}</p>
+                <p className="text-xs text-muted">{d}</p>
+                {href && (
+                  <Link href={href as string} className="text-xs text-accent underline">
+                    Ir →
+                  </Link>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
 
-      <Card className="space-y-4">
-        <div>
-          <h3 className="font-display text-lg">Datos que siempre se piden</h3>
-          <label className="mt-2 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={cfg.pack}
-              onChange={(e) => setPack(e.target.checked)}
-            />
-            Pedir el pack estándar
+      <Card>
+        <h3 className="font-display text-lg">Texto de introducción</h3>
+        <p className="mt-0.5 text-sm text-muted">
+          Un mensaje corto que verán al abrir el formulario. Si lo dejas vacío no aparece.
+        </p>
+        <input
+          defaultValue={cfg.intro}
+          onBlur={(e) => setIntro(e.target.value)}
+          placeholder={`p. ej. «${INTRO_EJEMPLO}»`}
+          className={`${box} mt-2`}
+        />
+      </Card>
+
+      <Card>
+        <h3 className="font-display text-lg">Datos estándar</h3>
+        <p className="mt-0.5 text-sm text-muted">
+          Marca qué datos básicos se piden. El nombre siempre se pide.
+        </p>
+        <div className="mt-2 divide-y divide-line">
+          <label className="flex items-center gap-2.5 py-1.5 text-sm text-muted">
+            <input type="checkbox" checked disabled className="mt-0.5" />
+            Nombre <span className="text-xs">(siempre)</span>
           </label>
-          {cfg.pack && (
-            <ul className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-              {PACK.map((p) => (
-                <li key={p} className="rounded-full bg-accent-soft px-2.5 py-0.5 text-accent">
-                  {p}
-                </li>
-              ))}
-            </ul>
+          {item("apellidos", "Apellidos")}
+          {item("email", "Email")}
+          {item("asiste", "¿Asistirás? (Sí / No)")}
+          {item(
+            "acompanante",
+            "¿Vienes con acompañante? (Sí / No)",
+            "Si responde «Sí», se piden el nombre y los apellidos del acompañante.",
           )}
         </div>
-
-        <label className="block">
-          <span className="text-xs text-muted">Texto de introducción del formulario</span>
-          <input
-            defaultValue={cfg.intro}
-            onBlur={(e) => setIntro(e.target.value)}
-            className={box}
-          />
-        </label>
       </Card>
 
       <Card className="space-y-3">
-        <h3 className="font-display text-lg">Preguntas</h3>
+        <h3 className="font-display text-lg">Preguntas adicionales</h3>
         {cfg.preguntas.length === 0 && (
           <p className="text-sm text-muted">Aún no has añadido ninguna pregunta.</p>
         )}
@@ -100,7 +122,7 @@ export default function FormularioPage() {
             q={q}
             numero={i + 1}
             anteriores={cfg.preguntas.slice(0, i)}
-            pack={cfg.pack}
+            pack={cfg.estandar.acompanante}
             primero={i === 0}
             ultimo={i === cfg.preguntas.length - 1}
           />
