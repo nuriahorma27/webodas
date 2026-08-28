@@ -14,6 +14,10 @@ import {
   loadEstados,
   loadDetalles,
   loadResponsablesCustom,
+  loadCategorias,
+  loadCategoriasOcultas,
+  ocultarCategoria,
+  recuperarCategoria,
   addResponsableCustom,
   removeResponsableCustom,
   setEstado,
@@ -322,6 +326,8 @@ export default function TareasPage() {
   const [nombres, setNombres] = useState<string[]>([]);
   const [respCustom, setRespCustom] = useState<string[]>([]);
   const [gestionResp, setGestionResp] = useState(false);
+  const [cats, setCats] = useState<string[]>([]);
+  const [catsOcultas, setCatsOcultas] = useState<string[]>([]);
 
   useEffect(() => {
     const sync = () => {
@@ -329,6 +335,8 @@ export default function TareasPage() {
       setEstados(loadEstados());
       setDetalles(loadDetalles());
       setRespCustom(loadResponsablesCustom());
+      setCats(loadCategorias());
+      setCatsOcultas(loadCategoriasOcultas());
       const b = loadBoda();
       setNombres([b.p1.nombre.trim(), b.p2.nombre.trim(), "Los dos"].filter(Boolean));
     };
@@ -368,15 +376,27 @@ export default function TareasPage() {
     ts: Tarea[],
     meta: (t: Tarea) => string | undefined,
     add: { groupKey: string; categoria: string; fase: string },
+    onDelete?: () => void,
   ) => {
     const done = ts.filter((t) => estadoDe(t.id) === "hecho").length;
     return (
       <Card key={titulo} className="p-0">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
           <h3 className="font-display text-lg">{titulo}</h3>
-          <span className="text-xs text-muted">
-            {done}/{ts.length}
-          </span>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-xs text-muted">
+              {done}/{ts.length}
+            </span>
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="text-xs text-muted hover:text-red-600"
+                title="Eliminar esta categoría"
+              >
+                Eliminar
+              </button>
+            )}
+          </div>
         </div>
         {ts.length > 0 && (
           <div className="px-4">
@@ -524,10 +544,10 @@ export default function TareasPage() {
                 f,
                 visibles.filter((t) => t.fase === f),
                 (t) => t.categoria,
-                { groupKey: `fase-${f}`, categoria: CATEGORIAS[0], fase: f },
+                { groupKey: `fase-${f}`, categoria: cats[0] ?? "Otros", fase: f },
               ),
             )
-          : CATEGORIAS.map((c) =>
+          : cats.map((c) =>
               renderGrupo(
                 c,
                 visibles
@@ -535,9 +555,36 @@ export default function TareasPage() {
                   .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase)),
                 (t) => t.fase,
                 { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
+                () => {
+                  if (
+                    confirm(
+                      `¿Eliminar la categoría "${c}" y todas sus tareas? Podrás recuperarla luego.`,
+                    )
+                  ) {
+                    ocultarCategoria(c);
+                    if (filtroResp) setFiltroResp("");
+                  }
+                },
               ),
             )}
       </div>
+
+      {vista === "categoria" && catsOcultas.length > 0 && (
+        <p className="text-xs text-muted">
+          Categorías ocultas:{" "}
+          {catsOcultas.map((c, i) => (
+            <span key={c}>
+              {i > 0 && ", "}
+              <button
+                onClick={() => recuperarCategoria(c)}
+                className="underline hover:text-accent"
+              >
+                {c}
+              </button>
+            </span>
+          ))}
+        </p>
+      )}
     </div>
   );
 }

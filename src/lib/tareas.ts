@@ -138,6 +138,7 @@ export const TIPO_LABEL: Record<string, string> = Object.fromEntries(
 // Mismas categorías que en Presupuesto + algunas propias de tareas.
 export const CATEGORIAS = [
   "Iglesia",
+  "Ceremonia civil",
   "Banquete",
   "Música",
   "Decoración y flores",
@@ -181,16 +182,27 @@ type Def = [titulo: string, fase: string, tipo: string, nota?: string];
 
 const DATA: Record<string, Def[]> = {
   Iglesia: [
-    ["Mirar y reservar iglesia", "12 meses antes", "proveedor"],
-    ["Cura / oficiante", "12 meses antes", "persona"],
+    ["Reservar la iglesia", "12 meses antes", "proveedor"],
+    ["Hablar con el cura", "12 meses antes", "persona"],
     ["Trámites y documentación del expediente", "8-9 meses antes", "documentos"],
     ["Cursillo prematrimonial", "4-5 meses antes", "lugarFecha"],
-    ["Coro / música de la ceremonia", "4-5 meses antes", "proveedor"],
-    ["Elegir repertorio de canciones", "4-5 meses antes", "eleccion"],
-    ["Elegir lecturas y lectores", "4-5 meses antes", "eleccion"],
-    ["Flores de la iglesia", "8-9 meses antes", "proveedor"],
-    ["Arras y alianzas", "4-5 meses antes", "compra"],
-    ["Misaletes / hojas de misa", "2-3 meses antes", "compra"],
+    ["Contratar la música de la ceremonia (coro, órgano)", "4-5 meses antes", "proveedor"],
+    ["Elegir el repertorio de canciones", "4-5 meses antes", "eleccion"],
+    ["Elegir las lecturas y los lectores", "4-5 meses antes", "eleccion"],
+    ["Flores de la iglesia", "4-5 meses antes", "proveedor"],
+    ["Comprar las arras y las alianzas", "4-5 meses antes", "compra"],
+    ["Encargar los misaletes / hojas de misa", "2-3 meses antes", "compra"],
+  ],
+  "Ceremonia civil": [
+    ["Reservar el espacio de la ceremonia civil", "12 meses antes", "proveedor"],
+    ["Juez, notario u oficiante", "12 meses antes", "persona"],
+    ["Trámites en el registro civil", "8-9 meses antes", "documentos"],
+    ["Cita en el registro civil", "8-9 meses antes", "lugarFecha"],
+    ["Elegir a los testigos", "8-9 meses antes", "eleccion"],
+    ["Contratar la música de la ceremonia", "4-5 meses antes", "proveedor"],
+    ["Elegir las lecturas y los lectores", "4-5 meses antes", "eleccion"],
+    ["Flores y decoración de la ceremonia", "4-5 meses antes", "proveedor"],
+    ["Comprar las alianzas", "4-5 meses antes", "compra"],
   ],
   Banquete: [
     ["Mirar y reservar la finca", "12 meses antes", "proveedor"],
@@ -373,10 +385,11 @@ type Personalizacion = {
   ov: Record<string, Patch>; // cambios sobre tareas de la plantilla
   borradas: string[]; // ids de plantilla ocultadas
   nuevas: Tarea[]; // tareas añadidas por la pareja
+  catsBorradas: string[]; // categorías ocultadas
 };
 
 const CUSTOM_KEY = "webodas:tareas-custom";
-const VACIA: Personalizacion = { ov: {}, borradas: [], nuevas: [] };
+const VACIA: Personalizacion = { ov: {}, borradas: [], nuevas: [], catsBorradas: [] };
 
 function loadCustom(): Personalizacion {
   try {
@@ -401,12 +414,35 @@ const esCustom = (id: string) => id.startsWith("custom-");
 // Lista final: plantilla (sin las borradas, con sus cambios) + las nuevas.
 export function loadTareas(): Tarea[] {
   const c = loadCustom();
-  const base = TAREAS.filter((t) => !c.borradas.includes(t.id)).map((t) => ({
-    ...t,
-    ...c.ov[t.id],
-  }));
-  const nuevas = c.nuevas.map((t) => ({ ...t, custom: true as const }));
+  const cats = c.catsBorradas ?? [];
+  const base = TAREAS.filter((t) => !c.borradas.includes(t.id))
+    .map((t) => ({ ...t, ...c.ov[t.id] }))
+    .filter((t) => !cats.includes(t.categoria));
+  const nuevas = c.nuevas
+    .map((t) => ({ ...t, custom: true as const }))
+    .filter((t) => !cats.includes(t.categoria));
   return [...base, ...nuevas];
+}
+
+// Categorías visibles (las estándar menos las ocultadas).
+export function loadCategorias(): string[] {
+  const cats = loadCustom().catsBorradas ?? [];
+  return CATEGORIAS.filter((c) => !cats.includes(c));
+}
+
+export function loadCategoriasOcultas(): string[] {
+  return loadCustom().catsBorradas ?? [];
+}
+
+export function ocultarCategoria(categoria: string) {
+  const c = loadCustom();
+  const cats = c.catsBorradas ?? [];
+  if (!cats.includes(categoria)) saveCustom({ ...c, catsBorradas: [...cats, categoria] });
+}
+
+export function recuperarCategoria(categoria: string) {
+  const c = loadCustom();
+  saveCustom({ ...c, catsBorradas: (c.catsBorradas ?? []).filter((x) => x !== categoria) });
 }
 
 export function addTarea(categoria: string, fase: string, tipo = "simple"): Tarea {
