@@ -694,75 +694,125 @@ function RespuestaCard({
     ? invitados.find((i) => i.id === resp.acompInvitadoId)
     : undefined;
 
-  const Respuestas = ({ data }: { data: Record<string, string> }) =>
-    Object.keys(data).length > 0 ? (
-      <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        {Object.entries(data).map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-[11px] uppercase tracking-wide text-muted">{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-    ) : null;
+  const [abierto, setAbierto] = useState(!resp.aplicada);
+
+  const fmtFecha = (s: string) => {
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    const fecha = d.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+    const hora = s.length > 10 ? d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
+    return hora ? `${fecha} · ${hora}` : fecha;
+  };
+
+  const Bloque = ({
+    titulo,
+    data,
+  }: {
+    titulo: string;
+    data: Record<string, string>;
+  }) => {
+    const entradas = Object.entries(data).filter(([, v]) => v !== undefined);
+    return (
+      <div className="rounded-lg border border-line bg-surface p-3">
+        <p className="text-sm font-semibold">{titulo}</p>
+        {entradas.length === 0 ? (
+          <p className="mt-1 text-sm text-muted">Sin datos adicionales.</p>
+        ) : (
+          <dl className="mt-2 divide-y divide-line/70 text-sm">
+            {entradas.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 py-1.5">
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-right font-medium">{v || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <Card className="space-y-3">
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-display text-lg">
-          {resp.nombre} {resp.apellido}
+    <Card className="p-0">
+      <button
+        onClick={() => setAbierto((v) => !v)}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span className="text-muted">{abierto ? "▾" : "▸"}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-base">
+            {resp.nombre} {resp.apellido}
+            {tieneAcomp && (
+              <span className="text-sm font-normal text-muted"> + {resp.acompNombre} {resp.acompApellido}</span>
+            )}
+          </span>
+          <span className="block text-xs text-muted">{fmtFecha(resp.fecha)}</span>
         </span>
         <span
-          className={`text-xs ${resp.asiste === "Sí" ? "text-emerald-700" : "text-[#7b2233]"}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
+            resp.asiste === "Sí"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-[#7b2233]/10 text-[#7b2233]"
+          }`}
         >
           {resp.asiste === "Sí" ? "Viene" : "No viene"}
-          {tieneAcomp ? " · con acompañante" : ""}
         </span>
-        <span className="text-xs text-muted">{resp.fecha}</span>
-      </div>
+        {resp.aplicada && (
+          <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-muted">
+            ✓ volcado
+          </span>
+        )}
+      </button>
 
-      <Respuestas data={resp.respuestas} />
-
-      {tieneAcomp && (
-        <div className="rounded-md border border-line bg-neutral-50/60 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Acompañante: {resp.acompNombre} {resp.acompApellido}
-          </p>
-          <div className="mt-1">
-            <Respuestas data={resp.respuestasAcomp ?? {}} />
-          </div>
-        </div>
-      )}
-
-      {resp.aplicada ? (
-        <p className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm text-emerald-700">
-          ✓ Volcado{vinc ? ` a «${vinc.nombre} ${vinc.apellido}»` : ""}
-          {vincA ? ` y «${vincA.nombre} ${vincA.apellido}»` : ""}
-          <button
-            onClick={() => onVolcar(resp, resp.invitadoId ?? "__nuevo", resp.acompInvitadoId ?? "__nuevo")}
-            className="text-xs text-muted underline hover:text-foreground"
-          >
-            volver a volcar
-          </button>
-        </p>
-      ) : (
-        <div className="space-y-2 border-t border-line pt-2 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted">El invitado se vincula con:</span>
-            <SelectInvitado value={sel} onChange={setSel} invitados={invitados} />
-          </div>
+      {abierto && (
+        <div className="space-y-3 border-t border-line px-4 py-3">
+          {resp.email && (
+            <p className="text-sm text-muted">
+              Email: <span className="text-foreground">{resp.email}</span>
+            </p>
+          )}
+          <Bloque titulo={`Datos de ${resp.nombre} ${resp.apellido ?? ""}`.trim()} data={resp.respuestas} />
           {tieneAcomp && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted">El acompañante se vincula con:</span>
-              <SelectInvitado value={selA} onChange={setSelA} invitados={invitados} />
+            <Bloque
+              titulo={`Datos de ${resp.acompNombre ?? ""} ${resp.acompApellido ?? ""}`.trim() || "Datos del acompañante"}
+              data={resp.respuestasAcomp ?? {}}
+            />
+          )}
+
+          {resp.aplicada ? (
+            <p className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm text-emerald-700">
+              ✓ Volcado{vinc ? ` a «${vinc.nombre} ${vinc.apellido}»` : ""}
+              {vincA ? ` y «${vincA.nombre} ${vincA.apellido}»` : ""}
+              <button
+                onClick={() => onVolcar(resp, resp.invitadoId ?? "__nuevo", resp.acompInvitadoId ?? "__nuevo")}
+                className="text-xs text-muted underline hover:text-foreground"
+              >
+                volver a volcar
+              </button>
+            </p>
+          ) : (
+            <div className="space-y-2 border-t border-line pt-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted">
+                  {resp.nombre} {resp.apellido} es, en mi lista:
+                </span>
+                <SelectInvitado value={sel} onChange={setSel} invitados={invitados} />
+              </div>
+              {tieneAcomp && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted">
+                    {resp.acompNombre} {resp.acompApellido} es, en mi lista:
+                  </span>
+                  <SelectInvitado value={selA} onChange={setSelA} invitados={invitados} />
+                </div>
+              )}
+              <button
+                onClick={() => onVolcar(resp, sel, selA)}
+                className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Volcar a mi lista
+              </button>
             </div>
           )}
-          <button
-            onClick={() => onVolcar(resp, sel, selA)}
-            className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white"
-          >
-            Volcar a mi lista
-          </button>
         </div>
       )}
     </Card>

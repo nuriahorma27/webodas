@@ -88,7 +88,7 @@ export function valorRespuesta(r: RsvpResponse, pregunta: string): string {
 export const RSVP_SEED: RsvpResponse[] = [
   {
     id: "seed-1",
-    fecha: "2026-06-02",
+    fecha: "2026-06-02T18:42:00.000Z",
     nombre: "Laura",
     apellido: "Méndez Gil",
     email: "laura.mendez@email.com",
@@ -113,7 +113,7 @@ export const RSVP_SEED: RsvpResponse[] = [
   },
   {
     id: "seed-2",
-    fecha: "2026-06-04",
+    fecha: "2026-06-04T09:15:00.000Z",
     nombre: "Carlos",
     apellido: "Ortega",
     email: "carlos.ortega@email.com",
@@ -127,7 +127,7 @@ export const RSVP_SEED: RsvpResponse[] = [
   },
   {
     id: "seed-3",
-    fecha: "2026-06-05",
+    fecha: "2026-06-05T21:03:00.000Z",
     nombre: "Marta",
     apellido: "Sevilla",
     email: "marta.sevilla@email.com",

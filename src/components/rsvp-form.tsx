@@ -93,7 +93,7 @@ export function RsvpForm({
 
     addResponse(weddingId, {
       id: crypto.randomUUID(),
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: new Date().toISOString(),
       nombre: nombre.trim() || "(sin nombre)",
       apellido: apellidos.trim(),
       email,
