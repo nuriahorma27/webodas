@@ -206,7 +206,7 @@ const DATA: Record<string, Def[]> = {
     ["Hacer la prueba de menú", "2-3 meses antes", "eleccion"],
     ["Decidir barra libre y horas extra", "2-3 meses antes", "eleccion"],
     ["Elegir la bodega y las bebidas", "2-3 meses antes", "eleccion"],
-    ["Contratar el puesto de quesos o la recena", "Sin fecha asignada", "proveedor"],
+    ["Contratar el puesto de quesos o la recena", "2-3 meses antes", "proveedor"],
     ["Encargar la tarta nupcial", "4-5 meses antes", "proveedor"],
     ["Comprar las chuches o el candy bar", "Último mes", "compra"],
   ],
