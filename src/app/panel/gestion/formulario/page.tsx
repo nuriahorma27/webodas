@@ -56,8 +56,13 @@ export default function FormularioPage() {
           {[
             ["1", "Prepara tu lista", "Ten lista tu lista de invitados y sus columnas.", "/panel/gestion/invitados"],
             ["2", "Crea las preguntas", "Aquí eliges qué se pregunta en el formulario.", null],
-            ["3", "Conecta las respuestas", "En Invitados → ⚙ Ajustes asocia cada pregunta a una columna.", "/panel/gestion/invitados"],
-            ["4", "Ponlo en tu web", "Añade el bloque «Confirmación (RSVP)»: solo pone el botón.", "/panel/webs"],
+            [
+              "3",
+              "Conecta las respuestas",
+              "En Invitados → ⚙ Ajustes eliges en qué columna de tu lista se guarda la respuesta de cada pregunta, para no copiarlas a mano.",
+              "/panel/gestion/invitados",
+            ],
+            ["4", "Ponlo en tu web", "Añade el bloque «Formulario de confirmación»: solo pone el botón que lo abre.", "/panel/webs"],
           ].map(([n, t, d, href]) => (
             <div key={n as string} className="flex gap-3 rounded-lg border border-line p-3">
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">

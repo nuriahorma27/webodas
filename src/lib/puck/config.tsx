@@ -1917,7 +1917,7 @@ export const puckConfig: Config<Props, RootProps> = {
     },
 
     RSVP: {
-      label: "Confirmación (RSVP)",
+      label: "Formulario de confirmación",
       fields: {
         title: { type: "text", label: "Título" },
         text: {

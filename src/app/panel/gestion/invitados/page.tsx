@@ -324,7 +324,7 @@ export default function InvitadosPage() {
             {preguntas.length === 0 && (
               <p className="mt-1 text-[11px] text-muted">
                 Aún no hay preguntas en el cuestionario. Añádelas en el editor de la web (bloque
-                «Confirmación (RSVP)»).
+                «Formulario de confirmación»).
               </p>
             )}
             <button

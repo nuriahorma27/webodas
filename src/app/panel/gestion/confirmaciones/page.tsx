@@ -77,7 +77,7 @@ export default function ConfirmacionesPage() {
       </Card>
 
       <p className="text-xs text-muted">
-        Las preguntas se configuran en el editor de la web, en el bloque «Confirmación (RSVP)».
+        Las preguntas se configuran en el editor de la web, en el bloque «Formulario de confirmación».
       </p>
     </div>
   );
