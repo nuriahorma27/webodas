@@ -86,7 +86,30 @@ function Row({
       </div>
 
       {abierto && (
-        <div className="border-t border-line bg-neutral-50/60 px-4 py-4">
+        <div className="space-y-3 border-t border-line bg-neutral-50/60 px-4 py-4">
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">Responsable</span>
+            <select
+              value={t.responsable ?? ""}
+              onChange={(ev) => {
+                if (ev.target.value === "__otra") {
+                  const v = prompt("¿Quién se encarga?");
+                  if (v?.trim()) updateTarea(t.id, { responsable: v.trim() });
+                } else {
+                  updateTarea(t.id, { responsable: ev.target.value });
+                }
+              }}
+              className="rounded-md border border-line bg-surface px-2.5 py-1 text-sm outline-none focus:border-accent"
+            >
+              <option value="">Sin asignar</option>
+              {responsables.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+              <option value="__otra">Otra persona…</option>
+            </select>
+          </label>
           <TareaDetalleForm id={t.id} tipo={t.tipo} titulo={t.titulo} inicial={detalle ?? {}} />
         </div>
       )}
@@ -101,29 +124,6 @@ function Row({
                 onBlur={(ev) => updateTarea(t.id, { titulo: ev.target.value })}
                 className={campo}
               />
-            </label>
-            <label className="block">
-              <span className="text-xs text-muted">Responsable</span>
-              <select
-                value={t.responsable ?? ""}
-                onChange={(ev) => {
-                  if (ev.target.value === "__otra") {
-                    const v = prompt("¿Quién se encarga?");
-                    if (v?.trim()) updateTarea(t.id, { responsable: v.trim() });
-                  } else {
-                    updateTarea(t.id, { responsable: ev.target.value });
-                  }
-                }}
-                className={campo}
-              >
-                <option value="">Sin asignar</option>
-                {responsables.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-                <option value="__otra">Otra persona…</option>
-              </select>
             </label>
             <label className="block">
               <span className="text-xs text-muted">Momento</span>
