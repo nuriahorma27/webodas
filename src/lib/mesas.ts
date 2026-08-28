@@ -18,9 +18,12 @@ export type MesaModo = "asignado" | "libre";
 
 export type Mesa = {
   id: string;
-  nombre: string;
+  numero: number; // nº de mesa, único entre todas las mesas
+  nombre: string; // nombre libre opcional ("Familia", "Amigos del cole"…)
   tipo: TipoMesa;
   plazas: number;
+  cabecera?: boolean; // solo rectangular: una silla en cada extremo corto
+  imagen?: string; // imagen del mesero / diseño de la mesa (data URL), para el plano
   invitados: string[]; // orden = nº de silla (silla 1 = invitados[0])
 };
 
@@ -50,24 +53,40 @@ export function loadMesas(): MesasConfig {
     if (!r) return def();
     const c = JSON.parse(r) as Partial<MesasConfig>;
     const base = def();
-    return {
+    const cfg: MesasConfig = {
       tipos: { ...base.tipos, ...(c.tipos ?? {}) },
       modo: c.modo === "asignado" ? "asignado" : "libre",
       mesas: Array.isArray(c.mesas)
-        ? c.mesas.map((m) => ({
+        ? c.mesas.map((m, idx) => ({
             id: m.id,
+            numero: Number(m.numero) > 0 ? Math.floor(Number(m.numero)) : idx + 1,
             nombre: m.nombre ?? "",
             tipo: (["redonda", "cuadrada", "rectangular"] as TipoMesa[]).includes(m.tipo)
               ? m.tipo
               : "redonda",
             plazas: Math.max(1, Number(m.plazas) || 8),
+            cabecera: Boolean(m.cabecera),
+            imagen: typeof m.imagen === "string" ? m.imagen : undefined,
             invitados: Array.isArray(m.invitados) ? m.invitados.filter(Boolean) : [],
           }))
         : [],
     };
+    // Garantiza números de mesa únicos.
+    const vistos = new Set<number>();
+    for (const m of cfg.mesas) {
+      if (vistos.has(m.numero)) m.numero = primerLibre(vistos);
+      vistos.add(m.numero);
+    }
+    return cfg;
   } catch {
     return def();
   }
+}
+
+function primerLibre(usados: Set<number>): number {
+  let n = 1;
+  while (usados.has(n)) n++;
+  return n;
 }
 
 function save(c: MesasConfig) {
@@ -92,15 +111,27 @@ export function setModoMesas(modo: MesaModo) {
 
 export function addMesa(tipo: TipoMesa) {
   const c = loadMesas();
-  const n = c.mesas.length + 1;
+  const numero = primerLibre(new Set(c.mesas.map((m) => m.numero)));
   c.mesas.push({
     id: crypto.randomUUID(),
-    nombre: `Mesa ${n}`,
+    numero,
+    nombre: "",
     tipo,
     plazas: c.tipos[tipo]?.max ?? 8,
     invitados: [],
   });
   save(c);
+}
+
+// Cambia el número de mesa. Devuelve false si el número ya está usado o no es válido.
+export function setNumeroMesa(id: string, numero: number): boolean {
+  const n = Math.floor(numero);
+  if (!(n > 0)) return false;
+  const c = loadMesas();
+  if (c.mesas.some((m) => m.id !== id && m.numero === n)) return false;
+  c.mesas = c.mesas.map((m) => (m.id === id ? { ...m, numero: n } : m));
+  save(c);
+  return true;
 }
 
 export function updateMesa(id: string, patch: Partial<Omit<Mesa, "id" | "invitados">>) {

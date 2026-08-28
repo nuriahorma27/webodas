@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui";
+import { ImagePicker } from "@/components/image-picker";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
 import {
   loadMesas,
@@ -9,6 +10,7 @@ import {
   setModoMesas,
   addMesa,
   updateMesa,
+  setNumeroMesa,
   removeMesa,
   sentar,
   quitarDeMesa,
@@ -19,6 +21,8 @@ import {
   type Mesa,
   type TipoMesa,
 } from "@/lib/mesas";
+
+const etiquetaMesa = (m: Mesa) => `Mesa ${m.numero}${m.nombre ? ` · ${m.nombre}` : ""}`;
 
 export default function MesasPage() {
   const [cfg, setCfg] = useState<MesasConfig | null>(null);
@@ -148,6 +152,15 @@ export default function MesasPage() {
             </p>
           </div>
 
+          <div className="flex items-center gap-2">
+          {cfg.mesas.length > 0 && (
+            <button
+              onClick={() => imprimirMesas(cfg, nombreDe)}
+              className="rounded-md border border-line px-3 py-1.5 text-sm text-muted hover:text-accent"
+            >
+              🖨 Imprimir plano
+            </button>
+          )}
           <div className="relative">
             {tiposActivos.length === 0 ? (
               <span className="text-xs text-muted">Activa algún tipo de mesa arriba.</span>
@@ -184,6 +197,7 @@ export default function MesasPage() {
               </>
             )}
           </div>
+          </div>
         </div>
 
         {cfg.mesas.length === 0 ? (
@@ -201,7 +215,10 @@ export default function MesasPage() {
                 onQuitar={quitarDeMesa}
                 onMover={(id, dir) => moverEnMesa(m.id, id, dir)}
                 onRename={(nombre) => updateMesa(m.id, { nombre })}
+                onNumero={(n) => setNumeroMesa(m.id, n)}
                 onPlazas={(plazas) => updateMesa(m.id, { plazas })}
+                onCabecera={(v) => updateMesa(m.id, { cabecera: v })}
+                onImagen={(v) => updateMesa(m.id, { imagen: v || undefined })}
                 onBorrar={() => setPorBorrar(m)}
               />
             ))}
@@ -220,7 +237,7 @@ export default function MesasPage() {
           >
             <h3 className="font-display text-lg">Eliminar mesa</h3>
             <p className="mt-1 text-sm text-muted">
-              ¿Seguro que quieres eliminar «{porBorrar.nombre}»? Sus{" "}
+              ¿Seguro que quieres eliminar «{etiquetaMesa(porBorrar)}»? Sus{" "}
               {porBorrar.invitados.length} invitados volverán a «sin mesa».
             </p>
             <div className="mt-4 flex justify-end gap-2">
@@ -245,6 +262,52 @@ export default function MesasPage() {
       )}
     </div>
   );
+}
+
+function imprimirMesas(
+  cfg: MesasConfig,
+  nombreDe: (id: string) => Invitado | undefined,
+) {
+  const esc = (s: string) =>
+    s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+  const paginas = [...cfg.mesas]
+    .sort((a, b) => a.numero - b.numero)
+    .map((m) => {
+      const filas = m.invitados
+        .map((id, i) => `<li><span class="n">${i + 1}</span> ${esc(nombreCompleto(nombreDe(id)))}</li>`)
+        .join("");
+      return `<section class="mesa">
+        ${m.imagen ? `<img src="${m.imagen}" alt=""/>` : ""}
+        <h1>Mesa ${m.numero}</h1>
+        ${m.nombre ? `<h2>${esc(m.nombre)}</h2>` : ""}
+        <ol>${filas || '<li class="vacia">Sin invitados</li>'}</ol>
+      </section>`;
+    })
+    .join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Plano de mesas</title>
+  <style>
+    @page { margin: 18mm; }
+    * { box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
+    body { margin:0; color:#1c1a17; }
+    .mesa { page-break-after: always; text-align:center; padding-top: 10mm; }
+    .mesa:last-child { page-break-after: auto; }
+    .mesa img { max-width: 70%; max-height: 95mm; object-fit: contain; margin-bottom: 8mm; }
+    h1 { font-size: 30pt; margin: 0; }
+    h2 { font-size: 16pt; font-weight: normal; color:#8a6d3b; margin: 2mm 0 6mm; }
+    ol { list-style:none; padding:0; margin: 6mm auto 0; max-width: 320px; text-align:left; }
+    li { font-size: 13pt; padding: 2mm 0; border-bottom: 1px solid #e5ded2; }
+    li .n { display:inline-block; width: 24px; color:#8a6d3b; }
+    li.vacia { color:#999; border:none; }
+  </style></head><body>${paginas}
+  <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+  </body></html>`;
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("Permite las ventanas emergentes para poder imprimir el plano.");
+    return;
+  }
+  w.document.write(html);
+  w.document.close();
 }
 
 function nombreCompleto(i?: Invitado) {
@@ -283,7 +346,10 @@ function MesaCard({
   onQuitar,
   onMover,
   onRename,
+  onNumero,
   onPlazas,
+  onCabecera,
+  onImagen,
   onBorrar,
 }: {
   mesa: Mesa;
@@ -294,7 +360,10 @@ function MesaCard({
   onQuitar: (id: string) => void;
   onMover: (id: string, dir: -1 | 1) => void;
   onRename: (nombre: string) => void;
+  onNumero: (n: number) => boolean;
   onPlazas: (n: number) => void;
+  onCabecera: (v: boolean) => void;
+  onImagen: (v: string) => void;
   onBorrar: () => void;
 }) {
   const llena = mesa.invitados.length > mesa.plazas;
@@ -311,6 +380,8 @@ function MesaCard({
     setPicker(null);
   };
 
+  const [errNum, setErrNum] = useState(false);
+
   const filtrados = q.trim()
     ? sinMesa.filter((i) => nombreCompleto(i).toLowerCase().includes(q.trim().toLowerCase()))
     : sinMesa;
@@ -318,12 +389,35 @@ function MesaCard({
   return (
     <div className="rounded-xl border border-line p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <input
-            defaultValue={mesa.nombre}
-            onBlur={(e) => onRename(e.target.value.trim() || mesa.nombre)}
-            className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 font-display text-base outline-none hover:border-line focus:border-accent"
-          />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display text-base">Mesa</span>
+            <input
+              type="number"
+              min={1}
+              defaultValue={mesa.numero}
+              key={mesa.numero}
+              onFocus={() => setErrNum(false)}
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (n === mesa.numero) return;
+                if (!onNumero(n)) {
+                  setErrNum(true);
+                  e.target.value = String(mesa.numero);
+                }
+              }}
+              className="w-14 rounded border border-line bg-surface px-1 py-0.5 font-display text-base outline-none focus:border-accent"
+            />
+            <input
+              defaultValue={mesa.nombre}
+              placeholder="nombre (opcional)"
+              onBlur={(e) => onRename(e.target.value.trim())}
+              className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm outline-none hover:border-line focus:border-accent"
+            />
+          </div>
+          {errNum && (
+            <p className="px-1 text-xs text-[#7b2233]">Ese número de mesa ya está en uso.</p>
+          )}
           <p className="px-1 text-xs text-muted">
             {LABEL_TIPO[mesa.tipo]} ·{" "}
             <span className={llena ? "font-semibold text-[#7b2233]" : ""}>
@@ -350,9 +444,23 @@ function MesaCard({
 
       {modo === "asignado" && (
         <div className="my-3 flex justify-center">
-          <MesaDibujo mesa={mesa} nombreDe={nombreDe} onSilla={abrirPicker} />
+          <MesaDibujo
+            mesa={mesa}
+            nombreDe={nombreDe}
+            onSilla={abrirPicker}
+            onCabecera={onCabecera}
+          />
         </div>
       )}
+
+      <details className="mt-2 text-xs">
+        <summary className="cursor-pointer text-muted hover:text-accent">
+          🖼 Imagen del mesero (para el plano)
+        </summary>
+        <div className="mt-2">
+          <ImagePicker value={mesa.imagen} onChange={onImagen} />
+        </div>
+      </details>
 
       {/* Lista ordenable */}
       <ol className="mt-2 space-y-1">
@@ -458,14 +566,16 @@ function MesaDibujo({
   mesa,
   nombreDe,
   onSilla,
+  onCabecera,
 }: {
   mesa: Mesa;
   nombreDe: (id: string) => Invitado | undefined;
   onSilla: (pos: number) => void;
+  onCabecera: (v: boolean) => void;
 }) {
   const n = Math.max(mesa.plazas, mesa.invitados.length);
   const seats = Array.from({ length: n }, (_, i) => i);
-  const posiciones = posicionesSillas(mesa.tipo, n);
+  const posiciones = posicionesSillas(mesa.tipo, n, Boolean(mesa.cabecera));
 
   const base = mesa.tipo === "rectangular" ? 260 : 220;
   const W = mesa.tipo === "rectangular" ? Math.min(360, base + Math.max(0, n - 8) * 12) : base;
@@ -473,7 +583,18 @@ function MesaDibujo({
   const seatPx = n > 16 ? 24 : n > 10 ? 28 : 32;
 
   return (
-    <div className="relative" style={{ width: W, height: H }}>
+    <div className="flex flex-col items-center gap-1">
+      {mesa.tipo === "rectangular" && (
+        <label className="flex items-center gap-1.5 text-[11px] text-muted">
+          <input
+            type="checkbox"
+            checked={Boolean(mesa.cabecera)}
+            onChange={(e) => onCabecera(e.target.checked)}
+          />
+          Con cabecera (silla en cada extremo)
+        </label>
+      )}
+      <div className="relative" style={{ width: W, height: H }}>
       <div
         className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
         style={{
@@ -504,12 +625,17 @@ function MesaDibujo({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
 
 // Posiciones en % (centro del asiento) para cada silla según el tipo.
-function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[] {
+function posicionesSillas(
+  tipo: TipoMesa,
+  n: number,
+  cabecera: boolean,
+): { x: number; y: number }[] {
   if (n === 0) return [];
   if (tipo === "redonda") {
     const rx = 46;
@@ -520,11 +646,15 @@ function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[]
     });
   }
   if (tipo === "rectangular") {
-    const top = Math.ceil(n / 2);
-    const bottom = n - top;
     const out: { x: number; y: number }[] = [];
+    // Con cabecera: 1 silla en cada extremo corto; el resto en los lados largos.
+    const lados = cabecera ? Math.max(0, n - 2) : n;
+    const top = Math.ceil(lados / 2);
+    const bottom = lados - top;
     for (let i = 0; i < top; i++) out.push({ x: pct(i, top), y: 6 });
     for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 94 });
+    if (cabecera && n >= 1) out.push({ x: 3, y: 50 });
+    if (cabecera && n >= 2) out.push({ x: 97, y: 50 });
     return out;
   }
   // cuadrada: repartir lo más parejo posible entre los 4 lados, sin sillas en las esquinas.
