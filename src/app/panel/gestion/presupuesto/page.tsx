@@ -5,6 +5,7 @@ import { Card, Stat, Progress } from "@/components/ui";
 import { CampoBoda } from "@/components/campo-boda";
 import { loadBoda } from "@/lib/boda";
 import { eur } from "@/lib/mock";
+import { descargarPresupuestoExcel } from "@/lib/export-excel";
 import {
   loadPartidas,
   addPartida,
@@ -68,7 +69,13 @@ export default function PresupuestoPage() {
         <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-4">
+        <button
+          onClick={() => descargarPresupuestoExcel(partidas, presupuestoTotal)}
+          className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
+        >
+          ↓ Descargar en Excel
+        </button>
         <button
           onClick={() => {
             if (confirm("¿Volver al presupuesto estándar? Se pierden tus cambios.")) resetPartidas();
