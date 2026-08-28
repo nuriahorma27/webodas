@@ -192,6 +192,7 @@ const DATA: Record<string, Def[]> = {
     ["Flores de la iglesia", "4-5 meses antes", "proveedor"],
     ["Comprar las arras y las alianzas", "4-5 meses antes", "compra"],
     ["Encargar los misaletes / hojas de misa", "2-3 meses antes", "compra"],
+    ["Comprar el arroz o los pétalos para la salida", "Último mes", "compra"],
   ],
   "Ceremonia civil": [
     ["Reservar el espacio de la ceremonia civil", "12 meses antes", "proveedor"],
