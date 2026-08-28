@@ -4,7 +4,7 @@
 
 import type { CSSProperties } from "react";
 
-export type AcabadoStd = "liso" | "lino" | "kraft" | "acuarela" | "puntos";
+export type AcabadoStd = "liso" | "papel" | "lino" | "kraft" | "puntos";
 export type FuenteStd = "serif" | "sans" | "script";
 export type PosTextoStd = "arriba" | "centro" | "abajo";
 
@@ -38,7 +38,7 @@ const DEFAULT: SaveTheDate = {
   mensaje: "",
   colorBg: "#f4efe6",
   colorText: "#3a342b",
-  acabado: "lino",
+  acabado: "papel",
   fuente: "serif",
   negrita: false,
   mayusculas: false,
@@ -55,8 +55,7 @@ export function loadStd(): SaveTheDate {
     const r = localStorage.getItem(KEY);
     if (!r) return { ...DEFAULT };
     const c = JSON.parse(r) as Partial<SaveTheDate> & { textura?: string };
-    // migración: "papel" → "lino"
-    const acabado = (c.acabado ?? (c.textura === "papel" ? "lino" : c.textura)) as AcabadoStd;
+    const acabado = (c.acabado ?? c.textura ?? DEFAULT.acabado) as AcabadoStd;
     return { ...DEFAULT, ...c, acabado: ACABADOS[acabado] ? acabado : DEFAULT.acabado };
   } catch {
     return { ...DEFAULT };
@@ -87,6 +86,16 @@ const noise = (op: number) =>
 
 export const ACABADOS: Record<AcabadoStd, { label: string; style: CSSProperties }> = {
   liso: { label: "Liso", style: {} },
+  papel: {
+    // Papel verjurado de gramaje: líneas finas verticales (corondeles),
+    // líneas horizontales más separadas (puntizones), grano y sombra suave.
+    label: "Papel verjurado",
+    style: {
+      backgroundImage: `${noise(0.045)}, repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(0deg, rgba(0,0,0,.028) 0 1px, transparent 1px 22px)`,
+      backgroundBlendMode: "multiply, normal, normal",
+      boxShadow: "inset 0 0 70px rgba(0,0,0,.07)",
+    },
+  },
   lino: {
     label: "Lino",
     style: {
@@ -98,12 +107,6 @@ export const ACABADOS: Record<AcabadoStd, { label: string; style: CSSProperties 
     style: {
       backgroundImage: `${noise(0.09)}, linear-gradient(180deg, rgba(120,90,50,.10), rgba(120,90,50,.03))`,
       backgroundBlendMode: "multiply, normal",
-    },
-  },
-  acuarela: {
-    label: "Acuarela",
-    style: {
-      backgroundImage: `radial-gradient(60% 45% at 20% 15%, rgba(255,255,255,.5), transparent 70%), radial-gradient(55% 40% at 85% 80%, rgba(0,0,0,.06), transparent 70%)`,
     },
   },
   puntos: {
