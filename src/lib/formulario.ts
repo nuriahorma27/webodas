@@ -44,7 +44,39 @@ export type FormularioConfig = {
   intro: string;
   estandar: DatosEstandar;
   preguntas: PreguntaForm[];
+  // Orden de TODO el formulario: claves estándar (ver CLAVES_ESTANDAR) e
+  // ids de preguntas personalizadas, mezcladas. "nombre" va siempre primero.
+  orden: string[];
 };
+
+// Claves de los datos estándar que se pueden ordenar dentro del formulario.
+export const CLAVES_ESTANDAR = [
+  "apellidos",
+  "email",
+  "asiste",
+  "acompanante",
+  "alergias",
+  "bus",
+] as const;
+export type ClaveEstandar = (typeof CLAVES_ESTANDAR)[number];
+
+export const LABEL_ESTANDAR: Record<ClaveEstandar, string> = {
+  apellidos: "Apellidos",
+  email: "Email",
+  asiste: "¿Asistirás? (Sí / No)",
+  acompanante: "¿Vienes con acompañante? (Sí / No)",
+  alergias: "Alergias / intolerancias",
+  bus: "Autobús (¿lo necesita? + ida y vuelta)",
+};
+
+// Reconstruye/repara el orden: añade lo que falte y quita lo que ya no existe.
+function repararOrden(orden: string[] | undefined, preguntas: PreguntaForm[]): string[] {
+  const validas = new Set<string>([...CLAVES_ESTANDAR, ...preguntas.map((p) => p.id)]);
+  const base = (orden ?? []).filter((k) => validas.has(k));
+  for (const k of CLAVES_ESTANDAR) if (!base.includes(k)) base.push(k);
+  for (const p of preguntas) if (!base.includes(p.id)) base.push(p.id);
+  return base;
+}
 
 const KEY = "webodas:formulario";
 
@@ -79,16 +111,17 @@ export const INTRO_EJEMPLO = "Confírmanos tu asistencia antes del 1 de agosto."
 
 let DEFAULT: FormularioConfig | null = null;
 function def(): FormularioConfig {
-  if (!DEFAULT)
+  if (!DEFAULT) {
+    const preguntas = [
+      { ...nueva("Menú"), qtype: "opcion" as const, options: "Normal, Vegetariano, Sin gluten, Infantil" },
+    ];
     DEFAULT = {
       intro: "",
       estandar: { ...ESTANDAR_DEFAULT },
-      preguntas: [
-        { ...nueva("Menú"), qtype: "opcion", options: "Normal, Vegetariano, Sin gluten, Infantil" },
-        { ...nueva("Alergias / intolerancias") },
-        { ...nueva("¿Necesitas autobús?"), qtype: "si-no" },
-      ],
+      preguntas,
+      orden: repararOrden([], preguntas),
     };
+  }
   return DEFAULT;
 }
 
@@ -104,6 +137,7 @@ export function loadFormulario(): FormularioConfig {
     // migración de valores antiguos ("no" | "solo" | "con-acomp" | boolean)
     const bool = (v: unknown, def: boolean) =>
       typeof v === "boolean" ? v : v === "solo" || v === "con-acomp" ? true : v === "no" ? false : def;
+    const preguntas = Array.isArray(c.preguntas) ? c.preguntas : [];
     return {
       intro: !c.intro || c.intro === INTRO_EJEMPLO ? "" : c.intro,
       estandar: {
@@ -116,7 +150,8 @@ export function loadFormulario(): FormularioConfig {
         bus: bool(raw.bus ?? raw.buses ?? raw.busAcomp, false),
         busAcomp: bool(raw.bus ?? raw.buses ?? raw.busAcomp, false),
       },
-      preguntas: Array.isArray(c.preguntas) ? c.preguntas : [],
+      preguntas,
+      orden: repararOrden(c.orden, preguntas),
     };
   } catch {
     return def();
@@ -134,7 +169,8 @@ export function saveFormulario(c: FormularioConfig) {
 
 export function addPregunta() {
   const c = loadFormulario();
-  saveFormulario({ ...c, preguntas: [...c.preguntas, nueva()] });
+  const q = nueva();
+  saveFormulario({ ...c, preguntas: [...c.preguntas, q], orden: [...c.orden, q.id] });
 }
 
 export function updatePregunta(id: string, patch: Partial<Omit<PreguntaForm, "id">>) {
@@ -147,17 +183,22 @@ export function updatePregunta(id: string, patch: Partial<Omit<PreguntaForm, "id
 
 export function removePregunta(id: string) {
   const c = loadFormulario();
-  saveFormulario({ ...c, preguntas: c.preguntas.filter((p) => p.id !== id) });
+  saveFormulario({
+    ...c,
+    preguntas: c.preguntas.filter((p) => p.id !== id),
+    orden: c.orden.filter((k) => k !== id),
+  });
 }
 
-export function movePregunta(id: string, dir: -1 | 1) {
+// Mueve cualquier fila del formulario (estándar o pregunta) arriba/abajo.
+export function moveItem(key: string, dir: -1 | 1) {
   const c = loadFormulario();
-  const list = [...c.preguntas];
-  const i = list.findIndex((p) => p.id === id);
+  const list = [...c.orden];
+  const i = list.indexOf(key);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= list.length) return;
   [list[i], list[j]] = [list[j], list[i]];
-  saveFormulario({ ...c, preguntas: list });
+  saveFormulario({ ...c, orden: list });
 }
 
 export function setEstandar(patch: Partial<DatosEstandar>) {
@@ -175,13 +216,23 @@ export function setIntro(intro: string) {
 // Etiquetas de todas las preguntas (para asociarlas a columnas de invitados).
 export function labelsFormulario(): string[] {
   const c = loadFormulario();
-  const pack: string[] = [];
-  if (c.estandar.asiste) pack.push("¿Asistirás?");
-  if (c.estandar.acompanante) pack.push("¿Vienes con acompañante?");
-  if (c.estandar.alergias || c.estandar.alergiasAcomp) pack.push(LABEL_ALERGIAS);
-  if (c.estandar.bus || c.estandar.busAcomp)
-    pack.push(LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA);
-  return [...pack, ...c.preguntas.map((p) => p.label).filter(Boolean)];
+  const out: string[] = [];
+  for (const k of c.orden) {
+    if (k === "asiste") {
+      if (c.estandar.asiste) out.push("¿Asistirás?");
+    } else if (k === "acompanante") {
+      if (c.estandar.acompanante) out.push("¿Vienes con acompañante?");
+    } else if (k === "alergias") {
+      if (c.estandar.alergias || c.estandar.alergiasAcomp) out.push(LABEL_ALERGIAS);
+    } else if (k === "bus") {
+      if (c.estandar.bus || c.estandar.busAcomp)
+        out.push(LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA);
+    } else if (k !== "apellidos" && k !== "email") {
+      const q = c.preguntas.find((p) => p.id === k);
+      if (q?.label) out.push(q.label);
+    }
+  }
+  return out;
 }
 
 // Tipo (y opciones) que debe tener una columna asociada a esa pregunta.

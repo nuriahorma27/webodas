@@ -9,12 +9,14 @@ import {
   addPregunta,
   updatePregunta,
   removePregunta,
-  movePregunta,
+  moveItem,
   setEstandar,
   setIntro,
   INTRO_EJEMPLO,
+  CLAVES_ESTANDAR,
   type FormularioConfig,
   type PreguntaForm,
+  type ClaveEstandar,
 } from "@/lib/formulario";
 
 const box =
@@ -33,49 +35,84 @@ export default function FormularioPage() {
   if (!cfg) return null;
 
   const est = cfg.estandar;
-  const item = (k: "apellidos" | "email" | "asiste" | "acompanante", texto: string, nota?: string) => (
-    <li>
-      <label className="flex items-start gap-2.5 py-2 text-sm">
-        <input
-          type="checkbox"
-          checked={est[k]}
-          onChange={(e) => setEstandar({ [k]: e.target.checked })}
-          className="mt-0.5"
-        />
-        <span>
-          {texto}
-          {nota && <span className="block text-xs text-muted">{nota}</span>}
-        </span>
-      </label>
-    </li>
-  );
 
-  const simple = (
-    k: "alergias" | "bus",
-    texto: string,
-    nota: string,
-  ) => (
-    <li className="py-2 text-sm">
+  const NOTA_ESTANDAR: Partial<Record<ClaveEstandar, string>> = {
+    acompanante: "Si responde «Sí», se le piden nombre y apellidos del acompañante.",
+    alergias: "Se pregunta al invitado y, si trae acompañante, también por las de su acompañante.",
+    bus: "Se pregunta una vez y cuenta también para el acompañante.",
+  };
+  const TEXTO_ESTANDAR: Record<ClaveEstandar, string> = {
+    apellidos: "Apellidos",
+    email: "Email",
+    asiste: "¿Asistirás? (Sí / No)",
+    acompanante: "¿Vienes con acompañante? (Sí / No)",
+    alergias: "Alergias / intolerancias",
+    bus: "Autobús (¿lo necesita? + ida y vuelta)",
+  };
+
+  const toggleEstandar = (k: ClaveEstandar, v: boolean) =>
+    setEstandar(k === "alergias" ? { alergias: v, alergiasAcomp: v } : { [k]: v });
+
+  // Contenido de una fila de dato estándar (sin el envoltorio de orden).
+  const contenidoEstandar = (k: ClaveEstandar) => (
+    <div className="text-sm">
       <label className="flex items-start gap-2.5">
         <input
           type="checkbox"
           checked={est[k]}
-          onChange={(e) =>
-            setEstandar(
-              k === "alergias"
-                ? { alergias: e.target.checked, alergiasAcomp: e.target.checked }
-                : { bus: e.target.checked },
-            )
-          }
+          onChange={(e) => toggleEstandar(k, e.target.checked)}
           className="mt-0.5"
         />
         <span>
-          {texto}
-          <span className="block text-xs text-muted">{nota}</span>
+          {TEXTO_ESTANDAR[k]}
+          {NOTA_ESTANDAR[k] && (
+            <span className="block text-xs text-muted">{NOTA_ESTANDAR[k]}</span>
+          )}
         </span>
       </label>
-    </li>
+      {k === "bus" && est.bus && (
+        <div className="ml-6 mt-2 grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ["Bus de ida", "busIdaModo", "busIdaHorarios", "busIdaUbicacion"],
+              ["Bus de vuelta", "busVueltaModo", "busVueltaHorarios", "busVueltaUbicacion"],
+            ] as const
+          ).map(([titulo, kModo, kHor, kUbi]) => (
+            <div key={kModo} className="rounded-md border border-line p-2.5">
+              <p className="text-xs font-medium">{titulo}</p>
+              <select
+                className={`${box} mt-1`}
+                value={est[kModo]}
+                onChange={(e) => setEstandar({ [kModo]: e.target.value as "sino" | "lista" })}
+              >
+                <option value="sino">Preguntar Sí / No</option>
+                <option value="lista">Elegir un horario de una lista</option>
+              </select>
+              {est[kModo] === "lista" && (
+                <input
+                  className={`${box} mt-2`}
+                  placeholder="Horarios separados por comas (17:00, 17:30, 18:00)"
+                  defaultValue={est[kHor]}
+                  onBlur={(e) => setEstandar({ [kHor]: e.target.value })}
+                />
+              )}
+              <input
+                className={`${box} mt-2`}
+                placeholder="Punto de recogida (p. ej. Plaza Mayor, junto a la fuente)"
+                defaultValue={est[kUbi]}
+                onBlur={(e) => setEstandar({ [kUbi]: e.target.value })}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
+
+  const esClave = (k: string): k is ClaveEstandar =>
+    (CLAVES_ESTANDAR as readonly string[]).includes(k);
+
+  let numQ = 0;
 
   return (
     <div className="space-y-6">
@@ -127,98 +164,63 @@ export default function FormularioPage() {
       <Card className="space-y-3">
         <h3 className="font-display text-lg">Preguntas del formulario</h3>
         <p className="text-sm text-muted">
-          Marca los datos básicos que quieres pedir y, debajo, añade tus propias preguntas.
+          Este es el formulario completo, en el orden en que lo verán tus invitados. Marca los
+          datos que quieres pedir, añade tus preguntas y ordénalo todo con ↑ ↓.
         </p>
 
-        <ul className="divide-y divide-line">
-          <li className="flex items-center gap-2.5 py-2 text-sm text-muted">
+        <div className="rounded-lg border border-line divide-y divide-line">
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted">
+            <span className="w-8 shrink-0" />
             <input type="checkbox" checked disabled />
-            Nombre <span className="text-xs">(siempre)</span>
-          </li>
-          {item("apellidos", "Apellidos")}
-          {item("email", "Email")}
-          {item("asiste", "¿Asistirás? (Sí / No)")}
-          {item(
-            "acompanante",
-            "¿Vienes con acompañante? (Sí / No)",
-            "Si responde «Sí», se le piden nombre y apellidos del acompañante.",
-          )}
-          {simple(
-            "alergias",
-            "Alergias / intolerancias",
-            "Se pregunta al invitado y, si trae acompañante, también por las de su acompañante.",
-          )}
-          <li className="py-2 text-sm">
-            <label className="flex items-start gap-2.5">
-              <input
-                type="checkbox"
-                checked={est.bus}
-                onChange={(e) => setEstandar({ bus: e.target.checked })}
-                className="mt-0.5"
-              />
-              <span>
-                Autobús (¿lo necesita? + ida y vuelta)
-                <span className="block text-xs text-muted">
-                  Se pregunta una vez y cuenta también para el acompañante.
-                </span>
-              </span>
-            </label>
-            {est.bus && (
-              <div className="ml-6 mt-2 grid gap-3 sm:grid-cols-2">
-                {(
-                  [
-                    ["Bus de ida", "busIdaModo", "busIdaHorarios", "busIdaUbicacion"],
-                    ["Bus de vuelta", "busVueltaModo", "busVueltaHorarios", "busVueltaUbicacion"],
-                  ] as const
-                ).map(([titulo, kModo, kHor, kUbi]) => (
-                  <div key={kModo} className="rounded-md border border-line p-2.5">
-                    <p className="text-xs font-medium">{titulo}</p>
-                    <select
-                      className={`${box} mt-1`}
-                      value={est[kModo]}
-                      onChange={(e) =>
-                        setEstandar({ [kModo]: e.target.value as "sino" | "lista" })
-                      }
-                    >
-                      <option value="sino">Preguntar Sí / No</option>
-                      <option value="lista">Elegir un horario de una lista</option>
-                    </select>
-                    {est[kModo] === "lista" && (
-                      <input
-                        className={`${box} mt-2`}
-                        placeholder="Horarios separados por comas (17:00, 17:30, 18:00)"
-                        defaultValue={est[kHor]}
-                        onBlur={(e) => setEstandar({ [kHor]: e.target.value })}
-                      />
-                    )}
-                    <input
-                      className={`${box} mt-2`}
-                      placeholder="Punto de recogida (p. ej. Plaza Mayor, junto a la fuente)"
-                      defaultValue={est[kUbi]}
-                      onBlur={(e) => setEstandar({ [kUbi]: e.target.value })}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </li>
-        </ul>
+            <span>
+              Nombre <span className="text-xs">(siempre el primero)</span>
+            </span>
+          </div>
 
-        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted">Tus preguntas</p>
-        {cfg.preguntas.length === 0 && (
-          <p className="text-sm text-muted">Aún no has añadido ninguna pregunta.</p>
-        )}
-        {cfg.preguntas.map((q, i) => (
-          <PreguntaEditor
-            key={q.id}
-            q={q}
-            numero={i + 1}
-            anteriores={cfg.preguntas.slice(0, i)}
-            pack={cfg.estandar.acompanante}
-            primero={i === 0}
-            ultimo={i === cfg.preguntas.length - 1}
-          />
-        ))}
+          {cfg.orden.map((k, i) => {
+            const q = esClave(k) ? null : cfg.preguntas.find((p) => p.id === k);
+            if (!esClave(k) && !q) return null;
+            if (q) numQ += 1;
+            const anteriores = cfg.preguntas.filter(
+              (p) => cfg.orden.indexOf(p.id) < i && cfg.orden.indexOf(p.id) >= 0,
+            );
+            return (
+              <div key={k} className="flex gap-2 px-3 py-2.5">
+                <div className="flex w-8 shrink-0 flex-col items-center pt-0.5 text-muted">
+                  <button
+                    onClick={() => moveItem(k, -1)}
+                    disabled={i === 0}
+                    className="leading-none hover:text-foreground disabled:opacity-20"
+                    title="Subir"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveItem(k, 1)}
+                    disabled={i === cfg.orden.length - 1}
+                    className="leading-none hover:text-foreground disabled:opacity-20"
+                    title="Bajar"
+                  >
+                    ↓
+                  </button>
+                </div>
+                <div className="min-w-0 flex-1">
+                  {esClave(k) ? (
+                    contenidoEstandar(k)
+                  ) : (
+                    <PreguntaEditor
+                      q={q as PreguntaForm}
+                      numero={numQ}
+                      anteriores={anteriores}
+                      pack={cfg.estandar.acompanante}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         <button
           onClick={() => addPregunta()}
           className="w-full rounded-md border border-dashed border-line py-2 text-sm font-medium text-accent hover:border-accent"
@@ -244,15 +246,11 @@ function PreguntaEditor({
   numero,
   anteriores,
   pack,
-  primero,
-  ultimo,
 }: {
   q: PreguntaForm;
   numero: number;
   anteriores: PreguntaForm[];
   pack: boolean;
-  primero: boolean;
-  ultimo: boolean;
 }) {
   const [mostrarCond, setMostrarCond] = useState(false);
   const tieneCond = Boolean(q.condLabel) || mostrarCond;
@@ -280,35 +278,17 @@ function PreguntaEditor({
     <div className="rounded-lg border border-line p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Pregunta {numero}
+          Tu pregunta {numero}
         </span>
-        <div className="flex items-center gap-1 text-base text-muted">
-          <button
-            onClick={() => movePregunta(q.id, -1)}
-            disabled={primero}
-            className="px-1 hover:text-foreground disabled:opacity-20"
-            title="Subir"
-          >
-            ↑
-          </button>
-          <button
-            onClick={() => movePregunta(q.id, 1)}
-            disabled={ultimo}
-            className="px-1 hover:text-foreground disabled:opacity-20"
-            title="Bajar"
-          >
-            ↓
-          </button>
-          <button
-            onClick={() => {
-              if (confirm(`¿Eliminar la pregunta "${q.label || "sin texto"}"?`)) removePregunta(q.id);
-            }}
-            className="px-1 text-sm hover:text-red-600"
-            title="Eliminar"
-          >
-            🗑
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            if (confirm(`¿Eliminar la pregunta "${q.label || "sin texto"}"?`)) removePregunta(q.id);
+          }}
+          className="px-1 text-sm text-muted hover:text-red-600"
+          title="Eliminar"
+        >
+          🗑
+        </button>
       </div>
 
       <label className="block">

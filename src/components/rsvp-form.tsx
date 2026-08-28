@@ -157,7 +157,106 @@ export function RsvpForm({
     );
   };
 
-  const renderQuestion = (q: PreguntaForm, i: number) => {
+  const asisteOk = !est.asiste || asiste === "Sí";
+
+  const renderClave = (k: string) => {
+    if (k === "apellidos")
+      return est.apellidos ? (
+        <div key={k}>
+          <label style={lab}>Apellidos</label>
+          <input style={field} value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
+        </div>
+      ) : null;
+    if (k === "email")
+      return est.email ? (
+        <div key={k}>
+          <label style={lab}>Email</label>
+          <input type="email" style={field} value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+      ) : null;
+    if (k === "asiste")
+      return est.asiste ? (
+        <div key={k}>
+          <label style={lab}>¿Asistirás?</label>
+          <select style={field} value={asiste} onChange={(e) => setAsiste(e.target.value)}>
+            <option>Sí</option>
+            <option>No</option>
+          </select>
+        </div>
+      ) : null;
+    if (k === "acompanante")
+      return est.acompanante && asisteOk ? (
+        <div key={k} style={{ display: "grid", gap: 16 }}>
+          <div>
+            <label style={lab}>¿Vienes con acompañante?</label>
+            <select style={field} value={acomp} onChange={(e) => setAcomp(e.target.value)}>
+              <option>No</option>
+              <option>Sí</option>
+            </select>
+          </div>
+          {acomp === "Sí" && (
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
+              <div>
+                <label style={lab}>Nombre del acompañante</label>
+                <input style={field} value={acompNombre} onChange={(e) => setAcompNombre(e.target.value)} />
+              </div>
+              <div>
+                <label style={lab}>Apellidos del acompañante</label>
+                <input style={field} value={acompApellidos} onChange={(e) => setAcompApellidos(e.target.value)} />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null;
+    if (k === "alergias")
+      return asisteOk && est.alergias ? (
+        <div key={k} style={{ display: "grid", gap: 16 }}>
+          <div>
+            <label style={lab}>{PREGUNTA_ALERGIAS}</label>
+            <input
+              style={field}
+              value={answers[LABEL_ALERGIAS] ?? ""}
+              onChange={(e) => set(LABEL_ALERGIAS, e.target.value)}
+              placeholder="Deja vacío si no hay"
+            />
+          </div>
+          {conAcomp && (
+            <div>
+              <label style={lab}>{PREGUNTA_ALERGIAS_ACOMP}</label>
+              <input
+                style={field}
+                value={answersAcomp[LABEL_ALERGIAS] ?? ""}
+                onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
+                placeholder="Deja vacío si no hay"
+              />
+            </div>
+          )}
+        </div>
+      ) : null;
+    if (k === "bus")
+      return asisteOk && est.bus ? (
+        <div key={k}>
+          <label style={lab}>¿Necesitas autobús?</label>
+          <select style={field} value={answers[LABEL_BUS] ?? ""} onChange={(e) => set(LABEL_BUS, e.target.value)}>
+            <option value="">Elige…</option>
+            <option>Sí</option>
+            <option>No</option>
+          </select>
+          {answers[LABEL_BUS] === "Sí" && (
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+              {trayectoBus("Bus de ida", LABEL_BUS_IDA, est.busIdaModo, est.busIdaHorarios, est.busIdaUbicacion)}
+              {trayectoBus("Bus de vuelta", LABEL_BUS_VUELTA, est.busVueltaModo, est.busVueltaHorarios, est.busVueltaUbicacion)}
+            </div>
+          )}
+        </div>
+      ) : null;
+    // id de pregunta personalizada
+    const q = questions.find((p) => p.id === k);
+    if (!q || !asisteOk || !visible(q)) return null;
+    return renderQuestion(q, k);
+  };
+
+  const renderQuestion = (q: PreguntaForm, i: number | string) => {
     const opts = (q.options ?? "").split(",").map((o) => o.trim()).filter(Boolean);
     return (
       <div key={i}>
@@ -256,112 +355,12 @@ export function RsvpForm({
                 <h3 style={{ fontFamily: "var(--wf-heading, Georgia, serif)", fontSize: 24, marginBottom: 2 }}>Confirmar asistencia</h3>
                 {cfg.intro && <p style={{ fontSize: 14, color: "#666", marginTop: -6 }}>{cfg.intro}</p>}
 
-                <div style={{ display: "grid", gap: 12, gridTemplateColumns: est.apellidos ? "1fr 1fr" : "1fr" }}>
-                  <div>
-                    <label style={lab}>Nombre</label>
-                    <input style={field} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-                  </div>
-                  {est.apellidos && (
-                    <div>
-                      <label style={lab}>Apellidos</label>
-                      <input style={field} value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
-                    </div>
-                  )}
+                <div>
+                  <label style={lab}>Nombre</label>
+                  <input style={field} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
                 </div>
 
-                {est.email && (
-                  <div>
-                    <label style={lab}>Email</label>
-                    <input
-                      type="email"
-                      style={field}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
-
-                {est.asiste && (
-                  <div>
-                    <label style={lab}>¿Asistirás?</label>
-                    <select style={field} value={asiste} onChange={(e) => setAsiste(e.target.value)}>
-                      <option>Sí</option>
-                      <option>No</option>
-                    </select>
-                  </div>
-                )}
-
-                {est.acompanante && (!est.asiste || asiste === "Sí") && (
-                  <>
-                    <div>
-                      <label style={lab}>¿Vienes con acompañante?</label>
-                      <select style={field} value={acomp} onChange={(e) => setAcomp(e.target.value)}>
-                        <option>No</option>
-                        <option>Sí</option>
-                      </select>
-                    </div>
-
-                    {acomp === "Sí" && (
-                      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
-                        <div>
-                          <label style={lab}>Nombre del acompañante</label>
-                          <input style={field} value={acompNombre} onChange={(e) => setAcompNombre(e.target.value)} />
-                        </div>
-                        <div>
-                          <label style={lab}>Apellidos del acompañante</label>
-                          <input style={field} value={acompApellidos} onChange={(e) => setAcompApellidos(e.target.value)} />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {(!est.asiste || asiste === "Sí") && (est.alergias || est.bus) && (
-                  <>
-                    {est.alergias && (
-                      <div>
-                        <label style={lab}>{PREGUNTA_ALERGIAS}</label>
-                        <input
-                          style={field}
-                          value={answers[LABEL_ALERGIAS] ?? ""}
-                          onChange={(e) => set(LABEL_ALERGIAS, e.target.value)}
-                          placeholder="Deja vacío si no hay"
-                        />
-                      </div>
-                    )}
-                    {est.alergias && conAcomp && (
-                      <div>
-                        <label style={lab}>{PREGUNTA_ALERGIAS_ACOMP}</label>
-                        <input
-                          style={field}
-                          value={answersAcomp[LABEL_ALERGIAS] ?? ""}
-                          onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
-                          placeholder="Deja vacío si no hay"
-                        />
-                      </div>
-                    )}
-                    {est.bus && (
-                      <div>
-                        <label style={lab}>¿Necesitas autobús?</label>
-                        <select style={field} value={answers[LABEL_BUS] ?? ""} onChange={(e) => set(LABEL_BUS, e.target.value)}>
-                          <option value="">Elige…</option>
-                          <option>Sí</option>
-                          <option>No</option>
-                        </select>
-                        {answers[LABEL_BUS] === "Sí" && (
-                          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
-                            {trayectoBus("Bus de ida", LABEL_BUS_IDA, est.busIdaModo, est.busIdaHorarios, est.busIdaUbicacion)}
-                            {trayectoBus("Bus de vuelta", LABEL_BUS_VUELTA, est.busVueltaModo, est.busVueltaHorarios, est.busVueltaUbicacion)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {(!est.asiste || asiste === "Sí") &&
-                  questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
+                {cfg.orden.map((k) => renderClave(k))}
 
                 <button
                   type="submit"
