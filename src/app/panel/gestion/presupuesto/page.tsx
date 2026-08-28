@@ -19,8 +19,6 @@ import {
   moveCategoria,
   categoriasOrdenadas,
   totales,
-  vincularPartida,
-  desvincularTarea,
   CATEGORIAS_ESTANDAR,
   type Partida,
 } from "@/lib/presupuesto";
@@ -270,31 +268,10 @@ function Fila({ p, tareas }: { p: Partida; tareas: Tarea[] }) {
           onBlur={(e) => updatePartida(p.id, { concepto: e.target.value })}
           className={`${cell} font-medium`}
         />
-        {tareaVinc ? (
-          <span className="mt-0.5 flex items-center gap-1 text-[11px] text-accent">
-            🔗 {tareaVinc.titulo || "tarea"}
-            <button
-              onClick={() => desvincularTarea(p.tareaId!)}
-              className="text-muted underline hover:text-red-600"
-            >
-              quitar
-            </button>
+        {tareaVinc && (
+          <span className="mt-0.5 block text-[11px] text-accent">
+            🔗 vinculado a la tarea «{tareaVinc.titulo || "tarea"}»
           </span>
-        ) : (
-          <select
-            value=""
-            onChange={(e) => e.target.value && vincularPartida(p.id, e.target.value)}
-            className="mt-0.5 max-w-[180px] bg-transparent text-[11px] text-muted outline-none"
-          >
-            <option value="">🔗 vincular tarea…</option>
-            {tareas
-              .filter((t) => t.titulo)
-              .map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.categoria} · {t.titulo}
-                </option>
-              ))}
-          </select>
         )}
       </td>
       <td className="px-5 py-2">
