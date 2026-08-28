@@ -4,10 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { Card, Stat } from "@/components/ui";
 import { CampoBoda } from "@/components/campo-boda";
 import { leerNombresExcel } from "@/lib/import-excel";
-import { loadPreguntasRsvp } from "@/lib/rsvp";
+import {
+  loadPreguntasRsvp,
+  loadResponses,
+  updateResponse,
+  valorRespuesta,
+  type RsvpResponse,
+} from "@/lib/rsvp";
 import {
   loadInvitados,
   loadColumnas,
+  crearInvitado,
+  aplicarRespuestaAInvitado,
   loadGrupos,
   saveGrupos,
   loadSubgrupos,
@@ -46,6 +54,8 @@ export default function InvitadosPage() {
   const [filtro, setFiltro] = useState<"" | Viene>("");
   const [modalCol, setModalCol] = useState(false);
   const [ajustes, setAjustes] = useState(false);
+  const [vista, setVista] = useState<"gestion" | "respuestas">("gestion");
+  const [respuestas, setRespuestas] = useState<RsvpResponse[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importar = async (file: File) => {
@@ -73,10 +83,15 @@ export default function InvitadosPage() {
       setGrupos(loadGrupos());
       setSubgrupos(loadSubgrupos());
       setPreguntas(loadPreguntasRsvp());
+      setRespuestas(loadResponses("demo"));
     };
     sync();
     window.addEventListener("webodas:invitados", sync);
-    return () => window.removeEventListener("webodas:invitados", sync);
+    window.addEventListener("webodas:rsvp", sync);
+    return () => {
+      window.removeEventListener("webodas:invitados", sync);
+      window.removeEventListener("webodas:rsvp", sync);
+    };
   }, []);
 
   if (!inv) return null;
@@ -84,12 +99,42 @@ export default function InvitadosPage() {
   const r = resumenInvitados();
   const filas = filtro ? inv.filter((i) => i.viene === filtro) : inv;
 
+  const pendientesRespuesta = respuestas.filter((x) => !x.aplicada).length;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoBoda campo="invitadosAprox" label="Invitados aproximados" />
       </div>
 
+      <div className="flex gap-2 text-sm">
+        <button
+          onClick={() => setVista("gestion")}
+          className={`rounded-full px-3 py-1 ${
+            vista === "gestion" ? "bg-foreground text-white" : "border border-line text-muted"
+          }`}
+        >
+          Mi lista de gestión
+        </button>
+        <button
+          onClick={() => setVista("respuestas")}
+          className={`rounded-full px-3 py-1 ${
+            vista === "respuestas" ? "bg-foreground text-white" : "border border-line text-muted"
+          }`}
+        >
+          Respuestas del formulario
+          {pendientesRespuesta > 0 && (
+            <span className="ml-1.5 rounded-full bg-accent px-1.5 text-xs text-white">
+              {pendientesRespuesta}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {vista === "respuestas" ? (
+        <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
+      ) : (
+        <>
       <div className="grid gap-4 sm:grid-cols-4">
         <Stat label="Personas" value={String(r.personas)} sub={`${r.adultos} adultos · ${r.ninos} niños`} />
         <Stat label="Confirmadas" value={String(r.confirmadas)} tone="positive" />
@@ -428,6 +473,8 @@ export default function InvitadosPage() {
           }}
         />
       </Card>
+        </>
+      )}
 
       {modalCol && (
         <ModalColumna
@@ -440,6 +487,143 @@ export default function InvitadosPage() {
         />
       )}
     </div>
+  );
+}
+
+function VistaRespuestas({
+  respuestas,
+  invitados,
+  columnas,
+}: {
+  respuestas: RsvpResponse[];
+  invitados: Invitado[];
+  columnas: ColumnaInvitado[];
+}) {
+  if (respuestas.length === 0) {
+    return (
+      <Card>
+        <p className="text-sm text-muted">
+          Aún no ha llegado ninguna respuesta del formulario de confirmación de la web.
+        </p>
+      </Card>
+    );
+  }
+
+  const asociadas = columnas.filter((c) => c.preguntaRsvp);
+
+  const volcar = (resp: RsvpResponse, seleccion: string) => {
+    let invId = seleccion;
+    if (seleccion === "__nuevo" || !seleccion) {
+      const nuevo = crearInvitado(resp.nombre, resp.apellido ?? "");
+      invId = nuevo.id;
+    }
+    const viene: Viene = resp.asiste === "Sí" ? "Sí" : "No";
+    const rpc = asociadas
+      .map((c) => ({ columna: c.nombre, valor: valorRespuesta(resp, c.preguntaRsvp as string) }))
+      .filter((x) => x.valor);
+    aplicarRespuestaAInvitado(invId, viene, rpc);
+    updateResponse("demo", resp.id, { invitadoId: invId, aplicada: true });
+  };
+
+  return (
+    <div className="space-y-4">
+      {asociadas.length === 0 && (
+        <Card className="text-sm text-muted">
+          Todavía no has asociado ninguna pregunta a una columna. Hazlo en{" "}
+          <strong>⚙ Ajustes de la lista → Columnas</strong> para que los datos se vuelquen solos.
+        </Card>
+      )}
+      {respuestas.map((resp) => (
+        <RespuestaCard key={resp.id} resp={resp} invitados={invitados} onVolcar={volcar} />
+      ))}
+    </div>
+  );
+}
+
+function RespuestaCard({
+  resp,
+  invitados,
+  onVolcar,
+}: {
+  resp: RsvpResponse;
+  invitados: Invitado[];
+  onVolcar: (resp: RsvpResponse, seleccion: string) => void;
+}) {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const sugerido = invitados.find(
+    (i) =>
+      norm(i.nombre) === norm(resp.nombre) &&
+      norm(i.apellido) === norm(resp.apellido ?? ""),
+  );
+  const [sel, setSel] = useState(sugerido?.id ?? "__nuevo");
+  const vinculado = resp.invitadoId
+    ? invitados.find((i) => i.id === resp.invitadoId)
+    : undefined;
+
+  return (
+    <Card className="space-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <span className="font-display text-lg">
+          {resp.nombre} {resp.apellido}
+        </span>
+        <span
+          className={`text-xs ${
+            resp.asiste === "Sí" ? "text-emerald-700" : "text-[#7b2233]"
+          }`}
+        >
+          {resp.asiste === "Sí" ? "Viene" : "No viene"}
+          {resp.acompanantes > 0 ? ` · +${resp.acompanantes} acomp.` : ""}
+        </span>
+        <span className="text-xs text-muted">{resp.fecha}</span>
+      </div>
+
+      {Object.keys(resp.respuestas).length > 0 && (
+        <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+          {Object.entries(resp.respuestas).map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-[11px] uppercase tracking-wide text-muted">{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {resp.aplicada && vinculado ? (
+        <p className="flex flex-wrap items-center gap-2 text-sm text-emerald-700">
+          ✓ Volcado a «{vinculado.nombre} {vinculado.apellido}»
+          <button
+            onClick={() => onVolcar(resp, resp.invitadoId as string)}
+            className="text-xs text-muted underline hover:text-foreground"
+          >
+            volver a volcar
+          </button>
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm">
+          <span className="text-xs text-muted">Vincular con:</span>
+          <select
+            value={sel}
+            onChange={(e) => setSel(e.target.value)}
+            className="rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
+          >
+            <option value="__nuevo">➕ Crear invitado nuevo</option>
+            {invitados
+              .filter((i) => i.nombre || i.apellido)
+              .map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nombre} {i.apellido}
+                </option>
+              ))}
+          </select>
+          <button
+            onClick={() => onVolcar(resp, sel)}
+            className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white"
+          >
+            Volcar a mi lista
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }
 

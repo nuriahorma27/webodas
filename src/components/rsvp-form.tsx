@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { addResponse, type RsvpQuestion } from "@/lib/rsvp";
-import { upsertInvitadoDesdeRsvp, loadColumnas } from "@/lib/invitados";
 
 export function RsvpForm({
   questions,
@@ -55,36 +54,13 @@ export function RsvpForm({
     addResponse(weddingId, {
       id: crypto.randomUUID(),
       fecha: new Date().toISOString().slice(0, 10),
-      nombre: `${nombre} ${apellidos}`.trim() || "(sin nombre)",
+      nombre: nombre.trim() || "(sin nombre)",
+      apellido: apellidos.trim(),
       email,
       asiste,
       acompanantes: acomp === "Sí" ? 1 : 0,
       respuestas,
     });
-
-    // Vuelca a la lista de invitados: crea/actualiza a la persona y
-    // guarda cada respuesta en la columna que la pareja haya asociado (en Ajustes de invitados).
-    const viene = asiste === "Sí" ? "Sí" : "No";
-    const valorPregunta = (label: string): string => {
-      if (label === "¿Asistirás?") return asiste;
-      if (label === "¿Vienes con acompañante?") return acomp;
-      return answers[label] ?? "";
-    };
-    const respuestasPorColumna = loadColumnas()
-      .filter((c) => c.preguntaRsvp)
-      .map((c) => ({ columna: c.nombre, valor: valorPregunta(c.preguntaRsvp as string) }))
-      .filter((x) => x.valor);
-    if (nombre.trim() || apellidos.trim()) {
-      upsertInvitadoDesdeRsvp({
-        nombre,
-        apellido: apellidos,
-        viene,
-        respuestasPorColumna,
-      });
-    }
-    if (acomp === "Sí" && (acompNombre.trim() || acompApellidos.trim())) {
-      upsertInvitadoDesdeRsvp({ nombre: acompNombre, apellido: acompApellidos, viene: "Sí" });
-    }
 
     setSent(true);
   };

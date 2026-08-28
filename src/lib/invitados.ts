@@ -268,6 +268,47 @@ export function removeColumna(id: string) {
 
 /* ---------- volcado desde el formulario RSVP ---------- */
 
+// Crea una fila de gestión con nombre/apellido (para "crear nuevo" al revisar respuestas).
+export function crearInvitado(nombre: string, apellido: string): Invitado {
+  const nuevo: Invitado = {
+    id: crypto.randomUUID(),
+    nombre: nombre.trim(),
+    apellido: apellido.trim(),
+    viene: "Pendiente",
+    grupo: "",
+    subgrupo: "",
+    tipo: "Adulto",
+    extra: {},
+  };
+  saveInvitados([...loadInvitados(), nuevo]);
+  return nuevo;
+}
+
+// Vuelca una respuesta a una fila de gestión concreta.
+export function aplicarRespuestaAInvitado(
+  invitadoId: string,
+  viene: Viene,
+  respuestasPorColumna: { columna: string; valor: string }[],
+) {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const list = loadInvitados();
+  const inv = list.find((i) => i.id === invitadoId);
+  if (!inv) return;
+  inv.viene = viene;
+  let cols = loadColumnas();
+  for (const { columna, valor } of respuestasPorColumna) {
+    if (!columna || !valor) continue;
+    let col = cols.find((c) => norm(c.nombre) === norm(columna));
+    if (!col) {
+      col = { id: crypto.randomUUID(), nombre: columna.trim(), tipo: "texto" };
+      cols = [...cols, col];
+    }
+    inv.extra[col.id] = valor;
+  }
+  saveColumnas(cols);
+  saveInvitados(list);
+}
+
 // Busca (o crea) a la persona por nombre+apellido, actualiza si viene y vuelca
 // las respuestas de las preguntas que estén asociadas a una columna.
 export function upsertInvitadoDesdeRsvp(p: {

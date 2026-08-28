@@ -30,10 +30,13 @@ export type RsvpResponse = {
   id: string;
   fecha: string;
   nombre: string;
+  apellido?: string;
   email: string;
   asiste: string;
   acompanantes: number;
   respuestas: Record<string, string>;
+  invitadoId?: string; // fila de "mi gestión" a la que se ha vinculado
+  aplicada?: boolean; // ya se ha volcado a esa fila
 };
 
 const key = (weddingId: string) => `webodas:rsvp:${weddingId}`;
@@ -55,6 +58,23 @@ export function addResponse(weddingId: string, r: RsvpResponse) {
   } catch {
     /* noop */
   }
+}
+
+export function updateResponse(weddingId: string, id: string, patch: Partial<RsvpResponse>) {
+  try {
+    const all = loadResponses(weddingId).map((r) => (r.id === id ? { ...r, ...patch } : r));
+    localStorage.setItem(key(weddingId), JSON.stringify(all));
+    window.dispatchEvent(new Event("webodas:rsvp"));
+  } catch {
+    /* noop */
+  }
+}
+
+// Valor de una pregunta a partir de una respuesta (mapea las del pack).
+export function valorRespuesta(r: RsvpResponse, pregunta: string): string {
+  if (pregunta === "¿Asistirás?") return r.asiste;
+  if (pregunta === "¿Vienes con acompañante?") return r.acompanantes > 0 ? "Sí" : "No";
+  return r.respuestas[pregunta] ?? "";
 }
 
 // Respuestas de ejemplo para que el panel no salga vacío.
