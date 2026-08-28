@@ -10,6 +10,12 @@ import {
   type TareaDetalle,
 } from "@/lib/tareas";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
+import {
+  COLUMNAS_FIJAS,
+  type Invitado,
+  type ColumnaInvitado,
+} from "@/lib/invitados";
+import type { RsvpResponse } from "@/lib/rsvp";
 
 const EUR = '#,##0" €"';
 const ACENTO = "FF8A6D3B";
@@ -323,4 +329,177 @@ export async function descargarTareasExcel(
 
   const fecha = new Date().toISOString().slice(0, 10);
   await descargarLibro(wb, `Tareas boda ${fecha}.xlsx`);
+}
+
+/* ============================ INVITADOS ============================ */
+
+function cabecera(ws: ExcelJS.Worksheet, ancho: number, titulo: string) {
+  const boda = loadBoda();
+  const pareja = nombrePareja(boda);
+  const last = String.fromCharCode(64 + ancho);
+  ws.mergeCells(`A1:${last}1`);
+  const logo = ws.getCell("A1");
+  logo.value = "webodas";
+  logo.font = { name: "Georgia", size: 20, bold: true, color: { argb: ACENTO } };
+  ws.getRow(1).height = 30;
+  ws.mergeCells(`A2:${last}2`);
+  ws.getCell("A2").value = pareja === "Vuestra boda" ? titulo : `${titulo} · ${pareja}`;
+  ws.getCell("A2").font = { size: 14, bold: true, color: { argb: TINTA } };
+  ws.getRow(2).height = 20;
+  ws.mergeCells(`A3:${last}3`);
+  ws.getCell("A3").value = fechaLarga(boda);
+  ws.getCell("A3").font = { size: 10, color: { argb: "FF7A736A" } };
+}
+
+function pintaHead(ws: ExcelJS.Worksheet, fila: number, valores: string[]) {
+  const head = ws.getRow(fila);
+  head.values = valores;
+  head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  head.alignment = { vertical: "middle", wrapText: true };
+  for (let c = 1; c <= valores.length; c++) {
+    head.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: TINTA } };
+    head.getCell(c).border = borde;
+  }
+  head.height = 20;
+}
+
+export async function descargarInvitadosExcel(
+  invitados: Invitado[],
+  columnas: ColumnaInvitado[],
+  fijasOcultas: string[] = [],
+) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webodas";
+  wb.created = new Date();
+
+  const fijas = COLUMNAS_FIJAS.filter((f) => !fijasOcultas.includes(f.key));
+  const cabeceras = [
+    "Nombre",
+    "Apellido",
+    ...fijas.map((f) => f.label),
+    ...columnas.map((c) => c.nombre),
+  ];
+
+  const ws = wb.addWorksheet("Invitados", {
+    views: [{ state: "frozen", ySplit: 5, xSplit: 2 }],
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
+  });
+  ws.columns = cabeceras.map((_, i) => ({ width: i < 2 ? 20 : 16 }));
+
+  cabecera(ws, cabeceras.length, "Lista de invitados");
+  pintaHead(ws, 5, cabeceras);
+
+  const valorFija = (i: Invitado, key: string) =>
+    key === "viene"
+      ? i.viene
+      : key === "grupo"
+        ? i.grupo
+        : key === "subgrupo"
+          ? i.subgrupo
+          : key === "tipo"
+            ? i.tipo
+            : "";
+
+  let r = 6;
+  for (const i of invitados) {
+    const row = ws.getRow(r);
+    row.getCell(1).value = i.nombre;
+    row.getCell(2).value = i.apellido;
+    let c = 3;
+    for (const f of fijas) row.getCell(c++).value = valorFija(i, f.key);
+    for (const col of columnas) row.getCell(c++).value = i.extra[col.id] ?? "";
+    for (let k = 1; k <= cabeceras.length; k++) row.getCell(k).border = borde;
+    r++;
+  }
+
+  ws.mergeCells(`A${r}:B${r}`);
+  const tot = ws.getRow(r);
+  tot.getCell(1).value = `TOTAL · ${invitados.length} personas`;
+  tot.getCell(1).font = { bold: true };
+  tot.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  await descargarLibro(wb, `Invitados boda ${fecha}.xlsx`);
+}
+
+export async function descargarRespuestasExcel(respuestas: RsvpResponse[]) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webodas";
+  wb.created = new Date();
+
+  // Todas las claves de respuesta que han aparecido, en orden de aparición.
+  const claves: string[] = [];
+  const add = (m: Record<string, string> = {}) => {
+    for (const k of Object.keys(m)) if (!claves.includes(k)) claves.push(k);
+  };
+  respuestas.forEach((x) => {
+    add(x.respuestas);
+    add(x.respuestasAcomp);
+  });
+
+  const cabeceras = [
+    "Fecha",
+    "Hora",
+    "Nombre",
+    "Apellido",
+    "Email",
+    "¿Asiste?",
+    "Fila",
+    ...claves,
+  ];
+
+  const ws = wb.addWorksheet("Respuestas", {
+    views: [{ state: "frozen", ySplit: 5 }],
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
+  });
+  ws.columns = cabeceras.map((_, i) => ({ width: i < 7 ? 16 : 18 }));
+
+  cabecera(ws, cabeceras.length, "Respuestas del formulario");
+  pintaHead(ws, 5, cabeceras);
+
+  let r = 6;
+  const fila = (
+    fechaISO: string,
+    nombre: string,
+    apellido: string,
+    email: string,
+    asiste: string,
+    tipo: string,
+    datos: Record<string, string>,
+  ) => {
+    const d = new Date(fechaISO);
+    const ok = !isNaN(d.getTime());
+    const row = ws.getRow(r);
+    row.getCell(1).value = ok ? d.toLocaleDateString("es-ES") : fechaISO;
+    row.getCell(2).value = ok && fechaISO.length > 10
+      ? d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+      : "";
+    row.getCell(3).value = nombre;
+    row.getCell(4).value = apellido;
+    row.getCell(5).value = email;
+    row.getCell(6).value = asiste;
+    row.getCell(7).value = tipo;
+    claves.forEach((k, idx) => {
+      row.getCell(8 + idx).value = datos[k] ?? "";
+    });
+    for (let k = 1; k <= cabeceras.length; k++) row.getCell(k).border = borde;
+    r++;
+  };
+
+  for (const x of respuestas) {
+    fila(x.fecha, x.nombre, x.apellido ?? "", x.email, x.asiste, "Invitado", x.respuestas);
+    if (x.acompNombre || x.acompApellido)
+      fila(
+        x.fecha,
+        x.acompNombre ?? "",
+        x.acompApellido ?? "",
+        "",
+        x.asiste === "Sí" ? "Sí" : x.asiste,
+        "Acompañante",
+        x.respuestasAcomp ?? {},
+      );
+  }
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  await descargarLibro(wb, `Respuestas formulario ${fecha}.xlsx`);
 }

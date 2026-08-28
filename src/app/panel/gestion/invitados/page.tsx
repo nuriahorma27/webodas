@@ -16,6 +16,7 @@ import {
   LABEL_BUS_IDA,
   LABEL_BUS_VUELTA,
 } from "@/lib/formulario";
+import { descargarInvitadosExcel, descargarRespuestasExcel } from "@/lib/export-excel";
 import {
   loadInvitados,
   loadColumnas,
@@ -237,8 +238,14 @@ export default function InvitadosPage() {
           </button>
         ))}
         <button
+          onClick={() => descargarInvitadosExcel(inv, cols, fijasOcultas)}
+          className="ml-auto rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-accent"
+        >
+          ⬇ Descargar Excel
+        </button>
+        <button
           onClick={() => setAjustes((v) => !v)}
-          className="ml-auto rounded-full border border-dashed border-line px-3 py-1 text-xs text-muted hover:text-accent"
+          className="rounded-full border border-dashed border-line px-3 py-1 text-xs text-muted hover:text-accent"
         >
           ⚙ Ajustes de la lista
         </button>
@@ -561,6 +568,14 @@ function VistaRespuestas({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          onClick={() => descargarRespuestasExcel(respuestas)}
+          className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-accent"
+        >
+          ⬇ Descargar Excel
+        </button>
+      </div>
       {hayBus && (
         <Card className="space-y-2">
           <h3 className="font-display text-lg">Autobús</h3>
