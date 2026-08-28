@@ -5,12 +5,12 @@ import { Card, Progress, Badge } from "@/components/ui";
 import { EstadoControl, EstadoLeyenda } from "@/components/estado-control";
 import { TareaDetalleForm, detalleResumen } from "@/components/tarea-detalle";
 import { descargarTareasExcel } from "@/lib/export-excel";
+import { loadBoda } from "@/lib/boda";
 import {
   CATEGORIAS,
   FASES,
   ESTADOS,
   TIPOS_TAREA,
-  RESPONSABLES_BASE,
   loadTareas,
   loadEstados,
   loadDetalles,
@@ -37,25 +37,34 @@ export default function TareasPage() {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [filtroResp, setFiltroResp] = useState<string>("");
   const [addEn, setAddEn] = useState<string | null>(null); // clave de grupo donde se está añadiendo
+  const [nombres, setNombres] = useState<string[]>([]);
 
   useEffect(() => {
     const sync = () => {
       setTareas(loadTareas());
       setEstados(loadEstados());
       setDetalles(loadDetalles());
+      const b = loadBoda();
+      setNombres(
+        [b.p1.nombre.trim(), b.p2.nombre.trim(), "Los dos"].filter(Boolean),
+      );
     };
     sync();
     window.addEventListener("webodas:tareas", sync);
-    return () => window.removeEventListener("webodas:tareas", sync);
+    window.addEventListener("webodas:boda", sync);
+    return () => {
+      window.removeEventListener("webodas:tareas", sync);
+      window.removeEventListener("webodas:boda", sync);
+    };
   }, []);
 
   const estadoDe = (id: string): Estado => estados[id] ?? "sin";
 
   const responsables = useMemo(() => {
-    const set = new Set(RESPONSABLES_BASE);
+    const set = new Set(nombres);
     (tareas ?? []).forEach((t) => t.responsable && set.add(t.responsable));
     return [...set];
-  }, [tareas]);
+  }, [tareas, nombres]);
 
   if (!tareas) return null;
 
