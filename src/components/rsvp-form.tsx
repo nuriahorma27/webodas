@@ -8,6 +8,8 @@ import {
   LABEL_BUS,
   LABEL_BUS_IDA,
   LABEL_BUS_VUELTA,
+  PREGUNTA_ALERGIAS,
+  PREGUNTA_ALERGIAS_ACOMP,
   type PreguntaForm,
 } from "@/lib/formulario";
 
@@ -82,10 +84,10 @@ export function RsvpForm({
     if (conAcomp) {
       if (est.alergiasAcomp && answersAcomp[LABEL_ALERGIAS])
         respuestasAcomp[LABEL_ALERGIAS] = answersAcomp[LABEL_ALERGIAS];
-      if (est.busAcomp) {
-        if (answersAcomp[LABEL_BUS_IDA]) respuestasAcomp[LABEL_BUS_IDA] = answersAcomp[LABEL_BUS_IDA];
-        if (answersAcomp[LABEL_BUS_VUELTA])
-          respuestasAcomp[LABEL_BUS_VUELTA] = answersAcomp[LABEL_BUS_VUELTA];
+      // El autobús se pregunta una vez: se copia también al acompañante.
+      if (est.bus) {
+        for (const l of [LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA])
+          if (answers[l]) respuestasAcomp[l] = answers[l];
       }
     }
 
@@ -290,7 +292,7 @@ export function RsvpForm({
                     )}
                     {est.alergias && (
                       <div>
-                        <label style={lab}>Alergias / intolerancias</label>
+                        <label style={lab}>{PREGUNTA_ALERGIAS}</label>
                         <input
                           style={field}
                           value={answers[LABEL_ALERGIAS] ?? ""}
@@ -327,44 +329,20 @@ export function RsvpForm({
                 {(!est.asiste || asiste === "Sí") &&
                   questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
 
-                {conAcomp && (est.alergiasAcomp || est.busAcomp) && (
+                {conAcomp && est.alergiasAcomp && (
                   <>
                     <p style={{ ...lab, marginTop: 4, borderTop: "1px solid #eee", paddingTop: 12 }}>
                       Datos de tu acompañante
                     </p>
-                    {est.alergiasAcomp && (
-                      <div>
-                        <label style={lab}>Alergias / intolerancias del acompañante</label>
-                        <input
-                          style={field}
-                          value={answersAcomp[LABEL_ALERGIAS] ?? ""}
-                          onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
-                          placeholder="Deja vacío si no hay"
-                        />
-                      </div>
-                    )}
-                    {est.busAcomp && (
-                      <div>
-                        <label style={lab}>¿El acompañante necesita autobús?</label>
-                        <select style={field} value={answersAcomp[LABEL_BUS] ?? ""} onChange={(e) => setA(LABEL_BUS, e.target.value)}>
-                          <option value="">Elige…</option>
-                          <option>Sí</option>
-                          <option>No</option>
-                        </select>
-                        {answersAcomp[LABEL_BUS] === "Sí" && (
-                          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
-                            <div>
-                              <label style={lab}>Bus de ida</label>
-                              <input style={field} value={answersAcomp[LABEL_BUS_IDA] ?? ""} onChange={(e) => setA(LABEL_BUS_IDA, e.target.value)} placeholder="Sí / No / horario" />
-                            </div>
-                            <div>
-                              <label style={lab}>Bus de vuelta</label>
-                              <input style={field} value={answersAcomp[LABEL_BUS_VUELTA] ?? ""} onChange={(e) => setA(LABEL_BUS_VUELTA, e.target.value)} placeholder="Sí / No / horario" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div>
+                      <label style={lab}>{PREGUNTA_ALERGIAS_ACOMP}</label>
+                      <input
+                        style={field}
+                        value={answersAcomp[LABEL_ALERGIAS] ?? ""}
+                        onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
+                        placeholder="Deja vacío si no hay"
+                      />
+                    </div>
                   </>
                 )}
 

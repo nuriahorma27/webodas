@@ -9,7 +9,13 @@ import {
   valorRespuesta,
   type RsvpResponse,
 } from "@/lib/rsvp";
-import { labelsFormulario, formatoPregunta } from "@/lib/formulario";
+import {
+  labelsFormulario,
+  formatoPregunta,
+  LABEL_BUS,
+  LABEL_BUS_IDA,
+  LABEL_BUS_VUELTA,
+} from "@/lib/formulario";
 import {
   loadInvitados,
   loadColumnas,
@@ -115,6 +121,7 @@ export default function InvitadosPage() {
   const [vista, setVista] = useState<"gestion" | "respuestas">("gestion");
   const [respuestas, setRespuestas] = useState<RsvpResponse[]>([]);
   const [fijasOcultas, setFijasOcultas] = useState<string[]>([]);
+  const [porBorrar, setPorBorrar] = useState<Invitado | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const verFija = (k: string) => !fijasOcultas.includes(k);
 
@@ -361,13 +368,10 @@ export default function InvitadosPage() {
                       )}
                     </td>
                   ))}
-                  <td className="px-2.5 text-center">
+                  <td className="w-10 px-1 text-center align-middle">
                     <button
-                      onClick={() => {
-                        const quien = `${i.nombre} ${i.apellido}`.trim() || "este invitado";
-                        if (confirm(`¿Seguro que quieres eliminar a ${quien}?`)) removeInvitado(i.id);
-                      }}
-                      className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-red-600"
+                      onClick={() => setPorBorrar(i)}
+                      className="mx-auto grid h-8 w-8 place-items-center rounded text-muted transition hover:bg-red-50 hover:text-red-600"
                       title="Eliminar invitado"
                     >
                       🗑
@@ -418,6 +422,44 @@ export default function InvitadosPage() {
         />
       </Card>
         </>
+      )}
+
+      {porBorrar && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setPorBorrar(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-xl bg-background p-5 shadow-xl"
+          >
+            <h3 className="font-display text-lg">Eliminar invitado</h3>
+            <p className="mt-1 text-sm text-muted">
+              ¿Seguro que quieres eliminar a{" "}
+              <strong className="text-foreground">
+                {porBorrar.nombre} {porBorrar.apellido}
+              </strong>
+              ? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setPorBorrar(null)}
+                className="rounded-md border border-line px-3 py-1.5 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  removeInvitado(porBorrar.id);
+                  setPorBorrar(null);
+                }}
+                className="rounded-md bg-[#7b2233] px-3 py-1.5 text-sm font-medium text-white"
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -479,8 +521,62 @@ function VistaRespuestas({
     });
   };
 
+  // Recuento de autobús: cuenta invitado + acompañante de cada respuesta.
+  const mapasBus: Record<string, string>[] = respuestas.flatMap((r) =>
+    r.acompNombre || r.acompApellido
+      ? [r.respuestas, r.respuestasAcomp ?? {}]
+      : [r.respuestas],
+  );
+  const cuentaTrayecto = (label: string) => {
+    const conteo: Record<string, number> = {};
+    let total = 0;
+    for (const m of mapasBus) {
+      const v = (m[label] ?? "").trim();
+      if (!v || v.toLowerCase() === "no") continue;
+      total++;
+      conteo[v] = (conteo[v] ?? 0) + 1;
+    }
+    return { total, conteo };
+  };
+  const pidenBus = mapasBus.filter(
+    (m) => (m[LABEL_BUS] ?? "").toLowerCase() === "sí" || (m[LABEL_BUS] ?? "").toLowerCase() === "si",
+  ).length;
+  const ida = cuentaTrayecto(LABEL_BUS_IDA);
+  const vuelta = cuentaTrayecto(LABEL_BUS_VUELTA);
+  const hayBus = pidenBus > 0 || ida.total > 0 || vuelta.total > 0;
+
+  const Trayecto = ({ titulo, dato }: { titulo: string; dato: ReturnType<typeof cuentaTrayecto> }) => (
+    <div className="rounded-lg border border-line bg-surface p-3">
+      <p className="text-xs uppercase tracking-wide text-muted">{titulo}</p>
+      <p className="font-display text-2xl">{dato.total}</p>
+      <ul className="mt-1 space-y-0.5 text-xs text-muted">
+        {Object.entries(dato.conteo).map(([k, n]) => (
+          <li key={k}>
+            {k}: <strong className="text-foreground">{n}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
+      {hayBus && (
+        <Card className="space-y-2">
+          <h3 className="font-display text-lg">Autobús</h3>
+          <p className="text-xs text-muted">
+            Suma las respuestas del invitado y de su acompañante.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-line bg-surface p-3">
+              <p className="text-xs uppercase tracking-wide text-muted">Solicitan autobús</p>
+              <p className="font-display text-2xl">{pidenBus}</p>
+            </div>
+            <Trayecto titulo="Bus de ida" dato={ida} />
+            <Trayecto titulo="Bus de vuelta" dato={vuelta} />
+          </div>
+        </Card>
+      )}
       {asociadas.length === 0 && (
         <Card className="text-sm text-muted">
           Todavía no has asociado ninguna pregunta a una columna. Hazlo en{" "}
@@ -503,21 +599,74 @@ function SelectInvitado({
   onChange: (v: string) => void;
   invitados: Invitado[];
 }) {
+  const nombreDe = (id: string) => {
+    const i = invitados.find((x) => x.id === id);
+    return i ? `${i.nombre} ${i.apellido}`.trim() : "";
+  };
+  const [q, setQ] = useState(value && value !== "__nuevo" ? nombreDe(value) : "");
+  const [abierto, setAbierto] = useState(false);
+
+  const lista = invitados.filter((i) => i.nombre || i.apellido);
+  const norm = (s: string) => s.toLowerCase();
+  const filtrados = q.trim()
+    ? lista.filter((i) => norm(`${i.nombre} ${i.apellido}`).includes(norm(q.trim())))
+    : lista;
+
+  const elegir = (id: string, texto: string) => {
+    onChange(id);
+    setQ(texto);
+    setAbierto(false);
+  };
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
-    >
-      <option value="__nuevo">➕ Crear invitado nuevo</option>
-      {invitados
-        .filter((i) => i.nombre || i.apellido)
-        .map((i) => (
-          <option key={i.id} value={i.id}>
-            {i.nombre} {i.apellido}
-          </option>
-        ))}
-    </select>
+    <div className="relative w-64">
+      <input
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setAbierto(true);
+        }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => setTimeout(() => setAbierto(false), 150)}
+        placeholder="Escribe nombre y apellido…"
+        className="w-full rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
+      />
+      {value === "__nuevo" && !abierto && (
+        <span className="mt-0.5 block text-[11px] text-accent">➕ Se creará un invitado nuevo</span>
+      )}
+      {abierto && (
+        <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md border border-line bg-background text-sm shadow-lg">
+          <li>
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => elegir("__nuevo", "")}
+              className="block w-full px-2.5 py-1.5 text-left text-accent hover:bg-accent-soft/40"
+            >
+              ➕ Crear invitado nuevo
+            </button>
+          </li>
+          {filtrados.map((i) => {
+            const txt = `${i.nombre} ${i.apellido}`.trim();
+            return (
+              <li key={i.id}>
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => elegir(i.id, txt)}
+                  className={`block w-full px-2.5 py-1.5 text-left hover:bg-accent-soft/40 ${
+                    value === i.id ? "bg-accent-soft/30 font-medium" : ""
+                  }`}
+                >
+                  {txt}
+                </button>
+              </li>
+            );
+          })}
+          {filtrados.length === 0 && (
+            <li className="px-2.5 py-1.5 text-muted">Sin coincidencias</li>
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -725,7 +874,9 @@ function AjustesModal({
                   onChange={() => toggleFija(f.key)}
                 />
                 <span className="flex-1">{f.label}</span>
-                <span className="text-[11px] text-muted">columna fija</span>
+                <span className="text-[11px] text-muted">
+                  {f.key === "tipo" ? "adulto / niño" : "listado"}
+                </span>
               </li>
             ))}
 

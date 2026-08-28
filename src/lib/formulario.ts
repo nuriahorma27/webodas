@@ -27,6 +27,12 @@ export const LABEL_BUS = "¿Necesita autobús?";
 export const LABEL_BUS_IDA = "Autobús ida";
 export const LABEL_BUS_VUELTA = "Autobús vuelta";
 
+// Textos que ve el invitado en el formulario (distintos del nombre de columna).
+export const PREGUNTA_ALERGIAS =
+  "¿Tienes alguna alergia o intolerancia que debamos saber?";
+export const PREGUNTA_ALERGIAS_ACOMP =
+  "¿Tu acompañante tiene alguna alergia o intolerancia que debamos saber?";
+
 export type FormularioConfig = {
   intro: string;
   estandar: DatosEstandar;
@@ -92,8 +98,10 @@ export function loadFormulario(): FormularioConfig {
         ...raw,
         alergias: bool(raw.alergias, true),
         alergiasAcomp: bool(raw.alergiasAcomp ?? raw.alergias, true),
-        bus: bool(raw.bus ?? raw.buses, false),
-        busAcomp: bool(raw.busAcomp ?? raw.buses, false),
+        // El autobús no tiene opción "solo del invitado": lo que se pida
+        // cuenta también para el acompañante.
+        bus: bool(raw.bus ?? raw.buses ?? raw.busAcomp, false),
+        busAcomp: bool(raw.bus ?? raw.buses ?? raw.busAcomp, false),
       },
       preguntas: Array.isArray(c.preguntas) ? c.preguntas : [],
     };
@@ -141,7 +149,10 @@ export function movePregunta(id: string, dir: -1 | 1) {
 
 export function setEstandar(patch: Partial<DatosEstandar>) {
   const c = loadFormulario();
-  saveFormulario({ ...c, estandar: { ...c.estandar, ...patch } });
+  const next = { ...c.estandar, ...patch };
+  // El autobús siempre cuenta para invitado y acompañante por igual.
+  if ("bus" in patch) next.busAcomp = next.bus;
+  saveFormulario({ ...c, estandar: next });
 }
 
 export function setIntro(intro: string) {

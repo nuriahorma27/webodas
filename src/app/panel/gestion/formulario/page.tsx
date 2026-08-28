@@ -149,7 +149,22 @@ export default function FormularioPage() {
             "Si responde «Sí», se le piden nombre y apellidos del acompañante.",
           )}
           {packDoble("alergias", "alergiasAcomp", "Alergias / intolerancias")}
-          {packDoble("bus", "busAcomp", "Autobús (¿lo necesita? + ida y vuelta)")}
+          <li className="py-2 text-sm">
+            <label className="flex items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={est.bus}
+                onChange={(e) => setEstandar({ bus: e.target.checked })}
+                className="mt-0.5"
+              />
+              <span>
+                Autobús (¿lo necesita? + ida y vuelta)
+                <span className="block text-xs text-muted">
+                  Se pregunta una vez y cuenta también para el acompañante.
+                </span>
+              </span>
+            </label>
+          </li>
         </ul>
 
         <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted">Tus preguntas</p>

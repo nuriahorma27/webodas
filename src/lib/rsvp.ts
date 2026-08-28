@@ -49,7 +49,9 @@ const key = (weddingId: string) => `webodas:rsvp:${weddingId}`;
 export function loadResponses(weddingId: string): RsvpResponse[] {
   try {
     const raw = localStorage.getItem(key(weddingId));
-    return raw ? (JSON.parse(raw) as RsvpResponse[]) : [];
+    if (raw) return JSON.parse(raw) as RsvpResponse[];
+    // Primera vez: respuestas de ejemplo para ver cómo llega la información.
+    return weddingId === "demo" ? RSVP_SEED : [];
   } catch {
     return [];
   }
@@ -82,33 +84,55 @@ export function valorRespuesta(r: RsvpResponse, pregunta: string): string {
   return r.respuestas[pregunta] ?? "";
 }
 
-// Respuestas de ejemplo para que el panel no salga vacío.
+// Respuestas de ejemplo para ver cómo llega la información rellenada.
 export const RSVP_SEED: RsvpResponse[] = [
   {
     id: "seed-1",
     fecha: "2026-06-02",
-    nombre: "Carlos y Nuria",
-    email: "carlos.nuria@email.com",
+    nombre: "Laura",
+    apellido: "Méndez Gil",
+    email: "laura.mendez@email.com",
     asiste: "Sí",
-    acompanantes: 2,
-    respuestas: { "Menú": "Normal", "Alergias / intolerancias": "Ninguna", "Autobús": "Sí" },
+    acompanantes: 1,
+    respuestas: {
+      Acompañante: "Diego Ramos",
+      Menú: "Vegetariano",
+      Alergias: "Lactosa",
+      "¿Necesita autobús?": "Sí",
+      "Autobús ida": "Sí",
+      "Autobús vuelta": "Sí, el de las 02:00",
+    },
+    acompNombre: "Diego",
+    acompApellido: "Ramos",
+    respuestasAcomp: {
+      Alergias: "Ninguna",
+      "¿Necesita autobús?": "Sí",
+      "Autobús ida": "Sí",
+      "Autobús vuelta": "Sí, el de las 02:00",
+    },
   },
   {
     id: "seed-2",
     fecha: "2026-06-04",
-    nombre: "Laura Méndez",
-    email: "laura.mendez@email.com",
+    nombre: "Carlos",
+    apellido: "Ortega",
+    email: "carlos.ortega@email.com",
     asiste: "Sí",
-    acompanantes: 1,
-    respuestas: { "Menú": "Vegetariano", "Alergias / intolerancias": "Lactosa", "Autobús": "No" },
+    acompanantes: 0,
+    respuestas: {
+      Menú: "Normal",
+      Alergias: "",
+      "¿Necesita autobús?": "No",
+    },
   },
   {
     id: "seed-3",
     fecha: "2026-06-05",
-    nombre: "Tíos de Sevilla",
-    email: "tios.sevilla@email.com",
+    nombre: "Marta",
+    apellido: "Sevilla",
+    email: "marta.sevilla@email.com",
     asiste: "No",
     acompanantes: 0,
-    respuestas: { "Menú": "-", "Alergias / intolerancias": "-", "Autobús": "-" },
+    respuestas: {},
   },
 ];
