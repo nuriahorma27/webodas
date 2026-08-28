@@ -21,6 +21,7 @@ const box =
 
 export default function FormularioPage() {
   const [cfg, setCfg] = useState<FormularioConfig | null>(null);
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     const sync = () => setCfg(loadFormulario());
@@ -160,13 +161,35 @@ export default function FormularioPage() {
         </button>
       </Card>
 
-      <Card>
-        <h3 className="font-display text-lg">Vista previa</h3>
-        <p className="mt-0.5 text-sm text-muted">Así queda el formulario que verán tus invitados.</p>
-        <div className="mt-3">
-          <Preview cfg={cfg} />
+      <Card className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="font-display text-lg">Vista previa</h3>
+          <p className="mt-0.5 text-sm text-muted">Mira cómo queda el formulario para tus invitados.</p>
         </div>
+        <button
+          onClick={() => setPreview(true)}
+          className="shrink-0 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          Ver vista previa
+        </button>
       </Card>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/40 p-4"
+          onClick={() => setPreview(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()} className="relative my-8">
+            <button
+              onClick={() => setPreview(false)}
+              className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-foreground text-white"
+            >
+              ×
+            </button>
+            <Preview cfg={cfg} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
