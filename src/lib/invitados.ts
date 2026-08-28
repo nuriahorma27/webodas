@@ -140,6 +140,51 @@ export function removeColumna(id: string) {
   );
 }
 
+/* ---------- volcado desde el formulario RSVP ---------- */
+
+// Busca (o crea) a la persona por nombre+apellido, actualiza si viene y vuelca
+// las respuestas de las preguntas que estén asociadas a una columna.
+export function upsertInvitadoDesdeRsvp(p: {
+  nombre: string;
+  apellido: string;
+  viene: Viene;
+  respuestasPorColumna?: { columna: string; valor: string }[];
+}) {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const list = loadInvitados();
+  let inv = list.find(
+    (i) => norm(i.nombre) === norm(p.nombre) && norm(i.apellido) === norm(p.apellido),
+  );
+  if (!inv) {
+    inv = {
+      id: crypto.randomUUID(),
+      nombre: p.nombre.trim(),
+      apellido: p.apellido.trim(),
+      viene: p.viene,
+      grupo: "",
+      subgrupo: "",
+      tipo: "Adulto",
+      extra: {},
+    };
+    list.push(inv);
+  } else {
+    inv.viene = p.viene;
+  }
+
+  let cols = loadColumnas();
+  for (const { columna, valor } of p.respuestasPorColumna ?? []) {
+    if (!columna || !valor) continue;
+    let col = cols.find((c) => norm(c.nombre) === norm(columna));
+    if (!col) {
+      col = { id: crypto.randomUUID(), nombre: columna.trim(), tipo: "texto" };
+      cols = [...cols, col];
+    }
+    inv.extra[col.id] = valor;
+  }
+  saveColumnas(cols);
+  saveInvitados(list);
+}
+
 /* ---------- resumen ---------- */
 
 export function resumenInvitados() {

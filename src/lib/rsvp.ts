@@ -6,6 +6,7 @@ export type RsvpQuestion = {
   options?: string;
   condLabel?: string;
   condValue?: string;
+  columna?: string; // columna de la lista de invitados donde guardar la respuesta
 };
 export type RsvpResponse = {
   id: string;
