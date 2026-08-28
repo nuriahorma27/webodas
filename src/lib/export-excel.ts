@@ -2,6 +2,13 @@
 
 import ExcelJS from "exceljs";
 import { categoriasOrdenadas, estimadoDe, totales, type Partida } from "@/lib/presupuesto";
+import {
+  CATEGORIAS,
+  ESTADOS,
+  type Estado,
+  type Tarea,
+  type TareaDetalle,
+} from "@/lib/tareas";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 
 const EUR = '#,##0" €"';
@@ -204,4 +211,118 @@ export async function descargarPresupuestoExcel(
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================ TAREAS ============================ */
+
+function descargarLibro(wb: ExcelJS.Workbook, nombre: string) {
+  return wb.xlsx.writeBuffer().then((buf) => {
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
+export async function descargarTareasExcel(
+  tareas: Tarea[],
+  estados: Record<string, Estado>,
+  detalles: Record<string, TareaDetalle>,
+) {
+  const boda = loadBoda();
+  const pareja = nombrePareja(boda);
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webodas";
+  wb.created = new Date();
+
+  const ws = wb.addWorksheet("Tareas", {
+    views: [{ state: "frozen", ySplit: 5 }],
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "landscape" },
+  });
+  ws.columns = [
+    { width: 3 },
+    { width: 40 },
+    { width: 20 },
+    { width: 16 },
+    { width: 14 },
+    { width: 40 },
+  ];
+
+  ws.mergeCells("A1:F1");
+  const logo = ws.getCell("A1");
+  logo.value = "webodas";
+  logo.font = { name: "Georgia", size: 20, bold: true, color: { argb: ACENTO } };
+  ws.getRow(1).height = 30;
+
+  ws.mergeCells("A2:F2");
+  ws.getCell("A2").value =
+    pareja === "Vuestra boda" ? "Tareas de la boda" : `Tareas de la boda · ${pareja}`;
+  ws.getCell("A2").font = { size: 14, bold: true, color: { argb: TINTA } };
+  ws.getRow(2).height = 20;
+
+  ws.mergeCells("A3:F3");
+  ws.getCell("A3").value = fechaLarga(boda);
+  ws.getCell("A3").font = { size: 10, color: { argb: "FF7A736A" } };
+
+  const head = ws.getRow(5);
+  head.values = ["", "Tarea", "Momento", "Responsable", "Estado", "Notas"];
+  head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  head.alignment = { vertical: "middle" };
+  for (let c = 1; c <= 6; c++) {
+    head.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: TINTA } };
+    head.getCell(c).border = borde;
+  }
+  head.height = 18;
+
+  const labelEstado = (id: string) =>
+    ESTADOS.find((e) => e.value === (estados[id] ?? "sin"))?.label ?? "";
+  const notaDe = (t: Tarea) => {
+    const d = detalles[t.id];
+    const privada = d && typeof d.notas === "string" ? d.notas : "";
+    return [t.notaVisible || t.nota || "", privada].filter(Boolean).join(" — ");
+  };
+
+  const orden = [...CATEGORIAS, ...new Set(tareas.map((t) => t.categoria).filter((c) => !CATEGORIAS.includes(c)))];
+  let r = 6;
+  for (const cat of orden) {
+    const items = tareas.filter((t) => t.categoria === cat);
+    if (items.length === 0) continue;
+    const done = items.filter((t) => (estados[t.id] ?? "sin") === "hecho").length;
+
+    ws.mergeCells(`A${r}:F${r}`);
+    const catRow = ws.getRow(r);
+    catRow.getCell(1).value = `${cat.toUpperCase()}   ·   ${done}/${items.length}`;
+    for (let c = 1; c <= 6; c++) {
+      catRow.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      catRow.getCell(c).font = { bold: true, color: { argb: TINTA } };
+      catRow.getCell(c).border = borde;
+    }
+    r++;
+
+    for (const t of items) {
+      const row = ws.getRow(r);
+      row.getCell(2).value = t.titulo || "(sin nombre)";
+      row.getCell(3).value = t.fase;
+      row.getCell(4).value = t.responsable || "";
+      row.getCell(5).value = labelEstado(t.id);
+      row.getCell(6).value = notaDe(t);
+      row.getCell(6).alignment = { wrapText: true };
+      for (let c = 1; c <= 6; c++) row.getCell(c).border = borde;
+      if ((estados[t.id] ?? "sin") === "hecho")
+        row.getCell(2).font = { color: { argb: "FF3F6212" } };
+      if ((estados[t.id] ?? "sin") === "descartada")
+        row.getCell(2).font = { strike: true, color: { argb: "FF9A9A9A" } };
+      r++;
+    }
+  }
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  await descargarLibro(wb, `Tareas boda ${fecha}.xlsx`);
 }

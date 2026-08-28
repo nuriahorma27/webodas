@@ -99,7 +99,30 @@ export type Tarea = {
   fase: string;
   tipo: string;
   nota?: string;
+  responsable?: string;
+  notaVisible?: string;
+  custom?: boolean;
 };
+
+export const RESPONSABLES_BASE = ["La novia", "El novio", "Los dos"];
+
+// Tipos de ficha que se pueden elegir al crear una tarea nueva.
+export const TIPOS_TAREA: { value: string; label: string }[] = [
+  { value: "simple", label: "Solo notas" },
+  { value: "proveedor", label: "Proveedor (varias opciones, contratar)" },
+  { value: "reserva", label: "Reserva (lugar, fecha, pago)" },
+  { value: "lugarFecha", label: "Lugar y fecha" },
+  { value: "persona", label: "Persona / contacto" },
+  { value: "compra", label: "Compra" },
+  { value: "eleccion", label: "Decisión / elección" },
+  { value: "lista", label: "Lista / listado" },
+  { value: "viaje", label: "Viaje" },
+  { value: "documentos", label: "Documentos / checklist" },
+];
+
+export const TIPO_LABEL: Record<string, string> = Object.fromEntries(
+  TIPOS_TAREA.map((t) => [t.value, t.label]),
+);
 
 export const CATEGORIAS = ["Iglesia", "Finca", "Decoración", "Otros de la boda", "Otros de la novia"];
 
@@ -261,4 +284,85 @@ export function setEstado(id: string, estado: Estado) {
   } catch {
     /* noop */
   }
+}
+
+/* ---------- personalización de la lista (añadir / quitar / editar) ---------- */
+
+type Patch = Partial<Pick<Tarea, "titulo" | "fase" | "categoria" | "responsable" | "notaVisible">>;
+type Personalizacion = {
+  ov: Record<string, Patch>; // cambios sobre tareas de la plantilla
+  borradas: string[]; // ids de plantilla ocultadas
+  nuevas: Tarea[]; // tareas añadidas por la pareja
+};
+
+const CUSTOM_KEY = "webodas:tareas-custom";
+const VACIA: Personalizacion = { ov: {}, borradas: [], nuevas: [] };
+
+function loadCustom(): Personalizacion {
+  try {
+    const r = localStorage.getItem(CUSTOM_KEY);
+    return r ? { ...VACIA, ...(JSON.parse(r) as Personalizacion) } : VACIA;
+  } catch {
+    return VACIA;
+  }
+}
+
+function saveCustom(c: Personalizacion) {
+  try {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(c));
+    window.dispatchEvent(new Event("webodas:tareas"));
+  } catch {
+    /* noop */
+  }
+}
+
+const esCustom = (id: string) => id.startsWith("custom-");
+
+// Lista final: plantilla (sin las borradas, con sus cambios) + las nuevas.
+export function loadTareas(): Tarea[] {
+  const c = loadCustom();
+  const base = TAREAS.filter((t) => !c.borradas.includes(t.id)).map((t) => ({
+    ...t,
+    ...c.ov[t.id],
+  }));
+  const nuevas = c.nuevas.map((t) => ({ ...t, custom: true as const }));
+  return [...base, ...nuevas];
+}
+
+export function addTarea(categoria: string, fase: string, tipo = "simple"): Tarea {
+  const c = loadCustom();
+  const nueva: Tarea = {
+    id: `custom-${crypto.randomUUID()}`,
+    titulo: "",
+    categoria,
+    fase,
+    tipo,
+    custom: true,
+    responsable: "",
+    notaVisible: "",
+  };
+  saveCustom({ ...c, nuevas: [...c.nuevas, nueva] });
+  return nueva;
+}
+
+export function updateTarea(id: string, patch: Patch) {
+  const c = loadCustom();
+  if (esCustom(id)) {
+    saveCustom({ ...c, nuevas: c.nuevas.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
+  } else {
+    saveCustom({ ...c, ov: { ...c.ov, [id]: { ...c.ov[id], ...patch } } });
+  }
+}
+
+export function removeTarea(id: string) {
+  const c = loadCustom();
+  if (esCustom(id)) {
+    saveCustom({ ...c, nuevas: c.nuevas.filter((t) => t.id !== id) });
+  } else {
+    saveCustom({ ...c, borradas: [...c.borradas.filter((x) => x !== id), id] });
+  }
+}
+
+export function resetTareas() {
+  saveCustom(VACIA);
 }

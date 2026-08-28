@@ -14,7 +14,7 @@ export type Partida = {
 };
 
 // v2: nueva estructura de categorías (arranca con todas las partidas estándar).
-const KEY = "webodas:presupuesto:v3";
+const KEY = "webodas:presupuesto:v4";
 
 // Conceptos que se tratan como "menú" (precio por comensal × nº).
 export const MENU_CONCEPTOS = ["Menú invitados", "Menú niños", "Menú proveedores"];
@@ -31,6 +31,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
   Iglesia: [
     "Donativo iglesia",
     "Cura / oficiante",
+    "Documentación y certificados",
     "Flores iglesia",
     "Música ceremonia / órgano",
     "Coro o solista",

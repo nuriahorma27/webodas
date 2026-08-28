@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, Progress, Badge } from "@/components/ui";
 import { EstadoControl, EstadoLeyenda } from "@/components/estado-control";
 import { TareaDetalleForm, detalleResumen } from "@/components/tarea-detalle";
+import { descargarTareasExcel } from "@/lib/export-excel";
 import {
-  TAREAS,
   CATEGORIAS,
   FASES,
   ESTADOS,
+  TIPOS_TAREA,
+  RESPONSABLES_BASE,
+  loadTareas,
   loadEstados,
   loadDetalles,
   setEstado,
+  addTarea,
+  updateTarea,
+  removeTarea,
+  resetTareas,
   type Estado,
   type Tarea,
   type TareaDetalle,
@@ -19,14 +26,21 @@ import {
 
 type Vista = "categoria" | "tiempo" | "estado";
 
+const campo =
+  "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
+
 export default function TareasPage() {
   const [vista, setVista] = useState<Vista>("categoria");
+  const [tareas, setTareas] = useState<Tarea[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [detalles, setDetalles] = useState<Record<string, TareaDetalle>>({});
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [filtroResp, setFiltroResp] = useState<string>("");
+  const [addEn, setAddEn] = useState<string | null>(null); // clave de grupo donde se está añadiendo
 
   useEffect(() => {
     const sync = () => {
+      setTareas(loadTareas());
       setEstados(loadEstados());
       setDetalles(loadDetalles());
     };
@@ -36,20 +50,30 @@ export default function TareasPage() {
   }, []);
 
   const estadoDe = (id: string): Estado => estados[id] ?? "sin";
-  const hechas = TAREAS.filter((t) => estadoDe(t.id) === "hecho").length;
+
+  const responsables = useMemo(() => {
+    const set = new Set(RESPONSABLES_BASE);
+    (tareas ?? []).forEach((t) => t.responsable && set.add(t.responsable));
+    return [...set];
+  }, [tareas]);
+
+  if (!tareas) return null;
+
+  const visibles = filtroResp
+    ? tareas.filter((t) => (t.responsable ?? "") === filtroResp)
+    : tareas;
+  const hechas = visibles.filter((t) => estadoDe(t.id) === "hecho").length;
 
   const Row = ({ t, meta }: { t: Tarea; meta?: string }) => {
     const e = estadoDe(t.id);
     const open = abierta === t.id;
     const resumen = detalleResumen(detalles[t.id]);
+    const visible = t.notaVisible || t.nota;
     return (
       <li className="text-sm">
         <div className="flex items-start gap-3 px-4 py-2.5">
           <EstadoControl value={e} onChange={(v) => setEstado(t.id, v)} />
-          <button
-            onClick={() => setAbierta(open ? null : t.id)}
-            className="min-w-0 flex-1 text-left"
-          >
+          <button onClick={() => setAbierta(open ? null : t.id)} className="min-w-0 flex-1 text-left">
             <p
               className={
                 e === "hecho"
@@ -59,50 +83,175 @@ export default function TareasPage() {
                     : ""
               }
             >
-              {t.titulo}
+              {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
+              {t.custom && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-accent">nueva</span>}
               <span className="ml-1 text-muted">{open ? "▾" : "›"}</span>
             </p>
-            {t.nota && <p className="text-xs text-accent">{t.nota}</p>}
+            {visible && <p className="text-xs text-accent">{visible}</p>}
             {resumen && <p className="text-xs text-accent">{resumen}</p>}
           </button>
-          {meta && <span className="shrink-0 text-xs text-muted">{meta}</span>}
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            {meta && <span className="text-xs text-muted">{meta}</span>}
+            {t.responsable && <Badge tone="neutral">{t.responsable}</Badge>}
+          </div>
         </div>
         {open && (
-          <div className="px-4 pb-4">
+          <div className="space-y-3 border-t border-line bg-neutral-50/60 px-4 py-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-xs text-muted">Nombre de la tarea</span>
+                <input
+                  defaultValue={t.titulo}
+                  onBlur={(ev) => updateTarea(t.id, { titulo: ev.target.value })}
+                  className={campo}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs text-muted">Responsable</span>
+                <select
+                  value={t.responsable ?? ""}
+                  onChange={(ev) => {
+                    if (ev.target.value === "__otra") {
+                      const v = prompt("¿Quién se encarga?");
+                      if (v?.trim()) updateTarea(t.id, { responsable: v.trim() });
+                    } else {
+                      updateTarea(t.id, { responsable: ev.target.value });
+                    }
+                  }}
+                  className={campo}
+                >
+                  <option value="">Sin asignar</option>
+                  {responsables.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                  <option value="__otra">Otra persona…</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs text-muted">Momento</span>
+                <select
+                  value={t.fase}
+                  onChange={(ev) => updateTarea(t.id, { fase: ev.target.value })}
+                  className={campo}
+                >
+                  {FASES.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs text-muted">Categoría</span>
+                <select
+                  value={t.categoria}
+                  onChange={(ev) => updateTarea(t.id, { categoria: ev.target.value })}
+                  className={campo}
+                >
+                  {CATEGORIAS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="text-xs text-muted">Nota visible (aparece bajo el título)</span>
+                <input
+                  defaultValue={t.notaVisible ?? ""}
+                  onBlur={(ev) => updateTarea(t.id, { notaVisible: ev.target.value })}
+                  className={campo}
+                />
+              </label>
+            </div>
+
             <TareaDetalleForm id={t.id} tipo={t.tipo} inicial={detalles[t.id] ?? {}} />
+
+            <button
+              onClick={() => {
+                if (confirm(`¿Quitar la tarea "${t.titulo || "sin nombre"}"?`)) {
+                  removeTarea(t.id);
+                  setAbierta(null);
+                }
+              }}
+              className="text-xs text-muted underline hover:text-red-600"
+            >
+              Quitar esta tarea
+            </button>
           </div>
         )}
       </li>
     );
   };
 
+  const AddTarea = ({ groupKey, categoria, fase }: { groupKey: string; categoria: string; fase: string }) => {
+    const abierto = addEn === groupKey;
+    if (!abierto) {
+      return (
+        <div className="px-4 py-2">
+          <button onClick={() => setAddEn(groupKey)} className="text-sm font-medium text-accent">
+            + Añadir tarea
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-wrap items-center gap-2 border-t border-line bg-neutral-50/60 px-4 py-3">
+        <span className="text-xs text-muted">Tipo de ficha:</span>
+        {TIPOS_TAREA.map((tp) => (
+          <button
+            key={tp.value}
+            onClick={() => {
+              const nueva = addTarea(categoria, fase, tp.value);
+              setAddEn(null);
+              setTimeout(() => setAbierta(nueva.id), 0);
+            }}
+            className="rounded-full border border-line px-2.5 py-1 text-xs hover:border-accent hover:text-accent"
+          >
+            {tp.label}
+          </button>
+        ))}
+        <button onClick={() => setAddEn(null)} className="text-xs text-muted underline">
+          Cancelar
+        </button>
+      </div>
+    );
+  };
+
   const Grupo = ({
     titulo,
-    tareas,
+    tareas: ts,
     meta,
+    add,
   }: {
     titulo: string;
     tareas: Tarea[];
     meta: (t: Tarea) => string | undefined;
+    add?: { groupKey: string; categoria: string; fase: string };
   }) => {
-    if (tareas.length === 0) return null;
-    const done = tareas.filter((t) => estadoDe(t.id) === "hecho").length;
+    if (ts.length === 0 && !add) return null;
+    const done = ts.filter((t) => estadoDe(t.id) === "hecho").length;
     return (
       <Card className="p-0">
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="font-display text-lg">{titulo}</h3>
           <span className="text-xs text-muted">
-            {done}/{tareas.length}
+            {done}/{ts.length}
           </span>
         </div>
-        <div className="px-4">
-          <Progress value={(done / tareas.length) * 100} />
-        </div>
+        {ts.length > 0 && (
+          <div className="px-4">
+            <Progress value={(done / ts.length) * 100} />
+          </div>
+        )}
         <ul className="mt-2 divide-y divide-line">
-          {tareas.map((t) => (
+          {ts.map((t) => (
             <Row key={t.id} t={t} meta={meta(t)} />
           ))}
         </ul>
+        {add && <AddTarea {...add} />}
       </Card>
     );
   };
@@ -114,7 +263,7 @@ export default function TareasPage() {
           <div>
             <p className="font-display text-lg">Tareas de la boda</p>
             <p className="text-sm text-muted">
-              {hechas} de {TAREAS.length} terminadas · toca una tarea para ver su detalle
+              {hechas} de {visibles.length} terminadas · toca una tarea para ver y editar su ficha
             </p>
           </div>
           <div className="flex gap-1 text-sm">
@@ -137,11 +286,54 @@ export default function TareasPage() {
             ))}
           </div>
         </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-sm">
+          <span className="text-xs text-muted">Responsable:</span>
+          <button
+            onClick={() => setFiltroResp("")}
+            className={`rounded-full px-2.5 py-0.5 text-xs ${
+              filtroResp === "" ? "bg-foreground text-white" : "border border-line text-muted"
+            }`}
+          >
+            Todos
+          </button>
+          {responsables.map((r) => (
+            <button
+              key={r}
+              onClick={() => setFiltroResp(r)}
+              className={`rounded-full px-2.5 py-0.5 text-xs ${
+                filtroResp === r ? "bg-foreground text-white" : "border border-line text-muted"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-3">
           <EstadoLeyenda />
         </div>
         <div className="mt-2">
-          <Progress value={(hechas / TAREAS.length) * 100} />
+          <Progress value={visibles.length ? (hechas / visibles.length) * 100 : 0} />
+        </div>
+
+        <div className="mt-3 flex items-center gap-4">
+          <button
+            onClick={() => descargarTareasExcel(visibles, estados, detalles)}
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
+          >
+            ↓ Descargar en Excel
+          </button>
+          <button
+            onClick={() => {
+              if (confirm("¿Volver a la lista de tareas estándar? Se pierden tus cambios en la lista (no los estados).")) {
+                resetTareas();
+              }
+            }}
+            className="text-xs text-muted underline hover:text-foreground"
+          >
+            Restablecer lista estándar
+          </button>
         </div>
       </Card>
 
@@ -151,8 +343,9 @@ export default function TareasPage() {
             <Grupo
               key={c}
               titulo={c}
-              tareas={TAREAS.filter((t) => t.categoria === c)}
+              tareas={visibles.filter((t) => t.categoria === c)}
               meta={(t) => t.fase}
+              add={{ groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" }}
             />
           ))}
         </div>
@@ -164,8 +357,9 @@ export default function TareasPage() {
             <Grupo
               key={f}
               titulo={f}
-              tareas={TAREAS.filter((t) => t.fase === f)}
+              tareas={visibles.filter((t) => t.fase === f)}
               meta={(t) => t.categoria}
+              add={{ groupKey: `fase-${f}`, categoria: CATEGORIAS[0], fase: f }}
             />
           ))}
         </div>
@@ -174,18 +368,18 @@ export default function TareasPage() {
       {vista === "estado" && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {ESTADOS.map((e) => {
-            const tareas = TAREAS.filter((t) => estadoDe(t.id) === e.value);
+            const ts = visibles.filter((t) => estadoDe(t.id) === e.value);
             return (
               <Card key={e.value} className="p-0">
                 <div className="flex items-center justify-between px-4 py-3">
                   <h3 className="font-display text-lg">{e.label}</h3>
-                  <Badge tone={e.tone}>{tareas.length}</Badge>
+                  <Badge tone={e.tone}>{ts.length}</Badge>
                 </div>
                 <ul className="divide-y divide-line">
-                  {tareas.map((t) => (
+                  {ts.map((t) => (
                     <Row key={t.id} t={t} meta={`${t.categoria} · ${t.fase}`} />
                   ))}
-                  {tareas.length === 0 && (
+                  {ts.length === 0 && (
                     <li className="px-4 py-6 text-center text-xs text-muted">Nada aquí</li>
                   )}
                 </ul>
