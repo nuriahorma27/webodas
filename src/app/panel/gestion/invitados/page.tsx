@@ -23,7 +23,8 @@ import {
   type TipoInvitado,
 } from "@/lib/invitados";
 
-const cell = "w-full bg-transparent px-2.5 py-2 text-sm outline-none focus:bg-accent-soft/30";
+const cell =
+  "w-full min-w-[7rem] bg-transparent px-2.5 py-2 text-sm outline-none focus:bg-accent-soft/30";
 
 export default function InvitadosPage() {
   const [inv, setInv] = useState<Invitado[] | null>(null);
@@ -75,9 +76,9 @@ export default function InvitadosPage() {
 
       <Card className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full min-w-max border-collapse text-sm">
             <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-              <tr>
+              <tr className="whitespace-nowrap">
                 <th className="px-2.5 py-2.5">Nombre</th>
                 <th className="px-2.5 py-2.5">Apellido</th>
                 <th className="px-2.5 py-2.5">¿Viene?</th>
