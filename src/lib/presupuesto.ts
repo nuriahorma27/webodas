@@ -11,7 +11,60 @@ export type Partida = {
 
 const KEY = "webodas:presupuesto";
 
-const p = (categoria: string, concepto: string): Partida => ({
+// Categorías estándar y sus partidas típicas. Se ofrecen al pulsar
+// "Añadir categoría" (también para volver a añadir una borrada por error).
+export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
+  Iglesia: [
+    "Donativo Iglesia",
+    "Cura",
+    "Flores iglesia",
+    "Fotografía Iglesia",
+    "Vídeo Iglesia",
+    "Música ceremonia / órgano",
+  ],
+  "Ceremonia civil": ["Oficiante", "Flores", "Fotografía", "Vídeo", "Música"],
+  Banquete: [
+    "Alquiler finca",
+    "Hora extra barra libre",
+    "Música en vivo",
+    "DJ",
+    "Invitados",
+  ],
+  "Traje novia": [
+    "Vestido",
+    "Arreglos",
+    "Zapatos",
+    "Tocado / velo",
+    "Ropa interior",
+    "Complementos",
+  ],
+  "Traje novio": ["Traje", "Camisa", "Zapatos", "Complementos"],
+  Otros: [
+    "Autobuses",
+    "Fotografía y vídeo",
+    "Peluquería y maquillaje",
+    "Invitaciones",
+    "Puros y tabaco",
+    "Detalle invitados",
+    "Ramo novia",
+    "Ramo para regalar",
+    "Preboda",
+    "Pedida",
+  ],
+  "Viaje de novios": ["Billetes", "Hoteles", "Efectivo", "Seguro de viaje", "Tasas"],
+};
+
+// Categorías que se muestran de arranque (en este orden).
+const CATEGORIAS_INICIALES = [
+  "Iglesia",
+  "Banquete",
+  "Traje novia",
+  "Traje novio",
+  "Otros",
+  "Viaje de novios",
+];
+
+const nuevaPartida = (categoria: string, concepto: string): Partida => ({
   id: crypto.randomUUID(),
   categoria,
   concepto,
@@ -21,40 +74,9 @@ const p = (categoria: string, concepto: string): Partida => ({
 });
 
 export function partidasIniciales(): Partida[] {
-  return [
-    p("Iglesia", "Donativo Iglesia"),
-    p("Iglesia", "Cura"),
-    p("Iglesia", "Flores iglesia"),
-    p("Iglesia", "Fotografía Iglesia"),
-    p("Iglesia", "Vídeo Iglesia"),
-    p("Iglesia", "Música ceremonia / órgano"),
-
-    p("Banquete", "Alquiler finca"),
-    p("Banquete", "Hora extra barra libre"),
-    p("Banquete", "Música en vivo"),
-    p("Banquete", "DJ"),
-    p("Banquete", "Invitados"),
-
-    p("Otros", "Autobuses"),
-    p("Otros", "Fotografía y vídeo"),
-    p("Otros", "Peluquería y maquillaje"),
-    p("Otros", "Invitaciones"),
-    p("Otros", "Puros y tabaco"),
-    p("Otros", "Detalle invitados"),
-    p("Otros", "Zapatos novia"),
-    p("Otros", "Tocado novia"),
-    p("Otros", "Ramo novia"),
-    p("Otros", "Ramo para regalar"),
-    p("Otros", "Preboda"),
-    p("Otros", "Pedida"),
-    p("Otros", "Vestido novia"),
-
-    p("Viaje de novios", "Billetes"),
-    p("Viaje de novios", "Hoteles"),
-    p("Viaje de novios", "Efectivo"),
-    p("Viaje de novios", "Seguro de viaje"),
-    p("Viaje de novios", "Tasas"),
-  ];
+  return CATEGORIAS_INICIALES.flatMap((cat) =>
+    (CATEGORIAS_ESTANDAR[cat] ?? []).map((concepto) => nuevaPartida(cat, concepto)),
+  );
 }
 
 let SEED: Partida[] | null = null;
@@ -84,9 +106,17 @@ export function savePartidas(partidas: Partida[]) {
 }
 
 export function addPartida(categoria: string): Partida {
-  const nueva = p(categoria, "");
+  const nueva = nuevaPartida(categoria, "");
   savePartidas([...loadPartidas(), nueva]);
   return nueva;
+}
+
+// Añade una categoría con sus partidas estándar (o una sola vacía si es libre).
+export function addCategoria(nombre: string) {
+  const actuales = loadPartidas();
+  if (categoriasOrdenadas(actuales).includes(nombre)) return;
+  const conceptos = CATEGORIAS_ESTANDAR[nombre] ?? [""];
+  savePartidas([...actuales, ...conceptos.map((c) => nuevaPartida(nombre, c))]);
 }
 
 export function updatePartida(id: string, patch: Partial<Omit<Partida, "id">>) {
@@ -104,6 +134,19 @@ export function removeCategoria(categoria: string) {
 export function renameCategoria(anterior: string, nueva: string) {
   savePartidas(
     loadPartidas().map((x) => (x.categoria === anterior ? { ...x, categoria: nueva } : x)),
+  );
+}
+
+// Mueve el bloque entero de una categoría arriba/abajo.
+export function moveCategoria(categoria: string, dir: -1 | 1) {
+  const partidas = loadPartidas();
+  const orden = categoriasOrdenadas(partidas);
+  const i = orden.indexOf(categoria);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= orden.length) return;
+  [orden[i], orden[j]] = [orden[j], orden[i]];
+  savePartidas(
+    orden.flatMap((cat) => partidas.filter((p) => p.categoria === cat)),
   );
 }
 

@@ -8,12 +8,15 @@ import { eur } from "@/lib/mock";
 import {
   loadPartidas,
   addPartida,
+  addCategoria,
   updatePartida,
   removePartida,
   removeCategoria,
   renameCategoria,
+  moveCategoria,
   categoriasOrdenadas,
   totales,
+  CATEGORIAS_ESTANDAR,
   type Partida,
 } from "@/lib/presupuesto";
 
@@ -46,10 +49,15 @@ export default function PresupuestoPage() {
   const referencia = presupuestoTotal ?? 0;
   const sinAsignar = referencia - tot.estimado;
 
-  const nuevaCategoria = () => {
+  const [menuCat, setMenuCat] = useState(false);
+  const estandarDisponibles = Object.keys(CATEGORIAS_ESTANDAR).filter(
+    (c) => !categorias.includes(c),
+  );
+
+  const categoriaLibre = () => {
+    setMenuCat(false);
     const nombre = prompt("Nombre de la nueva categoría");
-    if (!nombre?.trim()) return;
-    addPartida(nombre.trim());
+    if (nombre?.trim()) addCategoria(nombre.trim());
   };
 
   return (
@@ -76,12 +84,30 @@ export default function PresupuestoPage() {
       </div>
 
       <div className="space-y-4">
-        {categorias.map((cat) => {
+        {categorias.map((cat, ci) => {
           const filas = partidas.filter((p) => p.categoria === cat);
           const ct = totales(filas);
           return (
             <Card key={cat} className="p-0">
               <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+                <div className="flex shrink-0 flex-col leading-none text-muted">
+                  <button
+                    onClick={() => moveCategoria(cat, -1)}
+                    disabled={ci === 0}
+                    className="text-xs hover:text-foreground disabled:opacity-25"
+                    title="Subir categoría"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveCategoria(cat, 1)}
+                    disabled={ci === categorias.length - 1}
+                    className="text-xs hover:text-foreground disabled:opacity-25"
+                    title="Bajar categoría"
+                  >
+                    ▼
+                  </button>
+                </div>
                 <input
                   defaultValue={cat}
                   onBlur={(e) => {
@@ -138,12 +164,44 @@ export default function PresupuestoPage() {
         })}
       </div>
 
-      <button
-        onClick={nuevaCategoria}
-        className="w-full rounded-lg border border-dashed border-line py-3 text-sm font-medium text-muted hover:border-accent hover:text-accent"
-      >
-        + Añadir categoría
-      </button>
+      <div className="relative">
+        <button
+          onClick={() => setMenuCat((v) => !v)}
+          className="w-full rounded-lg border border-dashed border-line py-3 text-sm font-medium text-muted hover:border-accent hover:text-accent"
+        >
+          + Añadir categoría
+        </button>
+        {menuCat && (
+          <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
+            {estandarDisponibles.length > 0 && (
+              <>
+                <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-muted">
+                  Categorías habituales
+                </p>
+                {estandarDisponibles.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      addCategoria(c);
+                      setMenuCat(false);
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-accent-soft"
+                  >
+                    {c}
+                  </button>
+                ))}
+                <div className="my-1 border-t border-line" />
+              </>
+            )}
+            <button
+              onClick={categoriaLibre}
+              className="block w-full px-4 py-2 text-left text-sm text-accent hover:bg-accent-soft"
+            >
+              Otra categoría…
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
