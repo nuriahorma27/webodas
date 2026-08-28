@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { contribuir, type Gift, type Cobro } from "@/lib/regalos";
-import { eur } from "@/lib/mock";
+import { contribuir, contribuirServer, type Gift, type Cobro } from "@/lib/regalos";
+import { getPublicWeddingId } from "@/lib/wedding";
+
+const eur = (n: number) => `${Math.round(n).toLocaleString("es-ES")} €`;
 
 export function ContribuirModal({
   gift,
@@ -24,14 +26,17 @@ export function ContribuirModal({
 
   const submitManual = (e: React.FormEvent) => {
     e.preventDefault();
-    contribuir(gift.id, {
+    const ap = {
       nombre,
       email,
       mensaje,
       importe: Number(importe) || 0,
-      estado: "pendiente",
-      metodo: "manual",
-    });
+      estado: "pendiente" as const,
+      metodo: "manual" as const,
+    };
+    const wid = getPublicWeddingId();
+    if (wid) contribuirServer(wid, gift.id, ap);
+    else contribuir(gift.id, ap);
     setSent(true);
   };
 

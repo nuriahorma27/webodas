@@ -2,10 +2,17 @@
 
 import { use, useEffect, useState } from "react";
 import { parseInline } from "@/lib/rich-text";
-import { loadLista, setListaOverride, contribuir, type ListaRegalos, type Gift } from "@/lib/regalos";
+import {
+  loadLista,
+  setListaOverride,
+  contribuir,
+  contribuirServer,
+  type ListaRegalos,
+  type Gift,
+} from "@/lib/regalos";
 import { ContribuirModal } from "@/components/contribuir-modal";
 import { loadBoda, setBodaOverride, nombrePareja, fechaLarga } from "@/lib/boda";
-import { fetchBundlePublico, pickBundle } from "@/lib/wedding";
+import { fetchBundlePublico, pickBundle, getPublicWeddingId } from "@/lib/wedding";
 
 const eur = (n: number) => `${Math.round(n).toLocaleString("es-ES")} €`;
 
@@ -51,15 +58,22 @@ export default function ListaPublicaPage({ params }: { params: Promise<{ slug: s
         const res = await fetch(`/api/stripe/session?id=${encodeURIComponent(sid)}`);
         const d = await res.json();
         if (!d.paid) return;
-        contribuir(d.giftId, {
+        const ap = {
           id: "sess-" + sid,
           nombre: d.nombre,
           email: d.email,
           mensaje: d.mensaje,
           importe: d.amount,
-          estado: "confirmada",
-          metodo: "stripe",
-        });
+          estado: "confirmada" as const,
+          metodo: "stripe" as const,
+        };
+        let wid = getPublicWeddingId();
+        if (!wid) {
+          const res = await fetchBundlePublico(slug);
+          wid = res?.found ? res.id : null;
+        }
+        if (wid) await contribuirServer(wid, d.giftId, ap);
+        else contribuir(d.giftId, ap);
         setGracias(`¡Gracias! Aportación de ${eur(d.amount)} registrada.`);
       } catch {
         /* noop */
@@ -67,7 +81,7 @@ export default function ListaPublicaPage({ params }: { params: Promise<{ slug: s
         window.history.replaceState({}, "", window.location.pathname);
       }
     })();
-  }, []);
+  }, [slug]);
 
   if (noExiste)
     return (

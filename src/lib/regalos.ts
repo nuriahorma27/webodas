@@ -126,6 +126,86 @@ export function contribuir(
   }
 }
 
+/* ---------- aportaciones en el servidor (las que hacen los invitados) ---------- */
+
+// Guarda una aportación en el servidor (páginas públicas /lista/[slug]).
+export async function contribuirServer(
+  weddingId: string,
+  giftId: string,
+  a: Omit<Aportacion, "id" | "fecha" | "giftId" | "giftNombre"> & { id?: string },
+): Promise<void> {
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const lista = loadLista();
+    const gift = lista.gifts.find((g) => g.id === giftId);
+    const payload = {
+      ...a,
+      id: a.id ?? crypto.randomUUID(),
+      fecha: new Date().toISOString().slice(0, 10),
+      giftNombre: gift?.nombre ?? "",
+    };
+    await createClient()
+      .from("gift_contributions")
+      .insert({ wedding_id: weddingId, gift_id: giftId, payload });
+  } catch {
+    /* noop */
+  }
+}
+
+// La pareja lee las aportaciones que le han hecho por la web.
+export async function fetchAportacionesServer(): Promise<Aportacion[]> {
+  try {
+    const [{ createClient }, { getWedding }] = await Promise.all([
+      import("@/lib/supabase/client"),
+      import("@/lib/wedding"),
+    ]);
+    const w = await getWedding();
+    if (!w) return [];
+    const { data, error } = await createClient()
+      .from("gift_contributions")
+      .select("id, gift_id, created_at, payload")
+      .eq("wedding_id", w.id)
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map((row) => {
+      const p = (row.payload ?? {}) as Partial<Aportacion>;
+      return {
+        id: row.id,
+        fecha: p.fecha || row.created_at.slice(0, 10),
+        giftId: row.gift_id,
+        giftNombre: p.giftNombre ?? "",
+        nombre: p.nombre ?? "",
+        email: p.email ?? "",
+        mensaje: p.mensaje ?? "",
+        importe: p.importe ?? 0,
+        estado: p.estado === "confirmada" ? "confirmada" : "pendiente",
+        metodo: p.metodo === "stripe" ? "stripe" : "manual",
+      } as Aportacion;
+    });
+  } catch {
+    return [];
+  }
+}
+
+// La pareja marca una aportación del servidor como recibida.
+export async function confirmarAportacionServer(id: string, giftId: string, importe: number) {
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const sb = createClient();
+    const { data } = await sb.from("gift_contributions").select("payload").eq("id", id).single();
+    const payload = { ...((data?.payload as object) ?? {}), estado: "confirmada" };
+    await sb.from("gift_contributions").update({ payload }).eq("id", id);
+    const lista = loadLista();
+    const gift = lista.gifts.find((g) => g.id === giftId);
+    if (gift) {
+      gift.aportado = (gift.aportado || 0) + importe;
+      saveLista(lista);
+    }
+  } catch {
+    /* noop */
+  }
+}
+
 // La pareja confirma una aportación manual → suma al regalo.
 export function confirmarAportacion(id: string) {
   try {

@@ -9,7 +9,9 @@ import {
   loadLista,
   saveLista,
   loadAportaciones,
+  fetchAportacionesServer,
   confirmarAportacion,
+  confirmarAportacionServer,
   REGALOS_DEFAULT,
   TIPOS_REGALO,
   type ListaRegalos,
@@ -36,7 +38,12 @@ export default function RegalosPage() {
   useEffect(() => {
     const sync = () => {
       setLista(loadLista());
-      setAportaciones(loadAportaciones());
+      const locales = loadAportaciones();
+      setAportaciones(locales);
+      // + las que han hecho los invitados por la web (servidor)
+      fetchAportacionesServer().then((srv) => {
+        if (srv.length) setAportaciones([...srv, ...locales.filter((l) => l.metodo === "manual" && l.id.startsWith("seed"))]);
+      });
     };
     sync();
     window.addEventListener("webodas:regalos", sync);
@@ -284,7 +291,13 @@ export default function RegalosPage() {
                         <span className="text-xs text-green-700">Confirmada</span>
                       ) : (
                         <button
-                          onClick={() => confirmarAportacion(a.id)}
+                          onClick={async () => {
+                            confirmarAportacion(a.id);
+                            await confirmarAportacionServer(a.id, a.giftId, a.importe);
+                            setAportaciones((prev) =>
+                              prev.map((x) => (x.id === a.id ? { ...x, estado: "confirmada" } : x)),
+                            );
+                          }}
                           className="rounded-md border border-green-600 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
                         >
                           Marcar recibida

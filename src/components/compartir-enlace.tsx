@@ -7,9 +7,11 @@ export function CompartirEnlace({ path, label }: { path: string; label?: string 
   const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
+    // El invitado usa el mismo dominio en el que está la pareja.
     const base =
-      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-      (typeof window !== "undefined" ? window.location.origin : "");
+      typeof window !== "undefined"
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "");
     setUrl(base + path);
   }, [path]);
 
