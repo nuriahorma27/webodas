@@ -232,7 +232,7 @@ const DATA: Record<string, Def[]> = {
     ["Reservar la sesión de fotos preboda", "4-5 meses antes", "lugarFecha"],
   ],
   "La novia": [
-    ["Comprar el vestido de novia", "10-11 meses antes", "compra"],
+    ["Contratar o comprar el vestido de novia", "10-11 meses antes", "proveedor"],
     ["Arreglos del vestido", "2-3 meses antes", "compra"],
     ["Contratar la peluquería", "12 meses antes", "proveedor"],
     ["Contratar el maquillaje", "12 meses antes", "proveedor"],
@@ -246,7 +246,7 @@ const DATA: Record<string, Def[]> = {
     ["Preparar el neceser para retoques", "Último mes", "compra"],
   ],
   "El novio": [
-    ["Comprar o alquilar el traje del novio", "6-7 meses antes", "compra"],
+    ["Contratar o comprar el traje del novio", "6-7 meses antes", "proveedor"],
     ["Comprar la camisa", "4-5 meses antes", "compra"],
     ["Comprar los zapatos del novio", "4-5 meses antes", "compra"],
     ["Comprar los complementos (corbata, gemelos)", "4-5 meses antes", "compra"],
