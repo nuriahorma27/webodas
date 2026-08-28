@@ -16,6 +16,7 @@ import {
   type ColumnaInvitado,
 } from "@/lib/invitados";
 import type { RsvpResponse } from "@/lib/rsvp";
+import { loadMesas, mesaDeInvitado } from "@/lib/mesas";
 
 const EUR = '#,##0" €"';
 const ACENTO = "FF8A6D3B";
@@ -437,6 +438,11 @@ export async function descargarAlergiasExcel(
   const colsAlergia = columnas.filter(esAlergia);
   const colMesa = columnas.find((c) => c.nombre.toLowerCase().includes("mesa"));
 
+  // Mesa real (sección Mesas) si está configurada; si no, la columna "Mesa".
+  const mesasCfg = loadMesas();
+  const mesaReal = (id: string) => mesaDeInvitado(mesasCfg, id)?.nombre ?? "";
+  const hayMesasReales = mesasCfg.mesas.some((m) => m.invitados.length > 0);
+
   // No es una alergia real: vacío o respuestas tipo "no", "ninguna", "sin alergias"…
   const vacio = (v: string) => {
     const s = (v ?? "").trim().replace(/[.!]+$/, "").toLowerCase();
@@ -451,7 +457,7 @@ export async function descargarAlergiasExcel(
     .map((i) => {
       const alergia = colsAlergia.map((c) => i.extra[c.id] ?? "").find((v) => !vacio(v)) ?? "";
       return {
-        mesa: colMesa ? i.extra[colMesa.id] ?? "" : "",
+        mesa: mesaReal(i.id) || (colMesa ? i.extra[colMesa.id] ?? "" : ""),
         nombre: `${i.nombre} ${i.apellido}`.trim(),
         grupo: i.grupo,
         alergia,
@@ -460,7 +466,7 @@ export async function descargarAlergiasExcel(
     .filter((f) => f.alergia)
     .sort((a, b) => a.mesa.localeCompare(b.mesa) || a.nombre.localeCompare(b.nombre));
 
-  const conMesa = Boolean(colMesa);
+  const conMesa = hayMesasReales || Boolean(colMesa);
   const cabeceras = conMesa
     ? ["Mesa", "Invitado", "Grupo", "Alergia / intolerancia"]
     : ["Invitado", "Grupo", "Alergia / intolerancia"];
