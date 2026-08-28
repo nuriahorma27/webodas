@@ -4,16 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
 import { SaveTheDateView } from "@/components/save-the-date-view";
+import { SaveTheDateFrame } from "@/components/save-the-date-frame";
 import { CompartirEnlace } from "@/components/compartir-enlace";
 import {
   loadStd,
   setStd,
   ACABADOS,
   FUENTES,
+  MARCOS,
   type SaveTheDate,
   type AcabadoStd,
   type FuenteStd,
   type PosTextoStd,
+  type MarcoStd,
 } from "@/lib/savethedate";
 
 const campo =
@@ -21,7 +24,9 @@ const campo =
 
 export default function SaveTheDatePage() {
   const [std, setStdState] = useState<SaveTheDate | null>(null);
+  const [descargando, setDescargando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sync = () => setStdState(loadStd());
@@ -45,6 +50,33 @@ export default function SaveTheDatePage() {
   const nudge = (dx: number, dy: number) => {
     const c = (n: number) => Math.max(-70, Math.min(70, n));
     setStd({ imgX: c(std.imgX + dx), imgY: c(std.imgY + dy) });
+  };
+
+  const nudgeTexto = (dx: number, dy: number) => {
+    const c = (n: number) => Math.max(-80, Math.min(80, n));
+    setStd({ textoX: c(std.textoX + dx), textoY: c(std.textoY + dy) });
+  };
+
+  const descargarImagen = async () => {
+    if (!previewRef.current || descargando) return;
+    setDescargando(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(previewRef.current, {
+        cacheBust: true,
+        pixelRatio: 3,
+        backgroundColor: std.colorBg,
+      });
+      const nombres = std.nombres.trim().toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, "-").replace(/^-|-$/g, "");
+      const enlace = document.createElement("a");
+      enlace.download = `save-the-date${nombres ? `-${nombres}` : ""}.png`;
+      enlace.href = dataUrl;
+      enlace.click();
+    } catch {
+      alert("No se ha podido generar la imagen. Vuelve a intentarlo.");
+    } finally {
+      setDescargando(false);
+    }
   };
 
   return (
@@ -117,6 +149,66 @@ export default function SaveTheDatePage() {
                 ))}
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-xs font-medium text-muted">Mover el texto</span>
+                <div className="mt-1 grid grid-cols-3 grid-rows-3 gap-1">
+                  <span />
+                  <Flecha onClick={() => nudgeTexto(0, -4)}>↑</Flecha>
+                  <span />
+                  <Flecha onClick={() => nudgeTexto(-4, 0)}>←</Flecha>
+                  <Flecha onClick={() => setStd({ textoX: 0, textoY: 0 })}>•</Flecha>
+                  <Flecha onClick={() => nudgeTexto(4, 0)}>→</Flecha>
+                  <span />
+                  <Flecha onClick={() => nudgeTexto(0, 4)}>↓</Flecha>
+                  <span />
+                </div>
+              </div>
+              <p className="text-xs text-muted">El punto vuelve a la posición inicial.</p>
+            </div>
+          </Card>
+
+          <Card className="space-y-3">
+            <h2 className="font-display text-lg">Contorno decorativo</h2>
+            <p className="text-xs text-muted">Elige uno de los cinco dibujos o deja el diseño sin marco.</p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {(Object.keys(MARCOS) as MarcoStd[]).map((marco) => (
+                <button
+                  key={marco}
+                  onClick={() => setStd({ marco })}
+                  aria-pressed={std.marco === marco}
+                  className={`rounded-md border p-1.5 text-xs ${std.marco === marco ? "border-foreground" : "border-line hover:border-accent"}`}
+                >
+                  <span className="relative mb-1 block aspect-[3/4] overflow-hidden rounded bg-[#f4efe6]">
+                    <SaveTheDateFrame marco={marco} colorHojas={std.colorMarco} colorFrutos={std.colorFrutos} />
+                  </span>
+                  {MARCOS[marco].label}
+                </button>
+              ))}
+            </div>
+            {std.marco !== "ninguno" && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="color" value={std.colorMarco} onChange={(e) => setStd({ colorMarco: e.target.value })} className="h-8 w-10 rounded border border-line" />
+                    Color de las hojas
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="color" value={std.colorFrutos} onChange={(e) => setStd({ colorFrutos: e.target.value })} className="h-8 w-10 rounded border border-line" />
+                    Frutos y flores
+                  </label>
+                </div>
+                <label className="block text-sm">
+                  <span className="text-xs font-medium text-muted">Tamaño proporcional ({Math.round(std.tamMarco * 100)}%)</span>
+                  <input type="range" min={0.65} max={1.12} step={0.01} value={Math.max(0.65, std.tamMarco)} onChange={(e) => setStd({ tamMarco: Number(e.target.value) })} className="mt-1 w-full" />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-xs font-medium text-muted">Distancia al borde ({std.margenMarco.toFixed(1)}%)</span>
+                  <input type="range" min={-25} max={12} step={0.5} value={std.margenMarco} onChange={(e) => setStd({ margenMarco: Number(e.target.value) })} className="mt-1 w-full" />
+                  <span className="mt-1 block text-[11px] text-muted">Hacia la izquierda queda más pegado a las esquinas.</span>
+                </label>
+              </div>
+            )}
           </Card>
 
           <Card className="space-y-3">
@@ -148,6 +240,14 @@ export default function SaveTheDatePage() {
                   onChange={(e) => setStd({ negrita: e.target.checked })}
                 />
                 Nombres en negrita
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={std.cursiva}
+                  onChange={(e) => setStd({ cursiva: e.target.checked })}
+                />
+                Nombres en cursiva
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -198,7 +298,7 @@ export default function SaveTheDatePage() {
             </div>
             <div>
               <span className="text-xs font-medium text-muted">Acabado</span>
-              <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-5">
+              <div className="mt-1 grid grid-cols-2 gap-2 sm:max-w-sm">
                 {(Object.keys(ACABADOS) as AcabadoStd[]).map((a) => (
                   <button
                     key={a}
@@ -311,7 +411,18 @@ export default function SaveTheDatePage() {
         {/* Vista previa */}
         <div className="lg:sticky lg:top-6 lg:self-start">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Vista previa</p>
-          <SaveTheDateView std={std} editable onMove={(x, y) => setStd({ imgX: x, imgY: y })} />
+          <div ref={previewRef}>
+            <SaveTheDateView std={std} editable onMove={(x, y) => setStd({ imgX: x, imgY: y })} />
+          </div>
+          <button
+            type="button"
+            onClick={descargarImagen}
+            disabled={descargando}
+            className="mt-3 w-full rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+          >
+            {descargando ? "Generando imagen…" : "Descargar como imagen"}
+          </button>
+          <p className="mt-1.5 text-center text-[11px] text-muted">Se descargará un PNG en alta resolución.</p>
         </div>
       </div>
     </div>

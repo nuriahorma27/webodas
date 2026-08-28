@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { ACABADOS, FUENTES, type SaveTheDate } from "@/lib/savethedate";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
+import { SaveTheDateFrame } from "@/components/save-the-date-frame";
 
 export function SaveTheDateView({
   std,
@@ -43,10 +44,6 @@ export function SaveTheDateView({
 
   return (
     <>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap"
-      />
       <div
         ref={boxRef}
         className="relative mx-auto flex w-full max-w-sm flex-col overflow-hidden rounded-lg shadow-md"
@@ -79,7 +76,10 @@ export function SaveTheDateView({
 
         <div
           className="relative z-10 p-6 text-center"
-          style={{ fontFamily: family }}
+          style={{
+            fontFamily: family,
+            transform: `translate(${std.textoX}%, ${std.textoY}%)`,
+          }}
         >
           {std.titulo && (
             <p
@@ -94,6 +94,7 @@ export function SaveTheDateView({
             style={{
               fontSize: `${2 * std.tamNombres}rem`,
               fontWeight: std.negrita ? 700 : 400,
+              fontStyle: std.cursiva ? "italic" : "normal",
               textTransform: std.mayusculas ? "uppercase" : "none",
             }}
           >
@@ -105,6 +106,9 @@ export function SaveTheDateView({
               {std.mensaje}
             </p>
           )}
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <SaveTheDateFrame marco={std.marco} tamano={std.tamMarco} margen={std.margenMarco} colorHojas={std.colorMarco} colorFrutos={std.colorFrutos} />
         </div>
       </div>
     </>

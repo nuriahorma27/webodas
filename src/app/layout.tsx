@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { Cormorant_Garamond } from "next/font/google";
+import { Bodoni_Moda, Cormorant_Garamond, Geist, Parisienne } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +13,17 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
 });
 
+const bodoni = Bodoni_Moda({
+  variable: "--font-bodoni",
+  subsets: ["latin"],
+});
+
+const parisienne = Parisienne({
+  variable: "--font-parisienne",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "webodas",
   description: "Crea la web de tu boda, tu lista de regalos y gestiona el gran día.",
@@ -23,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${cormorant.variable} ${bodoni.variable} ${parisienne.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
