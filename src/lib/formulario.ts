@@ -19,6 +19,11 @@ export type DatosEstandar = {
   alergiasAcomp: boolean; // alergias del acompañante (si lo hay)
   bus: boolean; // autobús del invitado (ida y vuelta)
   busAcomp: boolean; // autobús del acompañante (si lo hay)
+  // Cómo se pregunta cada trayecto: "sino" (Sí / No) o "lista" (elegir horario).
+  busIdaModo: "sino" | "lista";
+  busIdaHorarios: string; // horarios separados por comas (modo "lista")
+  busVueltaModo: "sino" | "lista";
+  busVueltaHorarios: string;
 };
 
 // Etiquetas de pregunta que generan los packs (para asociarlas a columnas).
@@ -50,6 +55,10 @@ const ESTANDAR_DEFAULT: DatosEstandar = {
   alergiasAcomp: true,
   bus: false,
   busAcomp: false,
+  busIdaModo: "sino",
+  busIdaHorarios: "",
+  busVueltaModo: "sino",
+  busVueltaHorarios: "",
 };
 
 const nueva = (label = "Nueva pregunta"): PreguntaForm => ({
@@ -178,8 +187,13 @@ export function formatoPregunta(label: string): {
 } {
   if (label === "¿Asistirás?" || label === "¿Vienes con acompañante?") return { tipo: "sino" };
   if (label === LABEL_BUS) return { tipo: "sino" };
-  if (label === LABEL_BUS_IDA || label === LABEL_BUS_VUELTA || label === LABEL_ALERGIAS)
-    return { tipo: "texto" };
+  if (label === LABEL_ALERGIAS) return { tipo: "texto" };
+  if (label === LABEL_BUS_IDA || label === LABEL_BUS_VUELTA) {
+    const e = loadFormulario().estandar;
+    const modo = label === LABEL_BUS_IDA ? e.busIdaModo : e.busVueltaModo;
+    const horarios = label === LABEL_BUS_IDA ? e.busIdaHorarios : e.busVueltaHorarios;
+    return modo === "lista" ? { tipo: "lista", opciones: horarios } : { tipo: "sino" };
+  }
   const q = loadFormulario().preguntas.find((p) => p.label === label);
   if (!q) return { tipo: "texto" };
   if (q.qtype === "si-no") return { tipo: "sino" };

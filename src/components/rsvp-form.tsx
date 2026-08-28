@@ -82,7 +82,7 @@ export function RsvpForm({
 
     const respuestasAcomp: Record<string, string> = {};
     if (conAcomp) {
-      if (est.alergiasAcomp && answersAcomp[LABEL_ALERGIAS])
+      if ((est.alergiasAcomp || est.alergias) && answersAcomp[LABEL_ALERGIAS])
         respuestasAcomp[LABEL_ALERGIAS] = answersAcomp[LABEL_ALERGIAS];
       // El autobús se pregunta una vez: se copia también al acompañante.
       if (est.bus) {
@@ -122,6 +122,31 @@ export function RsvpForm({
     color: "#1c1a17",
   };
   const lab: React.CSSProperties = { display: "block", fontSize: 14, marginBottom: 6, fontWeight: 600 };
+
+  const trayectoBus = (titulo: string, label: string, modo: string, horarios: string) => {
+    const opts = horarios.split(",").map((o) => o.trim()).filter(Boolean);
+    return (
+      <div>
+        <label style={lab}>{titulo}</label>
+        <select style={field} value={answers[label] ?? ""} onChange={(e) => set(label, e.target.value)}>
+          <option value="">Elige…</option>
+          {modo === "lista" && opts.length > 0 ? (
+            <>
+              <option>No lo necesito</option>
+              {opts.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </>
+          ) : (
+            <>
+              <option>Sí</option>
+              <option>No</option>
+            </>
+          )}
+        </select>
+      </div>
+    );
+  };
 
   const renderQuestion = (q: PreguntaForm, i: number) => {
     const opts = (q.options ?? "").split(",").map((o) => o.trim()).filter(Boolean);
@@ -285,11 +310,6 @@ export function RsvpForm({
 
                 {(!est.asiste || asiste === "Sí") && (est.alergias || est.bus) && (
                   <>
-                    {conAcomp && (
-                      <p style={{ ...lab, marginTop: 4, borderTop: "1px solid #eee", paddingTop: 12 }}>
-                        Tus datos
-                      </p>
-                    )}
                     {est.alergias && (
                       <div>
                         <label style={lab}>{PREGUNTA_ALERGIAS}</label>
@@ -297,6 +317,17 @@ export function RsvpForm({
                           style={field}
                           value={answers[LABEL_ALERGIAS] ?? ""}
                           onChange={(e) => set(LABEL_ALERGIAS, e.target.value)}
+                          placeholder="Deja vacío si no hay"
+                        />
+                      </div>
+                    )}
+                    {est.alergias && conAcomp && (
+                      <div>
+                        <label style={lab}>{PREGUNTA_ALERGIAS_ACOMP}</label>
+                        <input
+                          style={field}
+                          value={answersAcomp[LABEL_ALERGIAS] ?? ""}
+                          onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
                           placeholder="Deja vacío si no hay"
                         />
                       </div>
@@ -311,14 +342,8 @@ export function RsvpForm({
                         </select>
                         {answers[LABEL_BUS] === "Sí" && (
                           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
-                            <div>
-                              <label style={lab}>Bus de ida</label>
-                              <input style={field} value={answers[LABEL_BUS_IDA] ?? ""} onChange={(e) => set(LABEL_BUS_IDA, e.target.value)} placeholder="Sí / No / horario" />
-                            </div>
-                            <div>
-                              <label style={lab}>Bus de vuelta</label>
-                              <input style={field} value={answers[LABEL_BUS_VUELTA] ?? ""} onChange={(e) => set(LABEL_BUS_VUELTA, e.target.value)} placeholder="Sí / No / horario" />
-                            </div>
+                            {trayectoBus("Bus de ida", LABEL_BUS_IDA, est.busIdaModo, est.busIdaHorarios)}
+                            {trayectoBus("Bus de vuelta", LABEL_BUS_VUELTA, est.busVueltaModo, est.busVueltaHorarios)}
                           </div>
                         )}
                       </div>
@@ -328,23 +353,6 @@ export function RsvpForm({
 
                 {(!est.asiste || asiste === "Sí") &&
                   questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
-
-                {conAcomp && est.alergiasAcomp && (
-                  <>
-                    <p style={{ ...lab, marginTop: 4, borderTop: "1px solid #eee", paddingTop: 12 }}>
-                      Datos de tu acompañante
-                    </p>
-                    <div>
-                      <label style={lab}>{PREGUNTA_ALERGIAS_ACOMP}</label>
-                      <input
-                        style={field}
-                        value={answersAcomp[LABEL_ALERGIAS] ?? ""}
-                        onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
-                        placeholder="Deja vacío si no hay"
-                      />
-                    </div>
-                  </>
-                )}
 
                 <button
                   type="submit"
