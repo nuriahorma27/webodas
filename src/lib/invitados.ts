@@ -42,8 +42,9 @@ export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: TipoColumna }[] = [
   { nombre: "Regalo", tipo: "sino" },
   { nombre: "Agradecimiento enviado", tipo: "sino" },
   // datos
+  { nombre: "Hora bus ida", tipo: "texto" },
+  { nombre: "Hora bus vuelta", tipo: "texto" },
   { nombre: "Cantidad (regalo)", tipo: "numero" },
-  { nombre: "Hora vuelta", tipo: "texto" },
   { nombre: "Dirección", tipo: "texto" },
   { nombre: "Alergias", tipo: "texto" },
   { nombre: "Menú", tipo: "texto" },

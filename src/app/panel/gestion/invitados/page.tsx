@@ -210,9 +210,28 @@ export default function InvitadosPage() {
               quitar, reordenar, añadir y <strong>asociar a una pregunta del cuestionario</strong>{" "}
               (la respuesta se guardará sola en esa columna).
             </p>
-            <ul className="mt-2 divide-y divide-line">
+            <p className="mt-2 text-xs text-muted">Usa ▲ ▼ para cambiar el orden de las columnas.</p>
+            <ul className="mt-1 divide-y divide-line">
               {cols.map((c, i) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                  <span className="flex flex-col text-xs text-muted">
+                    <button
+                      onClick={() => moveColumna(c.id, -1)}
+                      disabled={i === 0}
+                      className="leading-none hover:text-foreground disabled:opacity-20"
+                      title="Subir"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveColumna(c.id, 1)}
+                      disabled={i === cols.length - 1}
+                      className="leading-none hover:text-foreground disabled:opacity-20"
+                      title="Bajar"
+                    >
+                      ▼
+                    </button>
+                  </span>
                   <span className="font-medium">{c.nombre}</span>
                   {c.preguntaRsvp ? (
                     <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
@@ -238,25 +257,13 @@ export default function InvitadosPage() {
                       className="min-w-[10rem] flex-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
                     />
                   )}
-                  <div className="ml-auto flex items-center gap-1 text-xs text-muted">
-                    <button
-                      onClick={() => moveColumna(c.id, -1)}
-                      disabled={i === 0}
-                      className="hover:text-foreground disabled:opacity-25"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveColumna(c.id, 1)}
-                      disabled={i === cols.length - 1}
-                      className="hover:text-foreground disabled:opacity-25"
-                    >
-                      ▼
-                    </button>
-                    <button onClick={() => removeColumna(c.id)} className="hover:text-red-600">
-                      ✕
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => removeColumna(c.id)}
+                    className="ml-auto text-xs text-muted hover:text-red-600"
+                    title="Quitar columna"
+                  >
+                    🗑
+                  </button>
                   <label className="flex w-full items-center gap-2 text-xs text-muted">
                     Se rellena con la pregunta:
                     <select
@@ -305,6 +312,16 @@ export default function InvitadosPage() {
           </div>
         </div>
       )}
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">Lista de invitados</p>
+        <button
+          onClick={() => setModalCol(true)}
+          className="rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium hover:border-accent hover:text-accent"
+        >
+          ▦ Columnas de la tabla
+        </button>
+      </div>
 
       <Card className="p-0">
         <div className="max-h-[70vh] overflow-auto">
@@ -491,12 +508,9 @@ export default function InvitadosPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center gap-4 px-5 py-3">
+        <div className="px-5 py-3">
           <button onClick={() => addInvitado()} className="text-sm font-medium text-accent">
             + Añadir invitado
-          </button>
-          <button onClick={() => setModalCol(true)} className="text-sm font-medium text-accent">
-            + Añadir columna
           </button>
         </div>
       </Card>
