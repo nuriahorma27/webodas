@@ -469,11 +469,14 @@ export default function InvitadosPage() {
                   ))}
                   <td className="px-2.5 text-center">
                     <button
-                      onClick={() => removeInvitado(i.id)}
+                      onClick={() => {
+                        const quien = `${i.nombre} ${i.apellido}`.trim() || "este invitado";
+                        if (confirm(`¿Seguro que quieres eliminar a ${quien}?`)) removeInvitado(i.id);
+                      }}
                       className="text-muted hover:text-red-600"
-                      title="Eliminar"
+                      title="Eliminar invitado"
                     >
-                      ✕
+                      🗑
                     </button>
                   </td>
                 </tr>
