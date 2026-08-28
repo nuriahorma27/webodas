@@ -583,9 +583,11 @@ function VistaRespuestas({
           <strong>⚙ Ajustes de la lista → Columnas</strong> para que los datos se vuelquen solos.
         </Card>
       )}
-      {respuestas.map((resp) => (
-        <RespuestaCard key={resp.id} resp={resp} invitados={invitados} onVolcar={volcar} />
-      ))}
+      <div className="space-y-1.5">
+        {respuestas.map((resp) => (
+          <RespuestaCard key={resp.id} resp={resp} invitados={invitados} onVolcar={volcar} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -694,7 +696,7 @@ function RespuestaCard({
     ? invitados.find((i) => i.id === resp.acompInvitadoId)
     : undefined;
 
-  const [abierto, setAbierto] = useState(!resp.aplicada);
+  const [abierto, setAbierto] = useState(false);
 
   const fmtFecha = (s: string) => {
     const d = new Date(s);
@@ -735,18 +737,16 @@ function RespuestaCard({
     <Card className="p-0">
       <button
         onClick={() => setAbierto((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm"
       >
-        <span className="text-muted">{abierto ? "▾" : "▸"}</span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-base">
-            {resp.nombre} {resp.apellido}
-            {tieneAcomp && (
-              <span className="text-sm font-normal text-muted"> + {resp.acompNombre} {resp.acompApellido}</span>
-            )}
-          </span>
-          <span className="block text-xs text-muted">{fmtFecha(resp.fecha)}</span>
+        <span className="text-xs text-muted">{abierto ? "▾" : "▸"}</span>
+        <span className="min-w-0 flex-1 truncate font-medium">
+          {resp.nombre} {resp.apellido}
+          {tieneAcomp && (
+            <span className="font-normal text-muted"> + {resp.acompNombre} {resp.acompApellido}</span>
+          )}
         </span>
+        <span className="hidden shrink-0 text-xs text-muted sm:inline">{fmtFecha(resp.fecha)}</span>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
             resp.asiste === "Sí"
@@ -756,11 +756,7 @@ function RespuestaCard({
         >
           {resp.asiste === "Sí" ? "Viene" : "No viene"}
         </span>
-        {resp.aplicada && (
-          <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-muted">
-            ✓ volcado
-          </span>
-        )}
+        {resp.aplicada && <span className="shrink-0 text-xs text-muted">✓</span>}
       </button>
 
       {abierto && (
