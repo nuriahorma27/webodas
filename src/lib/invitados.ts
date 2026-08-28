@@ -18,8 +18,10 @@ export const GRUPOS_DEFAULT = [
 ];
 export const SUBGRUPOS_DEFAULT: string[] = [];
 
-// Columnas extra que se pueden añadir. tipo: texto libre o sí/no.
-export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: "texto" | "sino" }[] = [
+export type TipoColumna = "texto" | "sino" | "numero";
+
+// Columnas extra que se pueden añadir.
+export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: TipoColumna }[] = [
   // seguimiento (sí/no)
   { nombre: "Save the date enviado", tipo: "sino" },
   { nombre: "Invitación enviada", tipo: "sino" },
@@ -28,18 +30,17 @@ export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: "texto" | "sino" }[] = 
   { nombre: "Detalle entregado", tipo: "sino" },
   { nombre: "Menú confirmado", tipo: "sino" },
   { nombre: "Alojamiento reservado", tipo: "sino" },
-  { nombre: "Transporte confirmado", tipo: "sino" },
-  { nombre: "Agradecimiento enviado", tipo: "sino" },
   { nombre: "Bus ida", tipo: "sino" },
   { nombre: "Bus vuelta", tipo: "sino" },
-  // datos (texto)
+  { nombre: "Regalo", tipo: "sino" },
+  { nombre: "Agradecimiento enviado", tipo: "sino" },
+  // datos
+  { nombre: "Cantidad (regalo)", tipo: "numero" },
+  { nombre: "Hora vuelta", tipo: "texto" },
   { nombre: "Dirección", tipo: "texto" },
   { nombre: "Alergias", tipo: "texto" },
   { nombre: "Menú", tipo: "texto" },
   { nombre: "Mesa", tipo: "texto" },
-  { nombre: "Hora vuelta", tipo: "texto" },
-  { nombre: "Regalo", tipo: "texto" },
-  { nombre: "Cantidad (regalo)", tipo: "texto" },
   { nombre: "Alojamiento", tipo: "texto" },
   { nombre: "Notas", tipo: "texto" },
 ];
@@ -55,10 +56,10 @@ export type Invitado = {
   extra: Record<string, string>; // valores de columnas personalizadas (por id de columna)
 };
 
-export type ColumnaInvitado = { id: string; nombre: string; tipo: "texto" | "sino" };
+export type ColumnaInvitado = { id: string; nombre: string; tipo: TipoColumna };
 
 const KEY = "webodas:invitados";
-const COLS_KEY = "webodas:invitados-columnas";
+const COLS_KEY = "webodas:invitados-columnas:v2";
 const GRUPOS_KEY = "webodas:invitados-grupos";
 const SUBGRUPOS_KEY = "webodas:invitados-subgrupos";
 
@@ -172,15 +173,12 @@ export function importarInvitados(filas: { nombre: string; apellido: string }[])
 /* ---------- columnas personalizadas ---------- */
 
 // Columnas que aparecen de serie la primera vez.
-const COLUMNAS_INICIALES: { nombre: string; tipo: "texto" | "sino" }[] = [
+const COLUMNAS_INICIALES: { nombre: string; tipo: TipoColumna }[] = [
   { nombre: "Invitación entregada", tipo: "sino" },
   { nombre: "Dirección", tipo: "texto" },
   { nombre: "Alergias", tipo: "texto" },
-  { nombre: "Bus ida", tipo: "sino" },
-  { nombre: "Bus vuelta", tipo: "sino" },
-  { nombre: "Hora vuelta", tipo: "texto" },
-  { nombre: "Regalo", tipo: "texto" },
-  { nombre: "Cantidad (regalo)", tipo: "texto" },
+  { nombre: "Regalo", tipo: "sino" },
+  { nombre: "Cantidad (regalo)", tipo: "numero" },
   { nombre: "Agradecimiento enviado", tipo: "sino" },
 ];
 
@@ -211,7 +209,7 @@ function saveColumnas(list: ColumnaInvitado[]) {
   }
 }
 
-export function addColumna(nombre: string, tipo: "texto" | "sino" = "texto"): ColumnaInvitado {
+export function addColumna(nombre: string, tipo: TipoColumna = "texto"): ColumnaInvitado {
   const col = { id: crypto.randomUUID(), nombre: nombre.trim() || "Columna", tipo };
   saveColumnas([...loadColumnas(), col]);
   return col;

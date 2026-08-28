@@ -145,7 +145,9 @@ export default function InvitadosPage() {
               {cols.map((c, i) => (
                 <li key={c.id} className="flex items-center gap-2 py-1.5 text-sm">
                   <span className="flex-1">{c.nombre}</span>
-                  <span className="text-xs text-muted">{c.tipo === "sino" ? "sí/no" : "texto"}</span>
+                  <span className="text-xs text-muted">
+                    {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+                  </span>
                   <button
                     onClick={() => moveColumna(c.id, -1)}
                     disabled={i === 0}
@@ -206,15 +208,7 @@ export default function InvitadosPage() {
                     </span>
                   </th>
                 ))}
-                <th className="w-16 px-2.5 py-2.5 text-center">
-                  <button
-                    onClick={() => setModalCol(true)}
-                    className="text-accent hover:underline"
-                    title="Añadir columna"
-                  >
-                    + col
-                  </button>
-                </th>
+                <th className="w-10 px-2.5 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -318,9 +312,11 @@ export default function InvitadosPage() {
                         </select>
                       ) : (
                         <input
+                          type={c.tipo === "numero" ? "text" : "text"}
+                          inputMode={c.tipo === "numero" ? "numeric" : undefined}
                           defaultValue={i.extra[c.id] ?? ""}
                           onBlur={(e) => updateInvitadoExtra(i.id, c.id, e.target.value)}
-                          className={`${cell} text-muted`}
+                          className={`${cell} text-muted ${c.tipo === "numero" ? "text-right" : ""}`}
                         />
                       )}
                     </td>
@@ -349,6 +345,9 @@ export default function InvitadosPage() {
         <div className="flex flex-wrap items-center gap-4 px-5 py-3">
           <button onClick={() => addInvitado()} className="text-sm font-medium text-accent">
             + Añadir invitado
+          </button>
+          <button onClick={() => setModalCol(true)} className="text-sm font-medium text-accent">
+            + Añadir columna
           </button>
           <button
             onClick={() => fileRef.current?.click()}
@@ -396,7 +395,7 @@ function ModalColumna({
 }: {
   existentes: string[];
   onClose: () => void;
-  onAdd: (nombre: string, tipo: "texto" | "sino") => void;
+  onAdd: (nombre: string, tipo: import("@/lib/invitados").TipoColumna) => void;
 }) {
   const [nombre, setNombre] = useState("");
   const disponibles = COLUMNAS_SUGERIDAS.filter(
