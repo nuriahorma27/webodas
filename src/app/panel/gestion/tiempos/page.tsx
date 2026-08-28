@@ -236,14 +236,6 @@ function Row({
                 ))}
               </select>
             </label>
-            <label className="block sm:col-span-2">
-              <span className="text-xs text-muted">Nota visible (aparece bajo el título)</span>
-              <input
-                defaultValue={t.notaVisible ?? ""}
-                onBlur={(ev) => updateTarea(t.id, { notaVisible: ev.target.value })}
-                className={campo}
-              />
-            </label>
           </div>
 
           <div className="flex items-center gap-4">
