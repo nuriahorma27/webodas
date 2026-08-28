@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, Stat, Progress } from "@/components/ui";
+import { Card, Progress } from "@/components/ui";
 import { loadBoda, diasRestantes, fechaLarga } from "@/lib/boda";
 import { resumenInvitados } from "@/lib/invitados";
 import { loadResponses } from "@/lib/rsvp";
@@ -77,21 +77,25 @@ export default function ResumenPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat
-          label="Días"
-          value={d.dias === null ? "—" : String(d.dias)}
-          sub={d.dias === null ? "sin fecha aún" : "para la boda"}
-        />
-        <Stat label="Confirmados" value={String(d.inv.confirmadas)} sub="personas" tone="positive" />
-        <Stat label="Pendientes" value={String(d.inv.pendientes)} sub="sin respuesta" />
-        <Stat label="No vienen" value={String(d.inv.noVienen)} sub="personas" tone="negative" />
-        <Stat
-          label="Presupuesto"
-          value={eur(d.gastado)}
-          sub={`pagado de ${eur(baseBudget)}`}
-        />
-        <Stat label="Tareas" value={String(d.tareasPend)} sub={`de ${d.tareasTotal} pendientes`} />
+      <div className="py-2">
+        {d.dias === null ? (
+          <div>
+            <p className="font-display text-3xl">Sin fecha aún</p>
+            <Link
+              href="/panel"
+              className="text-sm text-accent hover:underline"
+            >
+              Añadir la fecha de la boda →
+            </Link>
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-6xl leading-none">{d.dias}</span>
+            <span className="text-lg text-muted">
+              {d.dias === 1 ? "día para la boda" : "días para la boda"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
