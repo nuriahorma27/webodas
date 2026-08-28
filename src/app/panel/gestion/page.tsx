@@ -1,65 +1,216 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, Stat, Progress } from "@/components/ui";
-import { boda, presupuesto, tareas, invitados, eur } from "@/lib/mock";
+import { loadBoda, diasRestantes, fechaLarga } from "@/lib/boda";
+import { resumenInvitados } from "@/lib/invitados";
+import { loadResponses } from "@/lib/rsvp";
+import { loadPartidas, totales } from "@/lib/presupuesto";
+import { loadTareas, loadEstados } from "@/lib/tareas";
+
+const eur = (n: number) => `${Math.round(n).toLocaleString("es-ES")} €`;
+
+type Datos = {
+  dias: number | null;
+  fecha: string;
+  inv: ReturnType<typeof resumenInvitados>;
+  respHoy: number;
+  sinVolcar: number;
+  totalResp: number;
+  gastado: number;
+  estimado: number;
+  refTotal: number | null;
+  tareasPend: number;
+  tareasTotal: number;
+};
+
+function leer(): Datos {
+  const boda = loadBoda();
+  const respuestas = loadResponses("demo");
+  const hoy = new Date().toDateString();
+  const partidas = loadPartidas();
+  const t = totales(partidas);
+  const tareas = loadTareas();
+  const estados = loadEstados();
+  const hechas = tareas.filter((x) => (estados[x.id] ?? "sin") === "hecho").length;
+  return {
+    dias: diasRestantes(boda),
+    fecha: fechaLarga(boda),
+    inv: resumenInvitados(),
+    respHoy: respuestas.filter((r) => {
+      const d = new Date(r.fecha);
+      return !isNaN(d.getTime()) && d.toDateString() === hoy;
+    }).length,
+    sinVolcar: respuestas.filter((r) => !r.aplicada).length,
+    totalResp: respuestas.length,
+    gastado: t.pagado,
+    estimado: t.estimado,
+    refTotal: boda.presupuestoTotal,
+    tareasPend: tareas.length - hechas,
+    tareasTotal: tareas.length,
+  };
+}
 
 export default function ResumenPage() {
-  const pendientes = tareas.filter((t) => !t.hecho);
-  const sinConfirmar = invitados.filter((i) => i.estado === "Pendiente").length;
+  const [d, setD] = useState<Datos | null>(null);
+
+  useEffect(() => {
+    const sync = () => setD(leer());
+    sync();
+    const evs = [
+      "webodas:boda",
+      "webodas:invitados",
+      "webodas:rsvp",
+      "webodas:presupuesto",
+      "webodas:tareas",
+    ];
+    evs.forEach((e) => window.addEventListener(e, sync));
+    return () => evs.forEach((e) => window.removeEventListener(e, sync));
+  }, []);
+
+  if (!d) return null;
+
+  const baseBudget = d.refTotal && d.refTotal > 0 ? d.refTotal : d.estimado;
+  const pctBudget = baseBudget > 0 ? Math.min(100, (d.gastado / baseBudget) * 100) : 0;
+  const pctTareas = d.tareasTotal > 0 ? ((d.tareasTotal - d.tareasPend) / d.tareasTotal) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Días" value={`${boda.diasRestantes}`} sub="para la boda" />
-        <Stat label="Presupuesto" value={eur(presupuesto.gastado)} sub={`de ${eur(presupuesto.total)}`} />
-        <Stat label="Confirmados" value={`${boda.invitadosConfirmados}`} sub={`de ${boda.invitadosTotales}`} />
-        <Stat label="Tareas" value={`${pendientes.length}`} sub="pendientes" />
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <Stat
+          label="Días"
+          value={d.dias === null ? "—" : String(d.dias)}
+          sub={d.dias === null ? "sin fecha aún" : "para la boda"}
+        />
+        <Stat label="Confirmados" value={String(d.inv.confirmadas)} sub="personas" tone="positive" />
+        <Stat label="Pendientes" value={String(d.inv.pendientes)} sub="sin respuesta" />
+        <Stat label="No vienen" value={String(d.inv.noVienen)} sub="personas" tone="negative" />
+        <Stat
+          label="Presupuesto"
+          value={eur(d.gastado)}
+          sub={`pagado de ${eur(baseBudget)}`}
+        />
+        <Stat label="Tareas" value={String(d.tareasPend)} sub={`de ${d.tareasTotal} pendientes`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg">Próximas tareas</h2>
-            <Link href="/panel/gestion/tiempos" className="text-sm text-accent">
-              Ver todas →
+            <h2 className="font-display text-lg">Formulario de confirmación</h2>
+            <Link
+              href="/panel/gestion/invitados"
+              className="text-sm text-accent hover:underline"
+            >
+              Ver respuestas →
             </Link>
           </div>
-          <ul className="mt-3 divide-y divide-line">
-            {pendientes.slice(0, 4).map((t) => (
-              <li key={t.titulo} className="flex items-center justify-between py-2.5 text-sm">
-                <span>{t.titulo}</span>
-                <span className="text-muted">{t.fecha}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-line bg-surface p-3">
+              <p className="font-display text-2xl">{d.respHoy}</p>
+              <p className="text-xs text-muted">respuestas hoy</p>
+            </div>
+            <div className="rounded-lg border border-line bg-surface p-3">
+              <p className="font-display text-2xl">{d.totalResp}</p>
+              <p className="text-xs text-muted">respuestas en total</p>
+            </div>
+            <div
+              className={`rounded-lg border p-3 ${
+                d.sinVolcar > 0 ? "border-amber-300 bg-amber-50" : "border-line bg-surface"
+              }`}
+            >
+              <p className="font-display text-2xl">{d.sinVolcar}</p>
+              <p className="text-xs text-muted">sin volcar a tu lista</p>
+            </div>
+          </div>
+          {d.sinVolcar > 0 && (
+            <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Tienes {d.sinVolcar} respuesta{d.sinVolcar === 1 ? "" : "s"} del formulario sin pasar a
+              la lista de gestión.
+            </p>
+          )}
         </Card>
 
         <Card>
-          <h2 className="font-display text-lg">Necesita tu atención</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li className="rounded-md bg-amber-50 px-3 py-2 text-amber-800">
-              {sinConfirmar} grupos de invitados sin confirmar asistencia
-            </li>
-            <li className="rounded-md bg-amber-50 px-3 py-2 text-amber-800">
-              Transporte de invitados sin pagar ({eur(1200)})
-            </li>
-            <li className="rounded-md bg-neutral-100 px-3 py-2 text-muted">
-              Presupuesto de la tarta pendiente de recibir
-            </li>
-          </ul>
+          <h2 className="font-display text-lg">Invitados</h2>
+          <div className="mt-3 space-y-2 text-sm">
+            <Fila label="Confirmados" valor={d.inv.confirmadas} color="text-emerald-700" />
+            <Fila label="Pendientes de responder" valor={d.inv.pendientes} color="text-amber-700" />
+            <Fila label="No vienen" valor={d.inv.noVienen} color="text-[#7b2233]" />
+            <div className="border-t border-line pt-2">
+              <Fila label="Total en la lista" valor={d.inv.personas} />
+              <p className="mt-1 text-xs text-muted">
+                {d.inv.adultos} adultos · {d.inv.ninos} niños
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/panel/gestion/invitados"
+            className="mt-3 inline-block text-sm text-accent hover:underline"
+          >
+            Ir a la lista →
+          </Link>
         </Card>
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg">Presupuesto consumido</h2>
-          <span className="text-sm text-muted">
-            {Math.round((presupuesto.gastado / presupuesto.total) * 100)}%
-          </span>
-        </div>
-        <div className="mt-3">
-          <Progress value={(presupuesto.gastado / presupuesto.total) * 100} />
-        </div>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg">Presupuesto</h2>
+            <span className="text-sm text-muted">{Math.round(pctBudget)}%</span>
+          </div>
+          <div className="mt-3">
+            <Progress value={pctBudget} />
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Pagado <strong className="text-foreground">{eur(d.gastado)}</strong> · Estimado{" "}
+            {eur(d.estimado)}
+            {d.refTotal ? ` · Referencia ${eur(d.refTotal)}` : ""}
+          </p>
+          <Link
+            href="/panel/gestion/presupuesto"
+            className="mt-2 inline-block text-sm text-accent hover:underline"
+          >
+            Ver presupuesto →
+          </Link>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg">Tareas</h2>
+            <span className="text-sm text-muted">{Math.round(pctTareas)}%</span>
+          </div>
+          <div className="mt-3">
+            <Progress value={pctTareas} />
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            {d.tareasTotal - d.tareasPend} hechas de {d.tareasTotal} · {d.tareasPend} pendientes
+          </p>
+          <Link
+            href="/panel/gestion/tiempos"
+            className="mt-2 inline-block text-sm text-accent hover:underline"
+          >
+            Ver tareas →
+          </Link>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function Fila({
+  label,
+  valor,
+  color = "text-foreground",
+}: {
+  label: string;
+  valor: number;
+  color?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted">{label}</span>
+      <span className={`font-display text-lg ${color}`}>{valor}</span>
     </div>
   );
 }
