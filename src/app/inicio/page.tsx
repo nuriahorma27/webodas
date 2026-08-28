@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, ConfigError } from "@/lib/supabase/client";
 
 export default function InicioPage() {
   return (
@@ -65,9 +65,13 @@ function Inicio() {
         setAviso(
           "Si hay una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña. Revisa tu correo.",
         );
-      } catch {
+      } catch (err) {
         setPending(false);
-        setError("No hemos podido contactar con el servidor. Vuelve a intentarlo.");
+        setError(
+          err instanceof ConfigError
+            ? "La conexión con el servidor no está configurada. Avísanos."
+            : "No hemos podido contactar con el servidor. Vuelve a intentarlo.",
+        );
       }
       return;
     }
