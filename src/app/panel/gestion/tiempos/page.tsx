@@ -151,7 +151,14 @@ function Row({
             <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
           </p>
         </button>
-        {meta && <span className="shrink-0 pt-0.5 text-xs text-muted">{meta}</span>}
+        <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5 text-xs">
+          {t.responsable && (
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
+              {t.responsable}
+            </span>
+          )}
+          {meta && <span className="text-muted">{meta}</span>}
+        </div>
         <button
           onClick={onToggleEdit}
           title="Editar tarea"
