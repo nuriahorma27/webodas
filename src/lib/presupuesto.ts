@@ -14,7 +14,7 @@ export type Partida = {
 };
 
 // v2: nueva estructura de categorías (arranca con todas las partidas estándar).
-const KEY = "webodas:presupuesto:v2";
+const KEY = "webodas:presupuesto:v3";
 
 // Conceptos que se tratan como "menú" (precio por comensal × nº).
 export const MENU_CONCEPTOS = ["Menú invitados", "Menú niños", "Menú proveedores"];
@@ -64,7 +64,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
   ],
   "Decoración y flores": [
     "Centros de mesa",
-    "Flores y ramos de damas",
+    "Flores y ramos de testigos",
     "Decoración de espacios",
     "Iluminación",
     "Velas y atrezzo",
@@ -76,7 +76,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
     "Sesión preboda / postboda",
     "Dron",
   ],
-  "Traje y belleza novia": [
+  "La novia": [
     "Vestido",
     "Arreglos",
     "Zapatos",
@@ -87,7 +87,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
     "Peluquería y maquillaje",
     "Pruebas de peluquería y maquillaje",
   ],
-  "Traje y belleza novio": [
+  "El novio": [
     "Traje",
     "Camisa",
     "Zapatos",
@@ -116,7 +116,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
   ],
   "Detalles y regalos": [
     "Detalle para invitados",
-    "Detalle para damas y padrinos",
+    "Detalle para testigos",
     "Puros y tabaco",
     "Kit de fiesta / abanicos",
     "Cesta de baño",
@@ -149,8 +149,8 @@ const CATEGORIAS_INICIALES = [
   "Música",
   "Decoración y flores",
   "Fotografía y vídeo",
-  "Traje y belleza novia",
-  "Traje y belleza novio",
+  "La novia",
+  "El novio",
   "Papelería",
   "Transporte",
   "Detalles y regalos",
