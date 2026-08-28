@@ -9,6 +9,8 @@ import {
   loadPartidas,
   addPartida,
   addCategoria,
+  resetPartidas,
+  estimadoDe,
   updatePartida,
   removePartida,
   removeCategoria,
@@ -64,6 +66,17 @@ export default function PresupuestoPage() {
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            if (confirm("¿Volver al presupuesto estándar? Se pierden tus cambios.")) resetPartidas();
+          }}
+          className="text-xs text-muted underline hover:text-foreground"
+        >
+          Restablecer al presupuesto estándar
+        </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -211,9 +224,12 @@ function Fila({ p }: { p: Partida }) {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
-  const pct = p.estimado ? Math.min(100, (p.pagado / p.estimado) * 100) : 0;
+  const est = estimadoDe(p);
+  const pct = est ? Math.min(100, (p.pagado / est) * 100) : 0;
 
   const cell = "w-full bg-transparent outline-none focus:border-b focus:border-accent";
+  const mini =
+    "w-16 rounded border border-line bg-transparent px-1.5 py-0.5 text-right text-xs outline-none focus:border-accent";
 
   return (
     <tr>
@@ -233,15 +249,38 @@ function Fila({ p }: { p: Partida }) {
           className={`${cell} text-muted`}
         />
       </td>
-      <td className="px-3 py-2 text-right">
-        <input
-          type="text"
-          inputMode="decimal"
-          defaultValue={p.estimado || ""}
-          placeholder="0"
-          onBlur={(e) => updatePartida(p.id, { estimado: num(e.target.value) })}
-          className={`${cell} text-right`}
-        />
+      <td className="px-3 py-2 text-right align-middle">
+        {p.tipo === "menu" ? (
+          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+            <input
+              type="text"
+              inputMode="decimal"
+              defaultValue={p.precioUnidad || ""}
+              placeholder="€/pax"
+              onBlur={(e) => updatePartida(p.id, { precioUnidad: num(e.target.value) })}
+              className={mini}
+            />
+            <span className="text-xs text-muted">×</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              defaultValue={p.cantidad || ""}
+              placeholder="nº"
+              onBlur={(e) => updatePartida(p.id, { cantidad: num(e.target.value) })}
+              className={mini}
+            />
+            <span className="ml-1 w-16 text-right text-xs font-medium">{eur(est)}</span>
+          </div>
+        ) : (
+          <input
+            type="text"
+            inputMode="decimal"
+            defaultValue={p.estimado || ""}
+            placeholder="0"
+            onBlur={(e) => updatePartida(p.id, { estimado: num(e.target.value) })}
+            className={`${cell} text-right`}
+          />
+        )}
       </td>
       <td className="px-3 py-2 text-right">
         <input

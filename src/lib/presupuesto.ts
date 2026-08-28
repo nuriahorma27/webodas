@@ -7,9 +7,22 @@ export type Partida = {
   proveedor: string;
   estimado: number;
   pagado: number;
+  // Partidas de menú: el estimado se calcula precio × comensales.
+  tipo?: "menu";
+  precioUnidad?: number;
+  cantidad?: number;
 };
 
 const KEY = "webodas:presupuesto";
+
+// Conceptos que se tratan como "menú" (precio por comensal × nº).
+export const MENU_CONCEPTOS = ["Menú invitados", "Menú niños", "Menú proveedores"];
+
+// Estimado real de una partida (calculado si es de tipo menú).
+export function estimadoDe(p: Partida): number {
+  if (p.tipo === "menu") return (p.precioUnidad || 0) * (p.cantidad || 0);
+  return p.estimado || 0;
+}
 
 // Categorías estándar y sus partidas típicas. Se ofrecen al pulsar
 // "Añadir categoría" (también para volver a añadir una borrada por error).
@@ -25,10 +38,12 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
   "Ceremonia civil": ["Oficiante", "Flores", "Fotografía", "Vídeo", "Música"],
   Banquete: [
     "Alquiler finca",
+    "Menú invitados",
+    "Menú niños",
+    "Menú proveedores",
     "Hora extra barra libre",
     "Música en vivo",
     "DJ",
-    "Invitados",
   ],
   "Traje novia": [
     "Vestido",
@@ -79,6 +94,7 @@ const nuevaPartida = (categoria: string, concepto: string): Partida => ({
   proveedor: "",
   estimado: 0,
   pagado: 0,
+  ...(MENU_CONCEPTOS.includes(concepto) ? { tipo: "menu" as const } : {}),
 });
 
 export function partidasIniciales(): Partida[] {
@@ -102,6 +118,10 @@ export function loadPartidas(): Partida[] {
   } catch {
     return seed();
   }
+}
+
+export function resetPartidas() {
+  savePartidas(partidasIniciales());
 }
 
 export function savePartidas(partidas: Partida[]) {
@@ -168,7 +188,7 @@ export function categoriasOrdenadas(partidas: Partida[]): string[] {
 export function totales(partidas: Partida[]) {
   return partidas.reduce(
     (acc, x) => ({
-      estimado: acc.estimado + (x.estimado || 0),
+      estimado: acc.estimado + estimadoDe(x),
       pagado: acc.pagado + (x.pagado || 0),
     }),
     { estimado: 0, pagado: 0 },
