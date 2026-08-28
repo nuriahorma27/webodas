@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui";
+import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
 import {
   loadMesas,
@@ -274,9 +275,10 @@ function svgMesa(mesa: Mesa, nombreDe: (id: string) => Invitado | undefined) {
 
   const mesaShape =
     mesa.tipo === "redonda"
-      ? `<ellipse cx="${VW / 2}" cy="${VH / 2}" rx="${VW * 0.31}" ry="${VH * 0.31}" fill="#efe7da" stroke="#d9cdb8"/>`
-      : `<rect x="${VW * 0.19}" y="${VH * 0.19}" width="${VW * 0.62}" height="${VH * 0.62}" rx="${rect ? 16 : 8}" fill="#efe7da" stroke="#d9cdb8"/>`;
+      ? `<ellipse cx="${VW / 2}" cy="${VH / 2}" rx="${VW * 0.31}" ry="${VH * 0.31}" fill="#f4eee1" stroke="#cdbfa4"/>`
+      : `<rect x="${VW * 0.19}" y="${VH * 0.19}" width="${VW * 0.62}" height="${VH * 0.62}" rx="${rect ? 16 : 8}" fill="#f4eee1" stroke="#cdbfa4"/>`;
 
+  const serif = "'Cormorant Garamond', Georgia, serif";
   const sillas = pos
     .map((p, i) => {
       const x = (p.x / 100) * VW;
@@ -284,13 +286,13 @@ function svgMesa(mesa: Mesa, nombreDe: (id: string) => Invitado | undefined) {
       const inv = mesa.invitados[i] ? nombreDe(mesa.invitados[i]) : undefined;
       const txt = inv ? iniciales(inv) : String(i + 1);
       return `<g>
-        <circle cx="${x}" cy="${y}" r="${r}" fill="${inv ? "#fff" : "#f7f3ec"}" stroke="#8a6d3b" stroke-width="1"/>
-        <text x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${fs}" font-weight="bold" fill="#1c1a17">${txt}</text>
+        <circle cx="${x}" cy="${y}" r="${r}" fill="${inv ? "#fff" : "#faf7f0"}" stroke="#b89b6a" stroke-width="1"/>
+        <text x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${fs}" font-family="${serif}" font-weight="600" fill="#3a342b">${txt}</text>
       </g>`;
     })
     .join("");
 
-  return `<svg viewBox="0 0 ${VW} ${VH}" width="${rect ? 380 : 300}" xmlns="http://www.w3.org/2000/svg">${mesaShape}${sillas}</svg>`;
+  return `<svg viewBox="0 0 ${VW} ${VH}" width="${rect ? 360 : 280}" xmlns="http://www.w3.org/2000/svg">${mesaShape}${sillas}</svg>`;
 }
 
 function imprimirMesas(
@@ -300,49 +302,79 @@ function imprimirMesas(
   const esc = (s: string) =>
     s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 
+  const boda = loadBoda();
+  const pareja = nombrePareja(boda);
+  const fecha = fechaLarga(boda);
+
+  const portada = `<section class="portada">
+    <div class="pmark">Plano de mesas</div>
+    <h1 class="pnombre">${esc(pareja === "Vuestra boda" ? "Nuestra boda" : pareja)}</h1>
+    ${fecha ? `<div class="pfecha">${esc(fecha)}</div>` : ""}
+    <div class="prule"></div>
+    <div class="pinfo">${cfg.mesas.length} mesas · ${cfg.mesas.reduce((s, m) => s + m.invitados.length, 0)} invitados sentados</div>
+  </section>`;
+
   const paginas = [...cfg.mesas]
     .sort((a, b) => a.numero - b.numero)
     .map((m) => {
       const filas = m.invitados
         .map((id, i) => {
           const inv = nombreDe(id);
-          return `<li><b>${i + 1}</b> ${esc(nombreCompleto(inv))} <span class="ini">${esc(iniciales(inv))}</span></li>`;
+          return `<li><span class="li-n">${i + 1}</span><span class="li-nom">${esc(nombreCompleto(inv))}</span><span class="ini">${esc(iniciales(inv))}</span></li>`;
         })
         .join("");
       return `<section class="mesa">
+        <div class="mhead">
+          <div class="mnum">Mesa ${m.numero}</div>
+          ${m.nombre ? `<div class="mnom">${esc(m.nombre)}</div>` : ""}
+        </div>
         ${m.imagen ? `<div class="foto"><img src="${m.imagen}" alt=""/></div>` : ""}
-        <h1>Mesa ${m.numero}</h1>
-        ${m.nombre ? `<h2>${esc(m.nombre)}</h2>` : ""}
         <div class="dibujo">${svgMesa(m, nombreDe)}</div>
         <ol>${filas || '<li class="vacia">Sin invitados asignados</li>'}</ol>
       </section>`;
     })
     .join("");
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Plano de mesas</title>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Plano de mesas · ${esc(pareja)}</title>
   <style>
-    @page { margin: 16mm; }
-    * { box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
-    body { margin:0; color:#1c1a17; }
-    .mesa { page-break-after: always; text-align:center; }
-    .mesa:last-child { page-break-after: auto; }
-    .foto { margin-bottom: 6mm; }
-    .foto img { max-width: 100%; max-height: 80mm; object-fit: contain; }
-    h1 { font-size: 28pt; margin: 0; }
-    h2 { font-size: 15pt; font-weight: normal; color:#8a6d3b; margin: 1mm 0 4mm; }
-    .dibujo { margin: 4mm 0 6mm; }
-    ol { list-style:none; padding:0; margin: 0 auto; max-width: 360px; text-align:left;
-         column-count: 1; }
-    ol.dos { column-count: 2; column-gap: 10mm; }
-    li { font-size: 12pt; padding: 1.5mm 0; border-bottom: 1px solid #e5ded2;
-         break-inside: avoid; }
-    li b { display:inline-block; width: 20px; color:#8a6d3b; }
-    li .ini { color:#999; font-size: 9pt; }
-    li.vacia { color:#999; border:none; }
-  </style></head><body>${paginas}
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=EB+Garamond:ital@0;1&display=swap');
+    @page { margin: 15mm; }
+    * { box-sizing: border-box; }
+    body { margin:0; color:#26221d; font-family: 'EB Garamond', Georgia, serif; }
+    section { page-break-after: always; text-align:center; }
+    section:last-child { page-break-after: auto; }
+
+    .portada {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-height: 245mm; gap: 5mm;
+    }
+    .pmark { font-family:'EB Garamond',serif; letter-spacing:.32em; text-transform:uppercase;
+      font-size: 11pt; color:#8a6d3b; }
+    .pnombre { font-family:'Cormorant Garamond',serif; font-weight:500; font-size: 42pt;
+      margin: 0; line-height:1.1; }
+    .pfecha { font-family:'Cormorant Garamond',serif; font-size: 16pt; color:#6b6459; }
+    .prule { width: 46mm; height:1px; background:#c9bda6; margin: 3mm 0; }
+    .pinfo { font-size: 11pt; color:#8a8172; letter-spacing:.04em; }
+
+    .mhead { margin-bottom: 5mm; }
+    .mnum { font-family:'Cormorant Garamond',serif; font-weight:600; font-size: 30pt; line-height:1; }
+    .mnom { font-family:'Cormorant Garamond',serif; font-size: 15pt; color:#8a6d3b; margin-top:1mm; }
+    .foto { margin: 0 auto 5mm; }
+    .foto img { display:block; margin:0 auto; max-width: 120mm; max-height: 62mm;
+      width:auto; height:auto; border: 1px solid #e3dccd; padding: 2mm; background:#fff; }
+    .dibujo { margin: 0 0 6mm; }
+    ol { list-style:none; padding:0; margin: 0 auto; max-width: 150mm; text-align:left; }
+    ol.dos { column-count: 2; column-gap: 12mm; }
+    li { font-size: 12pt; padding: 1.6mm 0; border-bottom: 1px solid #ece5d6;
+      break-inside: avoid; display:flex; align-items:baseline; gap: 3mm; }
+    li .li-n { width: 6mm; color:#8a6d3b; font-family:'Cormorant Garamond',serif; font-weight:600; }
+    li .li-nom { flex:1; }
+    li .ini { color:#b0a894; font-size: 9pt; letter-spacing:.08em; }
+    li.vacia { color:#a29a89; border:none; font-style:italic; }
+  </style></head><body>${portada}${paginas}
   <script>
-    document.querySelectorAll('ol').forEach(function(o){ if(o.children.length>10) o.classList.add('dos'); });
-    window.onload=function(){setTimeout(function(){window.print();},350);};
+    document.querySelectorAll('ol').forEach(function(o){ if(o.children.length>12) o.classList.add('dos'); });
+    window.onload=function(){setTimeout(function(){window.print();},450);};
   <\/script>
   </body></html>`;
 
