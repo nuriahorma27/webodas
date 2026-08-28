@@ -400,29 +400,34 @@ export default function InvitadosPage() {
           <button onClick={() => setModalCol(true)} className="text-sm font-medium text-accent">
             + Añadir columna
           </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="text-sm font-medium text-accent"
-          >
-            ↑ Importar de Excel
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importar(f);
-              e.target.value = "";
-            }}
-          />
         </div>
-        <p className="px-5 pb-3 text-xs text-muted">
-          El Excel debe tener los <strong>nombres en la columna A</strong> y los{" "}
-          <strong>apellidos en la columna B</strong>, empezando en la fila 1. Los que ya estén en la
-          lista no se duplican.
+      </Card>
+
+      <Card>
+        <h3 className="font-display text-lg">Importar invitados desde Excel</h3>
+        <p className="mt-1 text-sm text-muted">
+          Sube un archivo Excel (<strong>.xlsx</strong>) o CSV con los{" "}
+          <strong>nombres en la columna A</strong> y los <strong>apellidos en la columna B</strong>,
+          empezando en la <strong>fila 1</strong>. Se añaden a la lista; los que ya estén no se
+          duplican.
         </p>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="mt-3 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          ↑ Elegir archivo e importar
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importar(f);
+            e.target.value = "";
+          }}
+        />
       </Card>
 
       {modalCol && (
