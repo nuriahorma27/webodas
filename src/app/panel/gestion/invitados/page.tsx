@@ -408,8 +408,7 @@ export default function InvitadosPage() {
         <p className="mt-1 text-sm text-muted">
           Sube un archivo Excel (<strong>.xlsx</strong>) o CSV con los{" "}
           <strong>nombres en la columna A</strong> y los <strong>apellidos en la columna B</strong>,
-          empezando en la <strong>fila 1</strong>. Se añaden a la lista; los que ya estén no se
-          duplican.
+          empezando en la <strong>fila 1</strong>.
         </p>
         <button
           onClick={() => fileRef.current?.click()}
