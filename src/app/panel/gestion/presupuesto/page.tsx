@@ -23,6 +23,7 @@ import {
 export default function PresupuestoPage() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null);
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
+  const [menuCat, setMenuCat] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -49,7 +50,6 @@ export default function PresupuestoPage() {
   const referencia = presupuestoTotal ?? 0;
   const sinAsignar = referencia - tot.estimado;
 
-  const [menuCat, setMenuCat] = useState(false);
   const estandarDisponibles = Object.keys(CATEGORIAS_ESTANDAR).filter(
     (c) => !categorias.includes(c),
   );
