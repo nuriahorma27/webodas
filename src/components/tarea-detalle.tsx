@@ -63,7 +63,7 @@ export function TareaDetalleForm({
 
   if (esProveedor) {
     return (
-      <div className="rounded-lg bg-accent-soft/40 p-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
         <ProveedorOpciones
           opciones={(d.opciones as ProveedorOpcion[]) ?? []}
           contratado={(d.contratado as string) ?? ""}
@@ -100,7 +100,7 @@ export function TareaDetalleForm({
   const link = LINK_LABELS[tipo];
 
   return (
-    <div className="rounded-lg bg-accent-soft/40 p-4">
+    <div className="rounded-lg border border-line bg-surface p-4">
       {editando ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -160,10 +160,21 @@ export function TareaDetalleForm({
   );
 }
 
+const fmt = (c: Campo, v: string) => {
+  if (c.tipo === "date") {
+    const d = new Date(v);
+    return isNaN(d.getTime())
+      ? v
+      : d.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  }
+  if (c.tipo === "eur") return `${v} €`;
+  return v;
+};
+
 function DetalleLectura({ campos, d }: { campos: Campo[]; d: TareaDetalle }) {
   const filas = campos
     .filter((c) => c.tipo !== "checklist")
-    .map((c) => [c.label, (d[c.key] as string) ?? ""] as const)
+    .map((c) => [c, (d[c.key] as string) ?? ""] as const)
     .filter(([, v]) => v);
   const checklist = campos.find((c) => c.tipo === "checklist");
   const items = checklist ? ((d[checklist.key] as ChecklistItem[]) ?? []) : [];
@@ -173,16 +184,16 @@ function DetalleLectura({ campos, d }: { campos: Campo[]; d: TareaDetalle }) {
   }
 
   return (
-    <dl className="space-y-1 text-sm">
-      {filas.map(([label, v]) => (
-        <div key={label} className="flex gap-2">
-          <dt className="shrink-0 text-muted">{label}:</dt>
-          <dd className="whitespace-pre-wrap">{v}</dd>
+    <dl className="grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
+      {filas.map(([c, v]) => (
+        <div key={c.key} className={c.tipo === "textarea" ? "sm:col-span-2" : ""}>
+          <dt className="text-[11px] uppercase tracking-wide text-muted">{c.label}</dt>
+          <dd className="mt-0.5 whitespace-pre-wrap">{fmt(c, v)}</dd>
         </div>
       ))}
       {items.length > 0 && (
-        <div className="pt-1">
-          <dt className="text-muted">{checklist?.label}:</dt>
+        <div className="sm:col-span-2">
+          <dt className="text-[11px] uppercase tracking-wide text-muted">{checklist?.label}</dt>
           <ul className="mt-1 space-y-0.5">
             {items.map((i) => (
               <li key={i.label} className={i.done ? "text-muted line-through" : ""}>

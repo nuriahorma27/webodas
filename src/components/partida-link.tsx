@@ -16,6 +16,8 @@ import {
 
 const inputCls =
   "mt-1 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
+const numCls =
+  "w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm outline-none focus:border-accent";
 
 export function PartidaLink({
   tareaId,
@@ -45,44 +47,43 @@ export function PartidaLink({
 
   if (vinculada) {
     return (
-      <div className="mt-3 rounded-md border border-accent/40 bg-accent-soft/40 p-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted">
-            Partida del presupuesto ·{" "}
-            <span className="text-foreground">
-              {vinculada.categoria} › {vinculada.concepto || "sin nombre"}
-            </span>
-          </p>
+      <div className="mt-3 border-t border-line pt-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted">
+            Presupuesto
+          </span>
+          <span className="text-xs text-muted">
+            {vinculada.categoria} › {vinculada.concepto || "sin nombre"}
+          </span>
           <button
             onClick={() => desvincularTarea(tareaId)}
-            className="text-xs text-muted underline hover:text-red-600"
+            className="ml-auto text-xs text-muted underline hover:text-red-600"
           >
             Desvincular
           </button>
         </div>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-xs font-medium text-muted">{labelEstimado} (€)</span>
+        <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-xs text-muted">{labelEstimado}</span>
             <input
               type="number"
               defaultValue={estimadoDe(vinculada) || ""}
               onBlur={(e) => updatePartida(vinculada.id, { estimado: Number(e.target.value) || 0 })}
-              className={inputCls}
+              className={numCls}
             />
+            <span className="text-xs text-muted">€</span>
           </label>
-          <label className="block">
-            <span className="text-xs font-medium text-muted">{labelPagado} (€)</span>
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-xs text-muted">{labelPagado}</span>
             <input
               type="number"
               defaultValue={vinculada.pagado || ""}
               onBlur={(e) => updatePartida(vinculada.id, { pagado: Number(e.target.value) || 0 })}
-              className={inputCls}
+              className={numCls}
             />
+            <span className="text-xs text-muted">€</span>
           </label>
         </div>
-        <p className="mt-1.5 text-[11px] text-muted">
-          Se sincroniza con la pestaña Presupuesto.
-        </p>
       </div>
     );
   }
@@ -131,9 +132,11 @@ export function PartidaLink({
   }
 
   return (
-    <div className="mt-3">
-      <span className="text-xs font-medium text-muted">Partida del presupuesto</span>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
+    <div className="mt-3 border-t border-line pt-3">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-muted">
+        Presupuesto
+      </span>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <select
           defaultValue=""
           onChange={(e) => {
