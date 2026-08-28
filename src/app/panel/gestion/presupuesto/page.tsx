@@ -19,26 +19,33 @@ import {
   moveCategoria,
   categoriasOrdenadas,
   totales,
+  vincularPartida,
+  desvincularTarea,
   CATEGORIAS_ESTANDAR,
   type Partida,
 } from "@/lib/presupuesto";
+import { loadTareas, type Tarea } from "@/lib/tareas";
 
 export default function PresupuestoPage() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null);
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
+  const [tareas, setTareas] = useState<Tarea[]>([]);
   const [menuCat, setMenuCat] = useState(false);
 
   useEffect(() => {
     const sync = () => {
       setPartidas(loadPartidas());
       setPresupuestoTotal(loadBoda().presupuestoTotal);
+      setTareas(loadTareas());
     };
     sync();
     window.addEventListener("webodas:presupuesto", sync);
     window.addEventListener("webodas:boda", sync);
+    window.addEventListener("webodas:tareas", sync);
     return () => {
       window.removeEventListener("webodas:presupuesto", sync);
       window.removeEventListener("webodas:boda", sync);
+      window.removeEventListener("webodas:tareas", sync);
     };
   }, []);
 
@@ -180,7 +187,7 @@ export default function PresupuestoPage() {
                   </thead>
                   <tbody className="divide-y divide-line">
                     {filas.map((p) => (
-                      <Fila key={p.id} p={p} />
+                      <Fila key={p.id} p={p} tareas={tareas} />
                     ))}
                   </tbody>
                 </table>
@@ -241,13 +248,14 @@ export default function PresupuestoPage() {
   );
 }
 
-function Fila({ p }: { p: Partida }) {
+function Fila({ p, tareas }: { p: Partida; tareas: Tarea[] }) {
   const num = (v: string) => {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
   const est = estimadoDe(p);
   const pct = est ? Math.min(100, (p.pagado / est) * 100) : 0;
+  const tareaVinc = p.tareaId ? tareas.find((t) => t.id === p.tareaId) : undefined;
 
   const cell = "w-full bg-transparent outline-none focus:border-b focus:border-accent";
   const mini =
@@ -262,6 +270,32 @@ function Fila({ p }: { p: Partida }) {
           onBlur={(e) => updatePartida(p.id, { concepto: e.target.value })}
           className={`${cell} font-medium`}
         />
+        {tareaVinc ? (
+          <span className="mt-0.5 flex items-center gap-1 text-[11px] text-accent">
+            🔗 {tareaVinc.titulo || "tarea"}
+            <button
+              onClick={() => desvincularTarea(p.tareaId!)}
+              className="text-muted underline hover:text-red-600"
+            >
+              quitar
+            </button>
+          </span>
+        ) : (
+          <select
+            value=""
+            onChange={(e) => e.target.value && vincularPartida(p.id, e.target.value)}
+            className="mt-0.5 max-w-[180px] bg-transparent text-[11px] text-muted outline-none"
+          >
+            <option value="">🔗 vincular tarea…</option>
+            {tareas
+              .filter((t) => t.titulo)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.categoria} · {t.titulo}
+                </option>
+              ))}
+          </select>
+        )}
       </td>
       <td className="px-5 py-2">
         <input

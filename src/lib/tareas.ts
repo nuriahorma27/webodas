@@ -20,8 +20,6 @@ export const FIELD_SETS: Record<string, Campo[]> = {
     { key: "lugar", label: "Lugar", tipo: "text" },
     { key: "fecha", label: "Fecha reservada", tipo: "date" },
     { key: "contacto", label: "Contacto", tipo: "text" },
-    { key: "presupuesto", label: "Presupuesto (€)", tipo: "eur" },
-    { key: "pagado", label: "Pagado (€)", tipo: "eur" },
     { key: "notas", label: "Notas", tipo: "textarea" },
   ],
   persona: [
@@ -69,9 +67,9 @@ export const FIELD_SETS: Record<string, Campo[]> = {
   ],
   compra: [
     { key: "tienda", label: "Tienda / dónde", tipo: "text" },
-    { key: "precio", label: "Precio (€)", tipo: "eur" },
-    { key: "pagado", label: "Pagado (€)", tipo: "eur" },
     { key: "detalle", label: "Detalle (talla, color, diseñador…)", tipo: "text" },
+    { key: "enlace", label: "Enlace", tipo: "text" },
+    { key: "comprado", label: "¿Comprado?", tipo: "sino" },
     { key: "notas", label: "Notas", tipo: "textarea" },
   ],
   viaje: [

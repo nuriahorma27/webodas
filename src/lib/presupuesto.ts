@@ -11,6 +11,8 @@ export type Partida = {
   tipo?: "menu";
   precioUnidad?: number;
   cantidad?: number;
+  // Enlace con una tarea de la pestaña Tareas.
+  tareaId?: string;
 };
 
 // v2: nueva estructura de categorías (arranca con todas las partidas estándar).
@@ -251,6 +253,50 @@ export function categoriasOrdenadas(partidas: Partida[]): string[] {
   const vistas: string[] = [];
   for (const x of partidas) if (!vistas.includes(x.categoria)) vistas.push(x.categoria);
   return vistas;
+}
+
+/* ---------- enlace con tareas ---------- */
+
+export function partidaById(id: string): Partida | undefined {
+  return loadPartidas().find((p) => p.id === id);
+}
+
+export function partidaByTarea(tareaId: string): Partida | undefined {
+  return loadPartidas().find((p) => p.tareaId === tareaId);
+}
+
+// Vincula una partida existente a una tarea (quita el enlace previo de esa tarea).
+export function vincularPartida(partidaId: string, tareaId: string) {
+  savePartidas(
+    loadPartidas().map((p) => {
+      if (p.id === partidaId) return { ...p, tareaId };
+      if (p.tareaId === tareaId) return { ...p, tareaId: undefined };
+      return p;
+    }),
+  );
+}
+
+export function desvincularTarea(tareaId: string) {
+  savePartidas(
+    loadPartidas().map((p) => (p.tareaId === tareaId ? { ...p, tareaId: undefined } : p)),
+  );
+}
+
+// Crea una partida nueva ya vinculada a la tarea.
+export function crearPartidaVinculada(categoria: string, concepto: string, tareaId: string): Partida {
+  const actuales = loadPartidas();
+  const nueva: Partida = {
+    ...nuevaPartida(categoria || "Otros", concepto),
+    tareaId,
+  };
+  // la colocamos junto al resto de su categoría
+  const idx = actuales.map((p) => p.categoria).lastIndexOf(nueva.categoria);
+  const next =
+    idx >= 0
+      ? [...actuales.slice(0, idx + 1), nueva, ...actuales.slice(idx + 1)]
+      : [...actuales, nueva];
+  savePartidas(next);
+  return nueva;
 }
 
 export function totales(partidas: Partida[]) {

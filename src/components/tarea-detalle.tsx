@@ -10,6 +10,15 @@ import {
   type ProveedorOpcion,
 } from "@/lib/tareas";
 import { ProveedorOpciones } from "@/components/proveedor-opciones";
+import { PartidaLink } from "@/components/partida-link";
+
+// Fichas que se pueden enlazar con una partida del presupuesto.
+const LINK_LABELS: Record<string, { estimado: string; pagado: string }> = {
+  proveedor: { estimado: "Presupuesto", pagado: "Pagado" },
+  reserva: { estimado: "Importe total", pagado: "Señal / pagado" },
+  lugarFecha: { estimado: "Coste", pagado: "Pagado" },
+  compra: { estimado: "Precio", pagado: "Pagado" },
+};
 
 const inputCls =
   "mt-1 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
@@ -72,9 +81,23 @@ export function TareaDetalleForm({
             className={inputCls}
           />
         </label>
+        {d.contratado ? (
+          <PartidaLink
+            tareaId={id}
+            conceptoSugerido={
+              ((d.opciones as ProveedorOpcion[]) ?? []).find((o) => o.id === d.contratado)?.nombre ?? ""
+            }
+          />
+        ) : (
+          <p className="mt-3 text-[11px] text-muted">
+            Marca una opción como contratada para enlazarla con el presupuesto.
+          </p>
+        )}
       </div>
     );
   }
+
+  const link = LINK_LABELS[tipo];
 
   return (
     <div className="rounded-lg bg-accent-soft/40 p-4">
@@ -123,6 +146,15 @@ export function TareaDetalleForm({
             {guardado && <span className="text-xs text-green-600">Guardado ✓</span>}
           </div>
         </>
+      )}
+
+      {link && (
+        <PartidaLink
+          tareaId={id}
+          conceptoSugerido={(d.lugar as string) || (d.tienda as string) || ""}
+          labelEstimado={link.estimado}
+          labelPagado={link.pagado}
+        />
       )}
     </div>
   );
