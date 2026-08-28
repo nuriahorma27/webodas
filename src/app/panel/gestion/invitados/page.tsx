@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card, Stat } from "@/components/ui";
-import { CampoBoda } from "@/components/campo-boda";
 import { leerNombresExcel } from "@/lib/import-excel";
 import {
   loadResponses,
@@ -10,8 +9,7 @@ import {
   valorRespuesta,
   type RsvpResponse,
 } from "@/lib/rsvp";
-import { labelsFormulario, loadFormulario, formatoPregunta } from "@/lib/formulario";
-import Link from "next/link";
+import { labelsFormulario, formatoPregunta } from "@/lib/formulario";
 import {
   loadInvitados,
   loadColumnas,
@@ -57,8 +55,6 @@ export default function InvitadosPage() {
   const [ajustes, setAjustes] = useState(false);
   const [vista, setVista] = useState<"gestion" | "respuestas">("gestion");
   const [respuestas, setRespuestas] = useState<RsvpResponse[]>([]);
-  const [numPreguntas, setNumPreguntas] = useState(0);
-  const [webConBoton, setWebConBoton] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importar = async (file: File) => {
@@ -87,17 +83,6 @@ export default function InvitadosPage() {
       setSubgrupos(loadSubgrupos());
       setPreguntas(labelsFormulario());
       setRespuestas(loadResponses("demo"));
-      setNumPreguntas(loadFormulario().preguntas.length);
-      try {
-        const raw = localStorage.getItem("webodas:site:demo");
-        const data = raw ? JSON.parse(raw) : null;
-        setWebConBoton(
-          Array.isArray(data?.content) &&
-            data.content.some((b: { type?: string }) => b.type === "RSVP"),
-        );
-      } catch {
-        setWebConBoton(false);
-      }
     };
     sync();
     window.addEventListener("webodas:invitados", sync);
@@ -119,10 +104,6 @@ export default function InvitadosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <CampoBoda campo="invitadosAprox" label="Invitados aproximados" />
-      </div>
-
       <div className="grid gap-2 sm:grid-cols-2">
         <button
           onClick={() => setVista("gestion")}
@@ -160,14 +141,6 @@ export default function InvitadosPage() {
           </span>
         </button>
       </div>
-
-      {vista === "gestion" && (
-        <Pasos
-          lista={inv.length > 0}
-          formulario={numPreguntas > 0}
-          web={webConBoton}
-        />
-      )}
 
       {vista === "respuestas" ? (
         <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
@@ -858,43 +831,3 @@ function ListaEditable({
   );
 }
 
-function Pasos({ lista, formulario, web }: { lista: boolean; formulario: boolean; web: boolean }) {
-  const pasos = [
-    { ok: lista, txt: "Crea tu lista de invitados (añade o importa desde Excel)", href: null },
-    {
-      ok: formulario,
-      txt: "Crea el formulario de confirmación",
-      href: "/panel/gestion/formulario",
-    },
-    {
-      ok: lista && formulario,
-      txt: "Asocia cada pregunta a una columna (⚙ Ajustes de la lista)",
-      href: null,
-    },
-    { ok: web, txt: "Añade el botón del formulario a tu web", href: "/panel/webs" },
-  ];
-  if (pasos.every((p) => p.ok)) {
-    return (
-      <Card className="text-sm text-emerald-700">✓ Todo listo: lista, formulario y botón en la web.</Card>
-    );
-  }
-  return (
-    <Card>
-      <h3 className="font-display text-lg">Pasos para tener tus confirmaciones</h3>
-      <ol className="mt-2 space-y-1.5 text-sm">
-        {pasos.map((p, i) => (
-          <li key={i} className={`flex items-start gap-2 ${p.ok ? "text-muted line-through" : ""}`}>
-            <span>{p.ok ? "✓" : `${i + 1}.`}</span>
-            {p.href && !p.ok ? (
-              <Link href={p.href} className="text-accent underline">
-                {p.txt} →
-              </Link>
-            ) : (
-              <span>{p.txt}</span>
-            )}
-          </li>
-        ))}
-      </ol>
-    </Card>
-  );
-}
