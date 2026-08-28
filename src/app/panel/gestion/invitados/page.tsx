@@ -44,8 +44,98 @@ import {
   type TipoInvitado,
 } from "@/lib/invitados";
 
-const cell =
-  "w-full min-w-[7rem] bg-transparent px-2.5 py-2 text-sm outline-none focus:bg-accent-soft/30";
+
+// Celda que muestra el valor como texto (con tooltip si no cabe) y se edita al hacer doble clic.
+function CeldaTexto({
+  value,
+  onSave,
+  align = "",
+  muted = false,
+  numero = false,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+  align?: string;
+  muted?: boolean;
+  numero?: boolean;
+}) {
+  const [edit, setEdit] = useState(false);
+  if (edit) {
+    return (
+      <input
+        autoFocus
+        inputMode={numero ? "numeric" : undefined}
+        defaultValue={value}
+        onBlur={(e) => {
+          onSave(e.target.value.trim());
+          setEdit(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") setEdit(false);
+        }}
+        className={`w-full rounded-sm bg-white px-2.5 py-2 text-sm outline outline-2 -outline-offset-1 outline-accent ${align}`}
+      />
+    );
+  }
+  return (
+    <div
+      onDoubleClick={() => setEdit(true)}
+      title={value || undefined}
+      className={`max-w-[16rem] cursor-default truncate px-2.5 py-2 text-sm ${align} ${
+        muted ? "text-muted" : ""
+      }`}
+    >
+      {value || <span className="text-neutral-300">—</span>}
+    </div>
+  );
+}
+
+function CeldaSelect({
+  value,
+  opciones,
+  onSave,
+  tone = "",
+  muted = false,
+}: {
+  value: string;
+  opciones: string[];
+  onSave: (v: string) => void;
+  tone?: string;
+  muted?: boolean;
+}) {
+  const [edit, setEdit] = useState(false);
+  const lista = value && !opciones.includes(value) ? [...opciones, value] : opciones;
+  if (edit) {
+    return (
+      <select
+        autoFocus
+        defaultValue={value}
+        onChange={(e) => {
+          onSave(e.target.value);
+          setEdit(false);
+        }}
+        onBlur={() => setEdit(false)}
+        className="w-full rounded-sm bg-white px-2 py-2 text-sm outline outline-2 -outline-offset-1 outline-accent"
+      >
+        {lista.map((o) => (
+          <option key={o || "—"} value={o}>
+            {o || "—"}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <div
+      onDoubleClick={() => setEdit(true)}
+      title={value || undefined}
+      className={`cursor-default truncate px-2.5 py-2 text-sm ${tone || (muted ? "text-muted" : "")}`}
+    >
+      {value || <span className="text-neutral-300">—</span>}
+    </div>
+  );
+}
 
 export default function InvitadosPage() {
   const [inv, setInv] = useState<Invitado[] | null>(null);
@@ -194,8 +284,8 @@ export default function InvitadosPage() {
           <table className="w-full min-w-max border-collapse text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted">
               <tr className="whitespace-nowrap [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-line [&>th]:bg-surface">
-                <th className="!z-20 left-0 w-36 px-2.5 py-2.5">Nombre</th>
-                <th className="!z-20 left-36 w-36 px-2.5 py-2.5">Apellido</th>
+                <th className="!z-20 left-0 w-40 px-2.5 py-2.5">Nombre</th>
+                <th className="!z-20 left-40 w-40 px-2.5 py-2.5">Apellido</th>
                 {verFija("viene") && <th className="px-2.5 py-2.5">¿Viene?</th>}
                 {verFija("grupo") && <th className="bg-emerald-50/60 px-2.5 py-2.5">Grupo</th>}
                 {verFija("subgrupo") && (
@@ -212,139 +302,92 @@ export default function InvitadosPage() {
             </thead>
             <tbody className="divide-y divide-line">
               {filas.map((i) => (
-                <tr key={i.id} className="group align-top">
-                  <td className="sticky left-0 z-10 w-36 bg-surface px-0 group-hover:bg-neutral-50">
-                    <input
-                      defaultValue={i.nombre}
-                      placeholder="Nombre"
-                      onBlur={(e) => updateInvitado(i.id, { nombre: e.target.value })}
-                      className="w-full bg-transparent px-2.5 py-2 text-sm font-medium outline-none"
+                <tr key={i.id} className="group align-top hover:bg-neutral-50/70">
+                  <td className="sticky left-0 z-10 w-40 bg-surface px-0 group-hover:bg-neutral-50">
+                    <CeldaTexto
+                      value={i.nombre}
+                      onSave={(v) => updateInvitado(i.id, { nombre: v })}
+                      align="font-medium"
                     />
                   </td>
-                  <td className="sticky left-36 z-10 w-36 border-r border-line bg-surface px-0 group-hover:bg-neutral-50">
-                    <input
-                      defaultValue={i.apellido}
-                      placeholder="Apellido"
-                      onBlur={(e) => updateInvitado(i.id, { apellido: e.target.value })}
-                      className="w-full bg-transparent px-2.5 py-2 text-sm outline-none"
+                  <td className="sticky left-40 z-10 w-40 border-r border-line bg-surface px-0 group-hover:bg-neutral-50">
+                    <CeldaTexto
+                      value={i.apellido}
+                      onSave={(v) => updateInvitado(i.id, { apellido: v })}
                     />
                   </td>
                   {verFija("viene") && (
-                  <td className="px-0">
-                    <select
-                      value={i.viene}
-                      onChange={(e) => updateInvitado(i.id, { viene: e.target.value as Viene })}
-                      className={`${cell} ${
-                        i.viene === "Sí"
-                          ? "text-emerald-700"
-                          : i.viene === "No"
-                            ? "text-[#7b2233]"
-                            : "text-amber-700"
-                      }`}
-                    >
-                      {VIENE_OPCIONES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+                    <td className="px-0">
+                      <CeldaSelect
+                        value={i.viene}
+                        opciones={[...VIENE_OPCIONES]}
+                        onSave={(v) => updateInvitado(i.id, { viene: v as Viene })}
+                        tone={
+                          i.viene === "Sí"
+                            ? "text-emerald-700"
+                            : i.viene === "No"
+                              ? "text-[#7b2233]"
+                              : "text-amber-700"
+                        }
+                      />
+                    </td>
                   )}
                   {verFija("grupo") && (
-                  <td className="border-l border-line bg-emerald-50/40 px-0">
-                    <select
-                      value={i.grupo}
-                      onChange={(e) => updateInvitado(i.id, { grupo: e.target.value })}
-                      className={`${cell} text-muted`}
-                    >
-                      <option value="">—</option>
-                      {grupos.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                      {i.grupo && !grupos.includes(i.grupo) && (
-                        <option value={i.grupo}>{i.grupo}</option>
-                      )}
-                    </select>
-                  </td>
+                    <td className="border-l border-line bg-emerald-50/40 px-0">
+                      <CeldaSelect
+                        value={i.grupo}
+                        opciones={["", ...grupos]}
+                        onSave={(v) => updateInvitado(i.id, { grupo: v })}
+                        muted
+                      />
+                    </td>
                   )}
                   {verFija("subgrupo") && (
-                  <td className="border-r border-line bg-emerald-50/40 px-0">
-                    <select
-                      value={i.subgrupo}
-                      onChange={(e) => updateInvitado(i.id, { subgrupo: e.target.value })}
-                      className={`${cell} text-muted`}
-                    >
-                      <option value="">—</option>
-                      {subgrupos.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                      {i.subgrupo && !subgrupos.includes(i.subgrupo) && (
-                        <option value={i.subgrupo}>{i.subgrupo}</option>
-                      )}
-                    </select>
-                  </td>
+                    <td className="border-r border-line bg-emerald-50/40 px-0">
+                      <CeldaSelect
+                        value={i.subgrupo}
+                        opciones={["", ...subgrupos]}
+                        onSave={(v) => updateInvitado(i.id, { subgrupo: v })}
+                        muted
+                      />
+                    </td>
                   )}
                   {verFija("tipo") && (
-                  <td className="px-0">
-                    <select
-                      value={i.tipo}
-                      onChange={(e) =>
-                        updateInvitado(i.id, { tipo: e.target.value as TipoInvitado })
-                      }
-                      className={`${cell} text-muted`}
-                    >
-                      {TIPO_OPCIONES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+                    <td className="px-0">
+                      <CeldaSelect
+                        value={i.tipo}
+                        opciones={[...TIPO_OPCIONES]}
+                        onSave={(v) => updateInvitado(i.id, { tipo: v as TipoInvitado })}
+                        muted
+                      />
+                    </td>
                   )}
                   {cols.map((c) => (
                     <td key={c.id} className="px-0">
                       {c.tipo === "sino" ? (
-                        <select
+                        <CeldaSelect
                           value={i.extra[c.id] ?? ""}
-                          onChange={(e) => updateInvitadoExtra(i.id, c.id, e.target.value)}
-                          className={`${cell} text-muted`}
-                        >
-                          <option value="">—</option>
-                          <option value="Sí">Sí</option>
-                          <option value="No">No</option>
-                        </select>
+                          opciones={["", "Sí", "No"]}
+                          onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+                          muted
+                        />
                       ) : c.tipo === "lista" ? (
-                        <select
+                        <CeldaSelect
                           value={i.extra[c.id] ?? ""}
-                          onChange={(e) => updateInvitadoExtra(i.id, c.id, e.target.value)}
-                          className={`${cell} text-muted`}
-                        >
-                          <option value="">—</option>
-                          {(c.opciones ?? "")
-                            .split(",")
-                            .map((o) => o.trim())
-                            .filter(Boolean)
-                            .map((o) => (
-                              <option key={o} value={o}>
-                                {o}
-                              </option>
-                            ))}
-                          {i.extra[c.id] &&
-                            !(c.opciones ?? "").split(",").map((o) => o.trim()).includes(i.extra[c.id]) && (
-                              <option value={i.extra[c.id]}>{i.extra[c.id]}</option>
-                            )}
-                        </select>
+                          opciones={[
+                            "",
+                            ...(c.opciones ?? "").split(",").map((o) => o.trim()).filter(Boolean),
+                          ]}
+                          onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+                          muted
+                        />
                       ) : (
-                        <input
-                          type={c.tipo === "numero" ? "text" : "text"}
-                          inputMode={c.tipo === "numero" ? "numeric" : undefined}
-                          defaultValue={i.extra[c.id] ?? ""}
-                          onBlur={(e) => updateInvitadoExtra(i.id, c.id, e.target.value)}
-                          className={`${cell} text-muted ${c.tipo === "numero" ? "text-right" : ""}`}
+                        <CeldaTexto
+                          value={i.extra[c.id] ?? ""}
+                          onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+                          muted
+                          numero={c.tipo === "numero"}
+                          align={c.tipo === "numero" ? "text-right" : ""}
                         />
                       )}
                     </td>
@@ -355,7 +398,7 @@ export default function InvitadosPage() {
                         const quien = `${i.nombre} ${i.apellido}`.trim() || "este invitado";
                         if (confirm(`¿Seguro que quieres eliminar a ${quien}?`)) removeInvitado(i.id);
                       }}
-                      className="text-muted hover:text-red-600"
+                      className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-red-600"
                       title="Eliminar invitado"
                     >
                       🗑

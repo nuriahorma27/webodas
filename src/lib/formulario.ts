@@ -71,7 +71,8 @@ export function loadFormulario(): FormularioConfig {
         ? { apellidos: false, email: false, asiste: false, acompanante: false }
         : { ...ESTANDAR_DEFAULT });
     return {
-      intro: c.intro ?? "",
+      // el texto de ejemplo antiguo se trata como vacío
+      intro: !c.intro || c.intro === INTRO_EJEMPLO ? "" : c.intro,
       estandar: { ...ESTANDAR_DEFAULT, ...estandar },
       preguntas: Array.isArray(c.preguntas) ? c.preguntas : [],
     };
