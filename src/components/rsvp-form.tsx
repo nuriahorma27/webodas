@@ -89,6 +89,11 @@ export function RsvpForm({
         for (const l of [LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA])
           if (answers[l]) respuestasAcomp[l] = answers[l];
       }
+      // Preguntas personalizadas marcadas para el acompañante.
+      questions.forEach((q) => {
+        if (q.acomp && visible(q) && answersAcomp[q.label])
+          respuestasAcomp[q.label] = answersAcomp[q.label];
+      });
     }
 
     addResponse(weddingId, {
@@ -253,31 +258,41 @@ export function RsvpForm({
     // id de pregunta personalizada
     const q = questions.find((p) => p.id === k);
     if (!q || !asisteOk || !visible(q)) return null;
-    return renderQuestion(q, k);
+    return (
+      <div key={k} style={{ display: "grid", gap: 16 }}>
+        {renderQuestion(q, k, false)}
+        {q.acomp && conAcomp && renderQuestion(q, `${k}-a`, true)}
+      </div>
+    );
   };
 
-  const renderQuestion = (q: PreguntaForm, i: number | string) => {
+  const renderQuestion = (q: PreguntaForm, i: number | string, paraAcomp: boolean) => {
     const opts = (q.options ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+    const val = paraAcomp ? answersAcomp[q.label] ?? "" : answers[q.label] ?? "";
+    const onChg = (v: string) => (paraAcomp ? setA(q.label, v) : set(q.label, v));
     return (
       <div key={i}>
-        <label style={lab}>{q.label}</label>
+        <label style={lab}>
+          {q.label}
+          {paraAcomp ? " (acompañante)" : ""}
+        </label>
         {q.qtype === "opcion" && opts.length > 0 ? (
-          <select style={field} value={answers[q.label] ?? ""} onChange={(e) => set(q.label, e.target.value)}>
+          <select style={field} value={val} onChange={(e) => onChg(e.target.value)}>
             <option value="">Elige…</option>
             {opts.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>
         ) : q.qtype === "si-no" ? (
-          <select style={field} value={answers[q.label] ?? ""} onChange={(e) => set(q.label, e.target.value)}>
+          <select style={field} value={val} onChange={(e) => onChg(e.target.value)}>
             <option value="">Elige…</option>
             <option>Sí</option>
             <option>No</option>
           </select>
         ) : q.qtype === "numero" ? (
-          <input type="number" style={field} value={answers[q.label] ?? ""} onChange={(e) => set(q.label, e.target.value)} />
+          <input type="number" style={field} value={val} onChange={(e) => onChg(e.target.value)} />
         ) : (
-          <input style={field} value={answers[q.label] ?? ""} onChange={(e) => set(q.label, e.target.value)} />
+          <input style={field} value={val} onChange={(e) => onChg(e.target.value)} />
         )}
       </div>
     );

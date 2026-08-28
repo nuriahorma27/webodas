@@ -105,6 +105,7 @@ export const RSVP_SEED: RsvpResponse[] = [
     acompNombre: "Diego",
     acompApellido: "Ramos",
     respuestasAcomp: {
+      Menú: "Normal",
       Alergias: "Ninguna",
       "¿Necesita autobús?": "Sí",
       "Autobús ida": "Sí",

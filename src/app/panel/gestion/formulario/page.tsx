@@ -327,6 +327,21 @@ function PreguntaEditor({
         </label>
       )}
 
+      <label className="mt-3 flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={Boolean(q.acomp)}
+          onChange={(e) => updatePregunta(q.id, { acomp: e.target.checked })}
+          className="mt-0.5"
+        />
+        <span>
+          Preguntarla también, por separado, para el acompañante
+          <span className="block text-xs text-muted">
+            Si el invitado trae acompañante, aparece una segunda vez con «(acompañante)».
+          </span>
+        </span>
+      </label>
+
       <div className="mt-3">
         {!tieneCond ? (
           <button

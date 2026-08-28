@@ -8,6 +8,7 @@ export type PreguntaForm = {
   options: string; // opciones separadas por comas (para qtype "opcion")
   condLabel: string; // pregunta anterior de la que depende ("" = siempre)
   condValue: string; // respuesta que activa esta pregunta
+  acomp?: boolean; // preguntar también, por separado, para el acompañante
 };
 
 export type DatosEstandar = {
