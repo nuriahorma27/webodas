@@ -98,6 +98,7 @@ export default function FormularioPage() {
           <PreguntaEditor
             key={q.id}
             q={q}
+            numero={i + 1}
             anteriores={cfg.preguntas.slice(0, i)}
             pack={cfg.pack}
             primero={i === 0}
@@ -123,21 +124,25 @@ export default function FormularioPage() {
 
 function PreguntaEditor({
   q,
+  numero,
   anteriores,
   pack,
   primero,
   ultimo,
 }: {
   q: PreguntaForm;
+  numero: number;
   anteriores: PreguntaForm[];
   pack: boolean;
   primero: boolean;
   ultimo: boolean;
 }) {
-  const condOpciones = [
-    { label: "Siempre visible", value: "" },
-    ...(pack ? [{ label: "…si viene con acompañante", value: "¿Vienes con acompañante?" }] : []),
-    ...anteriores.filter((p) => p.label).map((p) => ({ label: `…según «${p.label}»`, value: p.label })),
+  const [mostrarCond, setMostrarCond] = useState(false);
+  const tieneCond = Boolean(q.condLabel) || mostrarCond;
+
+  const dependeDe = [
+    ...(pack ? [{ value: "¿Vienes con acompañante?", label: "¿Vienes con acompañante?" }] : []),
+    ...anteriores.filter((p) => p.label).map((p) => ({ value: p.label, label: p.label })),
   ];
   const target = anteriores.find((p) => p.label === q.condLabel);
   const respuestas =
@@ -149,78 +154,136 @@ function PreguntaEditor({
           ? (target.options ?? "").split(",").map((o) => o.trim()).filter(Boolean)
           : [];
 
+  const quitarCond = () => {
+    updatePregunta(q.id, { condLabel: "", condValue: "" });
+    setMostrarCond(false);
+  };
+
   return (
-    <div className="space-y-2 rounded-md border border-line p-3">
-      <div className="flex items-center gap-1">
+    <div className="rounded-lg border border-line p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Pregunta {numero}
+        </span>
+        <div className="flex items-center gap-1 text-base text-muted">
+          <button
+            onClick={() => movePregunta(q.id, -1)}
+            disabled={primero}
+            className="px-1 hover:text-foreground disabled:opacity-20"
+            title="Subir"
+          >
+            ↑
+          </button>
+          <button
+            onClick={() => movePregunta(q.id, 1)}
+            disabled={ultimo}
+            className="px-1 hover:text-foreground disabled:opacity-20"
+            title="Bajar"
+          >
+            ↓
+          </button>
+          <button
+            onClick={() => {
+              if (confirm(`¿Eliminar la pregunta "${q.label || "sin texto"}"?`)) removePregunta(q.id);
+            }}
+            className="px-1 text-sm hover:text-red-600"
+            title="Eliminar"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="text-xs font-medium text-muted">Texto de la pregunta</span>
         <input
-          className={box}
-          placeholder="Pregunta"
+          className={`${box} mt-1`}
+          placeholder="p. ej. ¿Necesitas autobús?"
           defaultValue={q.label}
           onBlur={(e) => updatePregunta(q.id, { label: e.target.value })}
         />
-        <button onClick={() => movePregunta(q.id, -1)} disabled={primero} className="px-1 text-muted disabled:opacity-25">
-          ↑
-        </button>
-        <button onClick={() => movePregunta(q.id, 1)} disabled={ultimo} className="px-1 text-muted disabled:opacity-25">
-          ↓
-        </button>
-        <button onClick={() => removePregunta(q.id)} className="px-1 text-muted hover:text-red-600">
-          ✕
-        </button>
-      </div>
+      </label>
 
-      <select
-        className={box}
-        value={q.qtype}
-        onChange={(e) => updatePregunta(q.id, { qtype: e.target.value as PreguntaForm["qtype"] })}
-      >
-        <option value="texto">Texto libre</option>
-        <option value="si-no">Sí / No</option>
-        <option value="opcion">Elegir de una lista</option>
-        <option value="numero">Número</option>
-      </select>
+      <label className="mt-3 block">
+        <span className="text-xs font-medium text-muted">Tipo de respuesta</span>
+        <select
+          className={`${box} mt-1`}
+          value={q.qtype}
+          onChange={(e) => updatePregunta(q.id, { qtype: e.target.value as PreguntaForm["qtype"] })}
+        >
+          <option value="texto">Texto libre</option>
+          <option value="si-no">Sí / No</option>
+          <option value="opcion">Elegir una opción de una lista</option>
+          <option value="numero">Un número</option>
+        </select>
+      </label>
 
       {q.qtype === "opcion" && (
-        <input
-          className={box}
-          placeholder="Opciones separadas por comas"
-          defaultValue={q.options}
-          onBlur={(e) => updatePregunta(q.id, { options: e.target.value })}
-        />
+        <label className="mt-3 block">
+          <span className="text-xs font-medium text-muted">Opciones (separadas por comas)</span>
+          <input
+            className={`${box} mt-1`}
+            placeholder="Normal, Vegetariano, Sin gluten, Infantil"
+            defaultValue={q.options}
+            onBlur={(e) => updatePregunta(q.id, { options: e.target.value })}
+          />
+        </label>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <select
-          className={box}
-          value={q.condLabel}
-          onChange={(e) => updatePregunta(q.id, { condLabel: e.target.value, condValue: "" })}
-        >
-          {condOpciones.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        {q.condLabel &&
-          (respuestas.length > 0 ? (
-            <select
-              className={box}
-              value={q.condValue}
-              onChange={(e) => updatePregunta(q.id, { condValue: e.target.value })}
-            >
-              <option value="">respuesta…</option>
-              {respuestas.map((a) => (
-                <option key={a}>{a}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              className={box}
-              placeholder="respuesta exacta"
-              defaultValue={q.condValue}
-              onBlur={(e) => updatePregunta(q.id, { condValue: e.target.value })}
-            />
-          ))}
+      <div className="mt-3">
+        {!tieneCond ? (
+          <button
+            onClick={() => setMostrarCond(true)}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            + Mostrar esta pregunta solo en algunos casos
+          </button>
+        ) : (
+          <div className="rounded-md bg-accent-soft/30 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted">
+                Mostrar esta pregunta solo si…
+              </span>
+              <button onClick={quitarCond} className="text-xs text-muted underline hover:text-red-600">
+                quitar condición
+              </button>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <select
+                className={box}
+                value={q.condLabel}
+                onChange={(e) => updatePregunta(q.id, { condLabel: e.target.value, condValue: "" })}
+              >
+                <option value="">la respuesta a…</option>
+                {dependeDe.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {q.condLabel &&
+                (respuestas.length > 0 ? (
+                  <select
+                    className={box}
+                    value={q.condValue}
+                    onChange={(e) => updatePregunta(q.id, { condValue: e.target.value })}
+                  >
+                    <option value="">…es…</option>
+                    {respuestas.map((a) => (
+                      <option key={a}>{a}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className={box}
+                    placeholder="…es (respuesta exacta)"
+                    defaultValue={q.condValue}
+                    onBlur={(e) => updatePregunta(q.id, { condValue: e.target.value })}
+                  />
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
