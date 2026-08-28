@@ -159,11 +159,22 @@ export default function InvitadosPage() {
         <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
       ) : (
         <>
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Personas" value={String(r.personas)} sub={`${r.adultos} adultos · ${r.ninos} niños`} />
-        <Stat label="Confirmadas" value={String(r.confirmadas)} tone="positive" />
-        <Stat label="Pendientes" value={String(r.pendientes)} />
-        <Stat label="No vienen" value={String(r.noVienen)} tone="negative" />
+      <div className="sticky top-0 z-30 flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-line bg-surface/95 px-4 py-2 text-sm shadow-sm backdrop-blur">
+        <span>
+          <strong className="font-display text-base">{r.personas}</strong> personas
+        </span>
+        <span className="text-emerald-700">
+          <strong className="font-display text-base">{r.confirmadas}</strong> vienen
+        </span>
+        <span>
+          <strong className="font-display text-base">{r.pendientes}</strong> pendientes
+        </span>
+        <span className="text-[#7b2233]">
+          <strong className="font-display text-base">{r.noVienen}</strong> no vienen
+        </span>
+        <span className="text-muted">
+          {r.adultos} adultos · {r.ninos} niños
+        </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -285,8 +296,8 @@ export default function InvitadosPage() {
           <table className="w-full min-w-max border-collapse text-sm">
             <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
               <tr className="whitespace-nowrap">
-                <th className="px-2.5 py-2.5">Nombre</th>
-                <th className="px-2.5 py-2.5">Apellido</th>
+                <th className="sticky left-0 z-20 w-36 bg-surface px-2.5 py-2.5">Nombre</th>
+                <th className="sticky left-36 z-20 w-36 bg-surface px-2.5 py-2.5">Apellido</th>
                 <th className="px-2.5 py-2.5">¿Viene?</th>
                 <th className="px-2.5 py-2.5">Grupo</th>
                 <th className="px-2.5 py-2.5">Subgrupo</th>
@@ -312,21 +323,21 @@ export default function InvitadosPage() {
             </thead>
             <tbody className="divide-y divide-line">
               {filas.map((i) => (
-                <tr key={i.id} className="align-top">
-                  <td className="px-0">
+                <tr key={i.id} className="group align-top">
+                  <td className="sticky left-0 z-10 w-36 bg-surface px-0 group-hover:bg-neutral-50">
                     <input
                       defaultValue={i.nombre}
                       placeholder="Nombre"
                       onBlur={(e) => updateInvitado(i.id, { nombre: e.target.value })}
-                      className={`${cell} font-medium`}
+                      className="w-full bg-transparent px-2.5 py-2 text-sm font-medium outline-none"
                     />
                   </td>
-                  <td className="px-0">
+                  <td className="sticky left-36 z-10 w-36 border-r border-line bg-surface px-0 group-hover:bg-neutral-50">
                     <input
                       defaultValue={i.apellido}
                       placeholder="Apellido"
                       onBlur={(e) => updateInvitado(i.id, { apellido: e.target.value })}
-                      className={cell}
+                      className="w-full bg-transparent px-2.5 py-2 text-sm outline-none"
                     />
                   </td>
                   <td className="px-0">
