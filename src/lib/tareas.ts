@@ -128,15 +128,7 @@ export const RESPONSABLES_BASE = ["La novia", "El novio", "Los dos"];
 export const TIPOS_TAREA: { value: string; label: string }[] = [
   { value: "simple", label: "Solo notas" },
   { value: "proveedor", label: "Proveedor (varias opciones, contratar)" },
-  { value: "reserva", label: "Reserva (lugar, fecha, pago)" },
-  { value: "lugarFecha", label: "Lugar y fecha" },
-  { value: "persona", label: "Persona / contacto" },
-  { value: "compra", label: "Compra" },
-  { value: "eleccion", label: "Decisión / elección" },
-  { value: "lista", label: "Lista / listado" },
-  { value: "invitados", label: "Invitados (enlaza con la sección)" },
-  { value: "viaje", label: "Viaje" },
-  { value: "documentos", label: "Documentos / checklist" },
+  { value: "lista", label: "Listado / checklist" },
 ];
 
 export const TIPO_LABEL: Record<string, string> = Object.fromEntries(
@@ -295,9 +287,19 @@ const DATA: Record<string, Def[]> = {
   ],
 };
 
+// id estable a partir del título (no del índice), para que reordenar / insertar
+// tareas en la plantilla no descoloque los datos guardados.
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 export const TAREAS: Tarea[] = CATEGORIAS.flatMap((categoria) =>
-  (DATA[categoria] ?? []).map(([titulo, fase, tipo, nota], i) => ({
-    id: `${categoria}-${i}`,
+  (DATA[categoria] ?? []).map(([titulo, fase, tipo, nota]) => ({
+    id: `t-${slug(categoria)}-${slug(titulo)}`,
     titulo,
     categoria,
     fase,
@@ -443,4 +445,55 @@ export function removeTarea(id: string) {
 
 export function resetTareas() {
   saveCustom(VACIA);
+}
+
+/* ---------- lista de responsables (personas) ---------- */
+
+const RESP_KEY = "webodas:responsables";
+
+export function loadResponsablesCustom(): string[] {
+  try {
+    const r = localStorage.getItem(RESP_KEY);
+    return r ? (JSON.parse(r) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveResponsablesCustom(list: string[]) {
+  try {
+    localStorage.setItem(RESP_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event("webodas:tareas"));
+  } catch {
+    /* noop */
+  }
+}
+
+export function addResponsableCustom(nombre: string) {
+  const n = nombre.trim();
+  if (!n) return;
+  const list = loadResponsablesCustom();
+  if (!list.some((x) => x.toLowerCase() === n.toLowerCase())) {
+    saveResponsablesCustom([...list, n]);
+  }
+}
+
+// Quita la persona de la lista y la desasigna de todas sus tareas.
+export function removeResponsableCustom(nombre: string) {
+  saveResponsablesCustom(loadResponsablesCustom().filter((x) => x !== nombre));
+  const c = loadCustom();
+  const ov = { ...c.ov };
+  let toco = false;
+  for (const t of TAREAS) {
+    if ((ov[t.id]?.responsable ?? "") === nombre) {
+      ov[t.id] = { ...ov[t.id], responsable: "" };
+      toco = true;
+    }
+  }
+  const nuevas = c.nuevas.map((t) =>
+    t.responsable === nombre ? { ...t, responsable: "" } : t,
+  );
+  if (toco || nuevas.some((t, i) => t !== c.nuevas[i])) {
+    saveCustom({ ...c, ov, nuevas });
+  }
 }

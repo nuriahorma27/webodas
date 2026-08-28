@@ -3,17 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Progress } from "@/components/ui";
 import { EstadoControl, EstadoLeyenda } from "@/components/estado-control";
-import { TareaDetalleForm, detalleResumen } from "@/components/tarea-detalle";
+import { TareaDetalleForm } from "@/components/tarea-detalle";
 import { descargarTareasExcel } from "@/lib/export-excel";
 import { loadBoda } from "@/lib/boda";
 import {
   CATEGORIAS,
   FASES,
   TIPOS_TAREA,
-  RUTAS_WEBODAS,
   loadTareas,
   loadEstados,
   loadDetalles,
+  loadResponsablesCustom,
+  addResponsableCustom,
+  removeResponsableCustom,
   setEstado,
   addTarea,
   updateTarea,
@@ -30,6 +32,88 @@ const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
 
 /* ---------- fila de tarea (a nivel de módulo para no remontar al abrir) ---------- */
+
+function PersonasModal({
+  base,
+  custom,
+  onClose,
+  onRemove,
+}: {
+  base: string[];
+  custom: string[];
+  onClose: () => void;
+  onRemove: (nombre: string) => void;
+}) {
+  const [nombre, setNombre] = useState("");
+  const anadir = () => {
+    const n = nombre.trim();
+    if (n) {
+      addResponsableCustom(n);
+      setNombre("");
+    }
+  };
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-xl bg-surface p-5 shadow-xl"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-lg">Personas</h3>
+          <button onClick={onClose} className="text-xl text-neutral-400 hover:text-foreground">
+            ×
+          </button>
+        </div>
+
+        {base.length > 0 && (
+          <p className="mt-1 text-xs text-muted">
+            Del perfil de la boda: {base.join(" · ")}
+          </p>
+        )}
+
+        <ul className="mt-3 divide-y divide-line">
+          {custom.length === 0 && (
+            <li className="py-2 text-sm text-muted">Aún no has añadido a nadie.</li>
+          )}
+          {custom.map((r) => (
+            <li key={r} className="flex items-center justify-between py-2 text-sm">
+              <span>{r}</span>
+              <button
+                onClick={() => {
+                  if (confirm(`¿Quitar a "${r}"? Se desasignará de sus tareas.`)) onRemove(r);
+                }}
+                className="text-muted hover:text-red-600"
+                title="Quitar"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-3 flex gap-2">
+          <input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && anadir()}
+            placeholder="Nombre de la persona"
+            autoFocus
+            className="flex-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+          />
+          <button
+            onClick={anadir}
+            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white"
+          >
+            Añadir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Row({
   t,
@@ -57,10 +141,6 @@ function Row({
     if (abierto || editar) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [abierto, editar]);
 
-  const resumen = detalleResumen(detalle);
-  const visible =
-    t.notaVisible || t.nota || (t.tipo === "webodas" ? RUTAS_WEBODAS[t.titulo]?.sub : "");
-
   return (
     <li ref={ref} className="scroll-mt-4 text-sm">
       <div className="flex items-start gap-3 px-4 py-2.5">
@@ -70,8 +150,6 @@ function Row({
             {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
             <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
           </p>
-          {visible && <p className="text-xs text-accent">{visible}</p>}
-          {resumen && <p className="text-xs text-accent">{resumen}</p>}
         </button>
         {meta && <span className="shrink-0 pt-0.5 text-xs text-muted">{meta}</span>}
         <button
@@ -92,12 +170,7 @@ function Row({
             <select
               value={t.responsable ?? ""}
               onChange={(ev) => {
-                if (ev.target.value === "__otra") {
-                  const v = prompt("¿Quién se encarga?");
-                  if (v?.trim()) updateTarea(t.id, { responsable: v.trim() });
-                } else {
-                  updateTarea(t.id, { responsable: ev.target.value });
-                }
+                updateTarea(t.id, { responsable: ev.target.value });
               }}
               className="rounded-md border border-line bg-surface px-2.5 py-1 text-sm outline-none focus:border-accent"
             >
@@ -107,7 +180,6 @@ function Row({
                   {r}
                 </option>
               ))}
-              <option value="__otra">Otra persona…</option>
             </select>
           </label>
           <TareaDetalleForm id={t.id} tipo={t.tipo} titulo={t.titulo} inicial={detalle ?? {}} />
@@ -241,12 +313,15 @@ export default function TareasPage() {
   const [filtroResp, setFiltroResp] = useState<string>("");
   const [addEn, setAddEn] = useState<string | null>(null);
   const [nombres, setNombres] = useState<string[]>([]);
+  const [respCustom, setRespCustom] = useState<string[]>([]);
+  const [gestionResp, setGestionResp] = useState(false);
 
   useEffect(() => {
     const sync = () => {
       setTareas(loadTareas());
       setEstados(loadEstados());
       setDetalles(loadDetalles());
+      setRespCustom(loadResponsablesCustom());
       const b = loadBoda();
       setNombres([b.p1.nombre.trim(), b.p2.nombre.trim(), "Los dos"].filter(Boolean));
     };
@@ -259,11 +334,10 @@ export default function TareasPage() {
     };
   }, []);
 
-  const responsables = useMemo(() => {
-    const set = new Set(nombres);
-    (tareas ?? []).forEach((t) => t.responsable && set.add(t.responsable));
-    return [...set];
-  }, [tareas, nombres]);
+  const responsables = useMemo(
+    () => [...new Set([...nombres, ...respCustom])],
+    [nombres, respCustom],
+  );
 
   if (!tareas) return null;
 
@@ -385,7 +459,25 @@ export default function TareasPage() {
               {r}
             </button>
           ))}
+          <button
+            onClick={() => setGestionResp(true)}
+            className="rounded-full border border-dashed border-line px-2.5 py-0.5 text-xs text-muted hover:text-accent"
+          >
+            Gestionar personas
+          </button>
         </div>
+
+        {gestionResp && (
+          <PersonasModal
+            base={nombres}
+            custom={respCustom}
+            onClose={() => setGestionResp(false)}
+            onRemove={(r) => {
+              removeResponsableCustom(r);
+              if (filtroResp === r) setFiltroResp("");
+            }}
+          />
+        )}
 
         <div className="mt-3">
           <EstadoLeyenda />
@@ -431,7 +523,9 @@ export default function TareasPage() {
           : CATEGORIAS.map((c) =>
               renderGrupo(
                 c,
-                visibles.filter((t) => t.categoria === c),
+                visibles
+                  .filter((t) => t.categoria === c)
+                  .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase)),
                 (t) => t.fase,
                 { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
               ),
