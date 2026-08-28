@@ -481,6 +481,10 @@ function VistaRespuestas({
   invitados: Invitado[];
   columnas: ColumnaInvitado[];
 }) {
+  const [porVolcar, setPorVolcar] = useState<
+    { resp: RsvpResponse; sel: string; selA: string } | null
+  >(null);
+
   if (respuestas.length === 0) {
     return (
       <Card>
@@ -493,21 +497,34 @@ function VistaRespuestas({
 
   const asociadas = columnas.filter((c) => c.preguntaRsvp);
 
-  const rpcDe = (respuestas: Record<string, string>, asiste: string) =>
-    asociadas
-      .map((c) => ({
-        columna: c.nombre,
-        valor: valorRespuesta(
-          { ...({} as RsvpResponse), respuestas, asiste, acompanantes: 0 },
-          c.preguntaRsvp as string,
-        ),
-      }))
-      .filter((x) => x.valor);
+  // Convierte una respuesta en pares {columna, valor}: las preguntas asociadas
+  // van a su columna; el resto crea/usa una columna con el nombre de la pregunta.
+  const rpcDe = (respuestas: Record<string, string>, asiste: string) => {
+    const out: { columna: string; valor: string }[] = [];
+    const yaPuestas = new Set<string>();
+    for (const c of asociadas) {
+      const v = valorRespuesta(
+        { ...({} as RsvpResponse), respuestas, asiste, acompanantes: 0 },
+        c.preguntaRsvp as string,
+      );
+      if (v) {
+        out.push({ columna: c.nombre, valor: v });
+        yaPuestas.add(c.preguntaRsvp as string);
+      }
+    }
+    for (const [k, v] of Object.entries(respuestas)) {
+      if (!v || k === "Acompañante" || yaPuestas.has(k)) continue;
+      out.push({ columna: k, valor: v });
+    }
+    return out;
+  };
 
   const volcar = (resp: RsvpResponse, selInv: string, selAcomp: string) => {
     let invId = selInv;
     if (selInv === "__nuevo" || !selInv) {
       invId = crearInvitado(resp.nombre, resp.apellido ?? "").id;
+    } else {
+      updateInvitado(invId, { nombre: resp.nombre, apellido: resp.apellido ?? "" });
     }
     const viene: Viene = resp.asiste === "Sí" ? "Sí" : "No";
     aplicarRespuestaAInvitado(invId, viene, rpcDe(resp.respuestas, resp.asiste));
@@ -517,6 +534,11 @@ function VistaRespuestas({
       acompId = selAcomp;
       if (selAcomp === "__nuevo" || !selAcomp) {
         acompId = crearInvitado(resp.acompNombre ?? "", resp.acompApellido ?? "").id;
+      } else {
+        updateInvitado(acompId, {
+          nombre: resp.acompNombre ?? "",
+          apellido: resp.acompApellido ?? "",
+        });
       }
       aplicarRespuestaAInvitado(acompId, "Sí", rpcDe(resp.respuestasAcomp ?? {}, "Sí"));
     }
@@ -594,15 +616,62 @@ function VistaRespuestas({
       )}
       {asociadas.length === 0 && (
         <Card className="text-sm text-muted">
-          Todavía no has asociado ninguna pregunta a una columna. Hazlo en{" "}
-          <strong>⚙ Ajustes de la lista → Columnas</strong> para que los datos se vuelquen solos.
+          Consejo: en <strong>⚙ Ajustes de la lista → Columnas</strong> puedes asociar cada
+          pregunta a una columna concreta. Si no lo haces, al volcar se crea una columna con el
+          nombre de la pregunta.
         </Card>
       )}
       <div className="space-y-1.5">
         {respuestas.map((resp) => (
-          <RespuestaCard key={resp.id} resp={resp} invitados={invitados} onVolcar={volcar} />
+          <RespuestaCard
+            key={resp.id}
+            resp={resp}
+            invitados={invitados}
+            onVolcar={(r, s, a) => setPorVolcar({ resp: r, sel: s, selA: a })}
+          />
         ))}
       </div>
+
+      {porVolcar && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setPorVolcar(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-xl bg-background p-5 shadow-xl"
+          >
+            <h3 className="font-display text-lg">¿Volcar esta respuesta?</h3>
+            <p className="mt-1 text-sm text-muted">
+              La información de{" "}
+              <strong className="text-foreground">
+                {porVolcar.resp.nombre} {porVolcar.resp.apellido}
+              </strong>{" "}
+              {porVolcar.resp.acompNombre || porVolcar.resp.acompApellido
+                ? "y de su acompañante "
+                : ""}
+              sustituirá a la que tengas en tu lista (incluidos nombre y apellidos).
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setPorVolcar(null)}
+                className="rounded-md border border-line px-3 py-1.5 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  volcar(porVolcar.resp, porVolcar.sel, porVolcar.selA);
+                  setPorVolcar(null);
+                }}
+                className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white"
+              >
+                Sí, volcar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
