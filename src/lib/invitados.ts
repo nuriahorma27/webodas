@@ -19,17 +19,26 @@ export const GRUPOS_SUGERIDOS = [
 
 // Columnas extra que se pueden añadir. tipo: texto libre o sí/no.
 export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: "texto" | "sino" }[] = [
+  // seguimiento (sí/no)
+  { nombre: "Save the date enviado", tipo: "sino" },
+  { nombre: "Invitación enviada", tipo: "sino" },
   { nombre: "Invitación entregada", tipo: "sino" },
-  { nombre: "Dirección", tipo: "texto" },
-  { nombre: "Alergias", tipo: "texto" },
+  { nombre: "Confirmado por teléfono", tipo: "sino" },
+  { nombre: "Detalle entregado", tipo: "sino" },
+  { nombre: "Menú confirmado", tipo: "sino" },
+  { nombre: "Alojamiento reservado", tipo: "sino" },
+  { nombre: "Transporte confirmado", tipo: "sino" },
+  { nombre: "Agradecimiento enviado", tipo: "sino" },
   { nombre: "Bus ida", tipo: "sino" },
   { nombre: "Bus vuelta", tipo: "sino" },
+  // datos (texto)
+  { nombre: "Dirección", tipo: "texto" },
+  { nombre: "Alergias", tipo: "texto" },
+  { nombre: "Menú", tipo: "texto" },
+  { nombre: "Mesa", tipo: "texto" },
   { nombre: "Hora vuelta", tipo: "texto" },
   { nombre: "Regalo", tipo: "texto" },
   { nombre: "Cantidad (regalo)", tipo: "texto" },
-  { nombre: "Agradecimiento enviado", tipo: "sino" },
-  { nombre: "Mesa", tipo: "texto" },
-  { nombre: "Menú", tipo: "texto" },
   { nombre: "Alojamiento", tipo: "texto" },
   { nombre: "Notas", tipo: "texto" },
 ];

@@ -239,6 +239,7 @@ export default function InvitadosPage() {
 
       {modalCol && (
         <ModalColumna
+          existentes={cols.map((c) => c.nombre.toLowerCase())}
           onClose={() => setModalCol(false)}
           onAdd={(nombre, tipo) => {
             addColumna(nombre, tipo);
@@ -251,13 +252,18 @@ export default function InvitadosPage() {
 }
 
 function ModalColumna({
+  existentes,
   onClose,
   onAdd,
 }: {
+  existentes: string[];
   onClose: () => void;
   onAdd: (nombre: string, tipo: "texto" | "sino") => void;
 }) {
   const [nombre, setNombre] = useState("");
+  const disponibles = COLUMNAS_SUGERIDAS.filter(
+    (c) => !existentes.includes(c.nombre.toLowerCase()),
+  );
   return (
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
@@ -275,7 +281,7 @@ function ModalColumna({
         </div>
         <p className="mt-1 text-xs text-muted">Habituales:</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          {COLUMNAS_SUGERIDAS.map((c) => (
+          {disponibles.map((c) => (
             <button
               key={c.nombre}
               onClick={() => onAdd(c.nombre, c.tipo)}
