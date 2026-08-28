@@ -5,7 +5,16 @@ import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
 import { SaveTheDateView } from "@/components/save-the-date-view";
 import { CompartirEnlace } from "@/components/compartir-enlace";
-import { loadStd, setStd, type SaveTheDate } from "@/lib/savethedate";
+import {
+  loadStd,
+  setStd,
+  ACABADOS,
+  FUENTES,
+  type SaveTheDate,
+  type AcabadoStd,
+  type FuenteStd,
+  type PosTextoStd,
+} from "@/lib/savethedate";
 
 const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
@@ -31,6 +40,11 @@ export default function SaveTheDatePage() {
     const reader = new FileReader();
     reader.onload = () => setStd({ imagen: String(reader.result) });
     reader.readAsDataURL(file);
+  };
+
+  const nudge = (dx: number, dy: number) => {
+    const c = (n: number) => Math.max(-70, Math.min(70, n));
+    setStd({ imgX: c(std.imgX + dx), imgY: c(std.imgY + dy) });
   };
 
   return (
@@ -78,10 +92,90 @@ export default function SaveTheDatePage() {
                 placeholder="p. ej. Invitación formal a continuación"
               />
             </label>
+
+            <div>
+              <span className="text-xs font-medium text-muted">Posición del texto</span>
+              <div className="mt-1 flex gap-2">
+                {(
+                  [
+                    ["arriba", "Arriba"],
+                    ["centro", "Centro"],
+                    ["abajo", "Abajo"],
+                  ] as [PosTextoStd, string][]
+                ).map(([v, l]) => (
+                  <button
+                    key={v}
+                    onClick={() => setStd({ posTexto: v })}
+                    className={`rounded-md border px-3 py-1.5 text-sm ${
+                      std.posTexto === v
+                        ? "border-foreground bg-foreground text-white"
+                        : "border-line hover:border-accent"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
           </Card>
 
           <Card className="space-y-3">
-            <h2 className="font-display text-lg">Estilo</h2>
+            <h2 className="font-display text-lg">Tipografía</h2>
+            <div>
+              <span className="text-xs font-medium text-muted">Tipo de letra</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {(Object.keys(FUENTES) as FuenteStd[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setStd({ fuente: f })}
+                    style={{ fontFamily: FUENTES[f].family }}
+                    className={`rounded-md border px-3 py-1.5 text-base ${
+                      std.fuente === f
+                        ? "border-foreground bg-foreground text-white"
+                        : "border-line hover:border-accent"
+                    }`}
+                  >
+                    {FUENTES[f].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={std.negrita}
+                  onChange={(e) => setStd({ negrita: e.target.checked })}
+                />
+                Nombres en negrita
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={std.mayusculas}
+                  onChange={(e) => setStd({ mayusculas: e.target.checked })}
+                />
+                Nombres en mayúsculas
+              </label>
+            </div>
+            <label className="block text-sm">
+              <span className="text-xs font-medium text-muted">
+                Tamaño de los nombres ({Math.round(std.tamNombres * 100)}%)
+              </span>
+              <input
+                type="range"
+                min={0.7}
+                max={1.8}
+                step={0.05}
+                value={std.tamNombres}
+                onChange={(e) => setStd({ tamNombres: Number(e.target.value) })}
+                className="mt-1 w-full"
+              />
+            </label>
+          </Card>
+
+          <Card className="space-y-3">
+            <h2 className="font-display text-lg">Fondo</h2>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -103,24 +197,21 @@ export default function SaveTheDatePage() {
               </label>
             </div>
             <div>
-              <span className="text-xs font-medium text-muted">Fondo</span>
-              <div className="mt-1 flex gap-2">
-                {(
-                  [
-                    ["liso", "Liso"],
-                    ["papel", "Papel de boda"],
-                  ] as const
-                ).map(([v, l]) => (
+              <span className="text-xs font-medium text-muted">Acabado</span>
+              <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {(Object.keys(ACABADOS) as AcabadoStd[]).map((a) => (
                   <button
-                    key={v}
-                    onClick={() => setStd({ textura: v })}
-                    className={`rounded-md border px-3 py-1.5 text-sm ${
-                      std.textura === v
-                        ? "border-foreground bg-foreground text-white"
-                        : "border-line hover:border-accent"
+                    key={a}
+                    onClick={() => setStd({ acabado: a })}
+                    className={`rounded-md border p-1.5 text-xs ${
+                      std.acabado === a ? "border-foreground" : "border-line hover:border-accent"
                     }`}
                   >
-                    {l}
+                    <span
+                      className="mb-1 block h-8 w-full rounded"
+                      style={{ backgroundColor: std.colorBg, ...ACABADOS[a].style }}
+                    />
+                    {ACABADOS[a].label}
                   </button>
                 ))}
               </div>
@@ -172,15 +263,25 @@ export default function SaveTheDatePage() {
                     className="mt-1 w-full"
                   />
                 </label>
-                <p className="text-xs text-muted">
-                  Arrastra la imagen en la vista previa para moverla.{" "}
-                  <button
-                    onClick={() => setStd({ imgX: 0, imgY: 0 })}
-                    className="underline hover:text-foreground"
-                  >
-                    Centrar
-                  </button>
-                </p>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <span className="text-xs font-medium text-muted">Mover</span>
+                    <div className="mt-1 grid grid-cols-3 grid-rows-3 gap-1">
+                      <span />
+                      <Flecha onClick={() => nudge(0, -4)}>↑</Flecha>
+                      <span />
+                      <Flecha onClick={() => nudge(-4, 0)}>←</Flecha>
+                      <Flecha onClick={() => setStd({ imgX: 0, imgY: 0 })}>•</Flecha>
+                      <Flecha onClick={() => nudge(4, 0)}>→</Flecha>
+                      <span />
+                      <Flecha onClick={() => nudge(0, 4)}>↓</Flecha>
+                      <span />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted">
+                    …o arrastra la imagen directamente sobre la vista previa.
+                  </p>
+                </div>
               </>
             )}
           </Card>
@@ -210,13 +311,20 @@ export default function SaveTheDatePage() {
         {/* Vista previa */}
         <div className="lg:sticky lg:top-6 lg:self-start">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Vista previa</p>
-          <SaveTheDateView
-            std={std}
-            editable
-            onMove={(x, y) => setStd({ imgX: x, imgY: y })}
-          />
+          <SaveTheDateView std={std} editable onMove={(x, y) => setStd({ imgX: x, imgY: y })} />
         </div>
       </div>
     </div>
+  );
+}
+
+function Flecha({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-8 w-8 rounded border border-line text-sm hover:bg-accent-soft/40"
+    >
+      {children}
+    </button>
   );
 }

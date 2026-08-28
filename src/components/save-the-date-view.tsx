@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { PAPEL_BG, type SaveTheDate } from "@/lib/savethedate";
+import { ACABADOS, FUENTES, type SaveTheDate } from "@/lib/savethedate";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 
 export function SaveTheDateView({
@@ -30,53 +30,83 @@ export function SaveTheDateView({
     const b = boxRef.current.getBoundingClientRect();
     const dx = ((e.clientX - drag.current.px) / b.width) * 100;
     const dy = ((e.clientY - drag.current.py) / b.height) * 100;
-    const clamp = (n: number) => Math.max(-60, Math.min(60, n));
+    const clamp = (n: number) => Math.max(-70, Math.min(70, n));
     onMove?.(clamp(drag.current.x + dx), clamp(drag.current.y + dy));
   };
   const onUp = () => {
     drag.current = null;
   };
 
-  return (
-    <div
-      ref={boxRef}
-      className="relative mx-auto w-full max-w-sm overflow-hidden rounded-lg shadow-md"
-      style={{
-        aspectRatio: "3 / 4",
-        backgroundColor: std.colorBg,
-        backgroundImage: std.textura === "papel" ? PAPEL_BG : undefined,
-        color: std.colorText,
-      }}
-    >
-      {std.imagen && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={std.imagen}
-          alt=""
-          onPointerDown={onDown}
-          onPointerMove={onMoveEv}
-          onPointerUp={onUp}
-          draggable={false}
-          className={`absolute left-1/2 top-1/2 max-w-none select-none ${
-            editable ? "cursor-move" : ""
-          }`}
-          style={{
-            width: "70%",
-            transform: `translate(-50%, -50%) translate(${std.imgX}%, ${std.imgY}%) scale(${std.imgEscala})`,
-          }}
-        />
-      )}
+  const family = FUENTES[std.fuente]?.family ?? FUENTES.serif.family;
+  const justify =
+    std.posTexto === "arriba" ? "flex-start" : std.posTexto === "centro" ? "center" : "flex-end";
 
-      <div className="absolute inset-x-0 bottom-0 p-6 text-center">
-        {std.titulo && (
-          <p className="text-[11px] uppercase tracking-[0.35em]" style={{ opacity: 0.75 }}>
-            {std.titulo}
-          </p>
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap"
+      />
+      <div
+        ref={boxRef}
+        className="relative mx-auto flex w-full max-w-sm flex-col overflow-hidden rounded-lg shadow-md"
+        style={{
+          aspectRatio: "3 / 4",
+          backgroundColor: std.colorBg,
+          color: std.colorText,
+          justifyContent: justify,
+          ...ACABADOS[std.acabado]?.style,
+        }}
+      >
+        {std.imagen && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={std.imagen}
+            alt=""
+            onPointerDown={onDown}
+            onPointerMove={onMoveEv}
+            onPointerUp={onUp}
+            draggable={false}
+            className={`absolute left-1/2 top-1/2 max-w-none select-none ${
+              editable ? "cursor-move" : ""
+            }`}
+            style={{
+              width: "70%",
+              transform: `translate(-50%, -50%) translate(${std.imgX}%, ${std.imgY}%) scale(${std.imgEscala})`,
+            }}
+          />
         )}
-        <p className="mt-1 font-display text-3xl leading-tight">{nombres}</p>
-        {fecha && <p className="mt-1 font-display text-lg">{fecha}</p>}
-        {std.mensaje && <p className="mt-1 text-sm" style={{ opacity: 0.8 }}>{std.mensaje}</p>}
+
+        <div
+          className="relative z-10 p-6 text-center"
+          style={{ fontFamily: family }}
+        >
+          {std.titulo && (
+            <p
+              className="text-[11px] uppercase tracking-[0.35em]"
+              style={{ opacity: 0.75, fontFamily: "var(--font-geist-sans), sans-serif" }}
+            >
+              {std.titulo}
+            </p>
+          )}
+          <p
+            className="mt-1 leading-tight"
+            style={{
+              fontSize: `${2 * std.tamNombres}rem`,
+              fontWeight: std.negrita ? 700 : 400,
+              textTransform: std.mayusculas ? "uppercase" : "none",
+            }}
+          >
+            {nombres}
+          </p>
+          {fecha && <p className="mt-1 text-lg">{fecha}</p>}
+          {std.mensaje && (
+            <p className="mt-1 text-sm" style={{ opacity: 0.8 }}>
+              {std.mensaje}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
