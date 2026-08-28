@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { addResponse } from "@/lib/rsvp";
-import { loadFormulario, type PreguntaForm } from "@/lib/formulario";
+import {
+  loadFormulario,
+  LABEL_ALERGIAS,
+  LABEL_BUS,
+  LABEL_BUS_IDA,
+  LABEL_BUS_VUELTA,
+  type PreguntaForm,
+} from "@/lib/formulario";
 
 export function RsvpForm({
   buttonLabel = "Confirmar asistencia",
@@ -31,8 +38,10 @@ export function RsvpForm({
   const [acompNombre, setAcompNombre] = useState("");
   const [acompApellidos, setAcompApellidos] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answersAcomp, setAnswersAcomp] = useState<Record<string, string>>({});
 
   const set = (label: string, v: string) => setAnswers((a) => ({ ...a, [label]: v }));
+  const setA = (label: string, v: string) => setAnswersAcomp((a) => ({ ...a, [label]: v }));
 
   const close = () => {
     setOpen(false);
@@ -50,14 +59,36 @@ export function RsvpForm({
     return (ctx[q.condLabel] ?? "").toLowerCase() === (q.condValue ?? "").toLowerCase();
   };
 
+  const conAcomp = est.acompanante && asiste === "Sí" && acomp === "Sí";
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const respuestas: Record<string, string> = {};
-    const acompNom = `${acompNombre} ${acompApellidos}`.trim();
-    if (acomp === "Sí" && acompNom) respuestas["Acompañante"] = acompNom;
+    if (conAcomp) {
+      const acompNom = `${acompNombre} ${acompApellidos}`.trim();
+      if (acompNom) respuestas["Acompañante"] = acompNom;
+    }
+    if (est.alergias && answers[LABEL_ALERGIAS])
+      respuestas[LABEL_ALERGIAS] = answers[LABEL_ALERGIAS];
+    if (est.bus) {
+      for (const l of [LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA])
+        if (answers[l]) respuestas[l] = answers[l];
+    }
     questions.forEach((q) => {
       if (asiste === "Sí" && visible(q) && answers[q.label]) respuestas[q.label] = answers[q.label];
     });
+
+    const respuestasAcomp: Record<string, string> = {};
+    if (conAcomp) {
+      if (est.alergiasAcomp && answersAcomp[LABEL_ALERGIAS])
+        respuestasAcomp[LABEL_ALERGIAS] = answersAcomp[LABEL_ALERGIAS];
+      if (est.busAcomp) {
+        if (answersAcomp[LABEL_BUS_IDA]) respuestasAcomp[LABEL_BUS_IDA] = answersAcomp[LABEL_BUS_IDA];
+        if (answersAcomp[LABEL_BUS_VUELTA])
+          respuestasAcomp[LABEL_BUS_VUELTA] = answersAcomp[LABEL_BUS_VUELTA];
+      }
+    }
+
     addResponse(weddingId, {
       id: crypto.randomUUID(),
       fecha: new Date().toISOString().slice(0, 10),
@@ -65,8 +96,15 @@ export function RsvpForm({
       apellido: apellidos.trim(),
       email,
       asiste,
-      acompanantes: acomp === "Sí" ? 1 : 0,
+      acompanantes: conAcomp ? 1 : 0,
       respuestas,
+      ...(conAcomp
+        ? {
+            acompNombre: acompNombre.trim(),
+            acompApellido: acompApellidos.trim(),
+            respuestasAcomp,
+          }
+        : {}),
     });
 
     setSent(true);
@@ -243,8 +281,92 @@ export function RsvpForm({
                   </>
                 )}
 
+                {(!est.asiste || asiste === "Sí") && (est.alergias || est.bus) && (
+                  <>
+                    {conAcomp && (
+                      <p style={{ ...lab, marginTop: 4, borderTop: "1px solid #eee", paddingTop: 12 }}>
+                        Tus datos
+                      </p>
+                    )}
+                    {est.alergias && (
+                      <div>
+                        <label style={lab}>Alergias / intolerancias</label>
+                        <input
+                          style={field}
+                          value={answers[LABEL_ALERGIAS] ?? ""}
+                          onChange={(e) => set(LABEL_ALERGIAS, e.target.value)}
+                          placeholder="Deja vacío si no hay"
+                        />
+                      </div>
+                    )}
+                    {est.bus && (
+                      <div>
+                        <label style={lab}>¿Necesitas autobús?</label>
+                        <select style={field} value={answers[LABEL_BUS] ?? ""} onChange={(e) => set(LABEL_BUS, e.target.value)}>
+                          <option value="">Elige…</option>
+                          <option>Sí</option>
+                          <option>No</option>
+                        </select>
+                        {answers[LABEL_BUS] === "Sí" && (
+                          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+                            <div>
+                              <label style={lab}>Bus de ida</label>
+                              <input style={field} value={answers[LABEL_BUS_IDA] ?? ""} onChange={(e) => set(LABEL_BUS_IDA, e.target.value)} placeholder="Sí / No / horario" />
+                            </div>
+                            <div>
+                              <label style={lab}>Bus de vuelta</label>
+                              <input style={field} value={answers[LABEL_BUS_VUELTA] ?? ""} onChange={(e) => set(LABEL_BUS_VUELTA, e.target.value)} placeholder="Sí / No / horario" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {(!est.asiste || asiste === "Sí") &&
                   questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
+
+                {conAcomp && (est.alergiasAcomp || est.busAcomp) && (
+                  <>
+                    <p style={{ ...lab, marginTop: 4, borderTop: "1px solid #eee", paddingTop: 12 }}>
+                      Datos de tu acompañante
+                    </p>
+                    {est.alergiasAcomp && (
+                      <div>
+                        <label style={lab}>Alergias / intolerancias del acompañante</label>
+                        <input
+                          style={field}
+                          value={answersAcomp[LABEL_ALERGIAS] ?? ""}
+                          onChange={(e) => setA(LABEL_ALERGIAS, e.target.value)}
+                          placeholder="Deja vacío si no hay"
+                        />
+                      </div>
+                    )}
+                    {est.busAcomp && (
+                      <div>
+                        <label style={lab}>¿El acompañante necesita autobús?</label>
+                        <select style={field} value={answersAcomp[LABEL_BUS] ?? ""} onChange={(e) => setA(LABEL_BUS, e.target.value)}>
+                          <option value="">Elige…</option>
+                          <option>Sí</option>
+                          <option>No</option>
+                        </select>
+                        {answersAcomp[LABEL_BUS] === "Sí" && (
+                          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+                            <div>
+                              <label style={lab}>Bus de ida</label>
+                              <input style={field} value={answersAcomp[LABEL_BUS_IDA] ?? ""} onChange={(e) => setA(LABEL_BUS_IDA, e.target.value)} placeholder="Sí / No / horario" />
+                            </div>
+                            <div>
+                              <label style={lab}>Bus de vuelta</label>
+                              <input style={field} value={answersAcomp[LABEL_BUS_VUELTA] ?? ""} onChange={(e) => setA(LABEL_BUS_VUELTA, e.target.value)} placeholder="Sí / No / horario" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <button
                   type="submit"

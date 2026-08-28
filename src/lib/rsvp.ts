@@ -35,8 +35,13 @@ export type RsvpResponse = {
   asiste: string;
   acompanantes: number;
   respuestas: Record<string, string>;
-  invitadoId?: string; // fila de "mi gestión" a la que se ha vinculado
-  aplicada?: boolean; // ya se ha volcado a esa fila
+  // acompañante (cuando lo trae): es una persona más de la lista
+  acompNombre?: string;
+  acompApellido?: string;
+  respuestasAcomp?: Record<string, string>;
+  invitadoId?: string; // fila de "mi gestión" a la que se ha vinculado el invitado
+  acompInvitadoId?: string; // fila a la que se ha vinculado el acompañante
+  aplicada?: boolean; // ya se ha volcado
 };
 
 const key = (weddingId: string) => `webodas:rsvp:${weddingId}`;

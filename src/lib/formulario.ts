@@ -15,7 +15,17 @@ export type DatosEstandar = {
   email: boolean;
   asiste: boolean; // ¿Asistirás? (Sí/No)
   acompanante: boolean; // ¿Vienes con acompañante? (Sí/No) + nombre y apellidos si Sí
+  alergias: boolean; // alergias del invitado
+  alergiasAcomp: boolean; // alergias del acompañante (si lo hay)
+  bus: boolean; // autobús del invitado (ida y vuelta)
+  busAcomp: boolean; // autobús del acompañante (si lo hay)
 };
+
+// Etiquetas de pregunta que generan los packs (para asociarlas a columnas).
+export const LABEL_ALERGIAS = "Alergias";
+export const LABEL_BUS = "¿Necesita autobús?";
+export const LABEL_BUS_IDA = "Autobús ida";
+export const LABEL_BUS_VUELTA = "Autobús vuelta";
 
 export type FormularioConfig = {
   intro: string;
@@ -30,6 +40,10 @@ const ESTANDAR_DEFAULT: DatosEstandar = {
   email: true,
   asiste: true,
   acompanante: true,
+  alergias: true,
+  alergiasAcomp: true,
+  bus: false,
+  busAcomp: false,
 };
 
 const nueva = (label = "Nueva pregunta"): PreguntaForm => ({
@@ -64,16 +78,23 @@ export function loadFormulario(): FormularioConfig {
     const r = localStorage.getItem(KEY);
     if (!r) return def();
     const c = JSON.parse(r) as Partial<FormularioConfig> & { pack?: boolean };
-    // migración: antes había un único `pack: boolean`
-    const estandar =
-      c.estandar ??
+    const raw = (c.estandar ??
       (c.pack === false
         ? { apellidos: false, email: false, asiste: false, acompanante: false }
-        : { ...ESTANDAR_DEFAULT });
+        : {})) as Record<string, unknown>;
+    // migración de valores antiguos ("no" | "solo" | "con-acomp" | boolean)
+    const bool = (v: unknown, def: boolean) =>
+      typeof v === "boolean" ? v : v === "solo" || v === "con-acomp" ? true : v === "no" ? false : def;
     return {
-      // el texto de ejemplo antiguo se trata como vacío
       intro: !c.intro || c.intro === INTRO_EJEMPLO ? "" : c.intro,
-      estandar: { ...ESTANDAR_DEFAULT, ...estandar },
+      estandar: {
+        ...ESTANDAR_DEFAULT,
+        ...raw,
+        alergias: bool(raw.alergias, true),
+        alergiasAcomp: bool(raw.alergiasAcomp ?? raw.alergias, true),
+        bus: bool(raw.bus ?? raw.buses, false),
+        busAcomp: bool(raw.busAcomp ?? raw.buses, false),
+      },
       preguntas: Array.isArray(c.preguntas) ? c.preguntas : [],
     };
   } catch {
@@ -133,6 +154,9 @@ export function labelsFormulario(): string[] {
   const pack: string[] = [];
   if (c.estandar.asiste) pack.push("¿Asistirás?");
   if (c.estandar.acompanante) pack.push("¿Vienes con acompañante?");
+  if (c.estandar.alergias || c.estandar.alergiasAcomp) pack.push(LABEL_ALERGIAS);
+  if (c.estandar.bus || c.estandar.busAcomp)
+    pack.push(LABEL_BUS, LABEL_BUS_IDA, LABEL_BUS_VUELTA);
   return [...pack, ...c.preguntas.map((p) => p.label).filter(Boolean)];
 }
 
@@ -142,6 +166,9 @@ export function formatoPregunta(label: string): {
   opciones?: string;
 } {
   if (label === "¿Asistirás?" || label === "¿Vienes con acompañante?") return { tipo: "sino" };
+  if (label === LABEL_BUS) return { tipo: "sino" };
+  if (label === LABEL_BUS_IDA || label === LABEL_BUS_VUELTA || label === LABEL_ALERGIAS)
+    return { tipo: "texto" };
   const q = loadFormulario().preguntas.find((p) => p.label === label);
   if (!q) return { tipo: "texto" };
   if (q.qtype === "si-no") return { tipo: "sino" };

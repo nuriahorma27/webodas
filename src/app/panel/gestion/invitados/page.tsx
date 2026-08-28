@@ -444,18 +444,39 @@ function VistaRespuestas({
 
   const asociadas = columnas.filter((c) => c.preguntaRsvp);
 
-  const volcar = (resp: RsvpResponse, seleccion: string) => {
-    let invId = seleccion;
-    if (seleccion === "__nuevo" || !seleccion) {
-      const nuevo = crearInvitado(resp.nombre, resp.apellido ?? "");
-      invId = nuevo.id;
+  const rpcDe = (respuestas: Record<string, string>, asiste: string) =>
+    asociadas
+      .map((c) => ({
+        columna: c.nombre,
+        valor: valorRespuesta(
+          { ...({} as RsvpResponse), respuestas, asiste, acompanantes: 0 },
+          c.preguntaRsvp as string,
+        ),
+      }))
+      .filter((x) => x.valor);
+
+  const volcar = (resp: RsvpResponse, selInv: string, selAcomp: string) => {
+    let invId = selInv;
+    if (selInv === "__nuevo" || !selInv) {
+      invId = crearInvitado(resp.nombre, resp.apellido ?? "").id;
     }
     const viene: Viene = resp.asiste === "Sí" ? "Sí" : "No";
-    const rpc = asociadas
-      .map((c) => ({ columna: c.nombre, valor: valorRespuesta(resp, c.preguntaRsvp as string) }))
-      .filter((x) => x.valor);
-    aplicarRespuestaAInvitado(invId, viene, rpc);
-    updateResponse("demo", resp.id, { invitadoId: invId, aplicada: true });
+    aplicarRespuestaAInvitado(invId, viene, rpcDe(resp.respuestas, resp.asiste));
+
+    let acompId: string | undefined;
+    if (resp.acompNombre || resp.acompApellido) {
+      acompId = selAcomp;
+      if (selAcomp === "__nuevo" || !selAcomp) {
+        acompId = crearInvitado(resp.acompNombre ?? "", resp.acompApellido ?? "").id;
+      }
+      aplicarRespuestaAInvitado(acompId, "Sí", rpcDe(resp.respuestasAcomp ?? {}, "Sí"));
+    }
+
+    updateResponse("demo", resp.id, {
+      invitadoId: invId,
+      acompInvitadoId: acompId,
+      aplicada: true,
+    });
   };
 
   return (
@@ -473,6 +494,33 @@ function VistaRespuestas({
   );
 }
 
+function SelectInvitado({
+  value,
+  onChange,
+  invitados,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  invitados: Invitado[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
+    >
+      <option value="__nuevo">➕ Crear invitado nuevo</option>
+      {invitados
+        .filter((i) => i.nombre || i.apellido)
+        .map((i) => (
+          <option key={i.id} value={i.id}>
+            {i.nombre} {i.apellido}
+          </option>
+        ))}
+    </select>
+  );
+}
+
 function RespuestaCard({
   resp,
   invitados,
@@ -480,76 +528,88 @@ function RespuestaCard({
 }: {
   resp: RsvpResponse;
   invitados: Invitado[];
-  onVolcar: (resp: RsvpResponse, seleccion: string) => void;
+  onVolcar: (resp: RsvpResponse, selInv: string, selAcomp: string) => void;
 }) {
   const norm = (s: string) => s.trim().toLowerCase();
-  const sugerido = invitados.find(
-    (i) =>
-      norm(i.nombre) === norm(resp.nombre) &&
-      norm(i.apellido) === norm(resp.apellido ?? ""),
+  const buscar = (n: string, a: string) =>
+    invitados.find((i) => norm(i.nombre) === norm(n) && norm(i.apellido) === norm(a));
+  const tieneAcomp = Boolean(resp.acompNombre || resp.acompApellido);
+
+  const [sel, setSel] = useState(buscar(resp.nombre, resp.apellido ?? "")?.id ?? "__nuevo");
+  const [selA, setSelA] = useState(
+    buscar(resp.acompNombre ?? "", resp.acompApellido ?? "")?.id ?? "__nuevo",
   );
-  const [sel, setSel] = useState(sugerido?.id ?? "__nuevo");
-  const vinculado = resp.invitadoId
-    ? invitados.find((i) => i.id === resp.invitadoId)
+
+  const vinc = resp.invitadoId ? invitados.find((i) => i.id === resp.invitadoId) : undefined;
+  const vincA = resp.acompInvitadoId
+    ? invitados.find((i) => i.id === resp.acompInvitadoId)
     : undefined;
 
+  const Respuestas = ({ data }: { data: Record<string, string> }) =>
+    Object.keys(data).length > 0 ? (
+      <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+        {Object.entries(data).map(([k, v]) => (
+          <div key={k}>
+            <dt className="text-[11px] uppercase tracking-wide text-muted">{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : null;
+
   return (
-    <Card className="space-y-2">
+    <Card className="space-y-3">
       <div className="flex flex-wrap items-baseline gap-x-3">
         <span className="font-display text-lg">
           {resp.nombre} {resp.apellido}
         </span>
         <span
-          className={`text-xs ${
-            resp.asiste === "Sí" ? "text-emerald-700" : "text-[#7b2233]"
-          }`}
+          className={`text-xs ${resp.asiste === "Sí" ? "text-emerald-700" : "text-[#7b2233]"}`}
         >
           {resp.asiste === "Sí" ? "Viene" : "No viene"}
-          {resp.acompanantes > 0 ? ` · +${resp.acompanantes} acomp.` : ""}
+          {tieneAcomp ? " · con acompañante" : ""}
         </span>
         <span className="text-xs text-muted">{resp.fecha}</span>
       </div>
 
-      {Object.keys(resp.respuestas).length > 0 && (
-        <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-          {Object.entries(resp.respuestas).map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-[11px] uppercase tracking-wide text-muted">{k}</dt>
-              <dd>{v}</dd>
-            </div>
-          ))}
-        </dl>
+      <Respuestas data={resp.respuestas} />
+
+      {tieneAcomp && (
+        <div className="rounded-md border border-line bg-neutral-50/60 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Acompañante: {resp.acompNombre} {resp.acompApellido}
+          </p>
+          <div className="mt-1">
+            <Respuestas data={resp.respuestasAcomp ?? {}} />
+          </div>
+        </div>
       )}
 
-      {resp.aplicada && vinculado ? (
-        <p className="flex flex-wrap items-center gap-2 text-sm text-emerald-700">
-          ✓ Volcado a «{vinculado.nombre} {vinculado.apellido}»
+      {resp.aplicada ? (
+        <p className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm text-emerald-700">
+          ✓ Volcado{vinc ? ` a «${vinc.nombre} ${vinc.apellido}»` : ""}
+          {vincA ? ` y «${vincA.nombre} ${vincA.apellido}»` : ""}
           <button
-            onClick={() => onVolcar(resp, resp.invitadoId as string)}
+            onClick={() => onVolcar(resp, resp.invitadoId ?? "__nuevo", resp.acompInvitadoId ?? "__nuevo")}
             className="text-xs text-muted underline hover:text-foreground"
           >
             volver a volcar
           </button>
         </p>
       ) : (
-        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm">
-          <span className="text-xs text-muted">Vincular con:</span>
-          <select
-            value={sel}
-            onChange={(e) => setSel(e.target.value)}
-            className="rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
-          >
-            <option value="__nuevo">➕ Crear invitado nuevo</option>
-            {invitados
-              .filter((i) => i.nombre || i.apellido)
-              .map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nombre} {i.apellido}
-                </option>
-              ))}
-          </select>
+        <div className="space-y-2 border-t border-line pt-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted">El invitado se vincula con:</span>
+            <SelectInvitado value={sel} onChange={setSel} invitados={invitados} />
+          </div>
+          {tieneAcomp && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted">El acompañante se vincula con:</span>
+              <SelectInvitado value={selA} onChange={setSelA} invitados={invitados} />
+            </div>
+          )}
           <button
-            onClick={() => onVolcar(resp, sel)}
+            onClick={() => onVolcar(resp, sel, selA)}
             className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white"
           >
             Volcar a mi lista

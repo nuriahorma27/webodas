@@ -33,7 +33,7 @@ export default function FormularioPage() {
   if (!cfg) return null;
 
   const est = cfg.estandar;
-  const item = (k: keyof typeof est, texto: string, nota?: string) => (
+  const item = (k: "apellidos" | "email" | "asiste" | "acompanante", texto: string, nota?: string) => (
     <li>
       <label className="flex items-start gap-2.5 py-2 text-sm">
         <input
@@ -47,6 +47,38 @@ export default function FormularioPage() {
           {nota && <span className="block text-xs text-muted">{nota}</span>}
         </span>
       </label>
+    </li>
+  );
+
+  const packDoble = (
+    k: "alergias" | "bus",
+    kAcomp: "alergiasAcomp" | "busAcomp",
+    texto: string,
+  ) => (
+    <li className="py-2 text-sm">
+      <label className="flex items-start gap-2.5">
+        <input
+          type="checkbox"
+          checked={est[k]}
+          onChange={(e) =>
+            setEstandar(
+              e.target.checked ? { [k]: true } : { [k]: false, [kAcomp]: false },
+            )
+          }
+          className="mt-0.5"
+        />
+        <span>{texto}</span>
+      </label>
+      {est[k] && (
+        <label className="ml-6 mt-1 flex items-center gap-2 text-xs text-muted">
+          <input
+            type="checkbox"
+            checked={est[kAcomp]}
+            onChange={(e) => setEstandar({ [kAcomp]: e.target.checked })}
+          />
+          Pedirlo también del acompañante
+        </label>
+      )}
     </li>
   );
 
@@ -116,6 +148,8 @@ export default function FormularioPage() {
             "¿Vienes con acompañante? (Sí / No)",
             "Si responde «Sí», se le piden nombre y apellidos del acompañante.",
           )}
+          {packDoble("alergias", "alergiasAcomp", "Alergias / intolerancias")}
+          {packDoble("bus", "busAcomp", "Autobús (¿lo necesita? + ida y vuelta)")}
         </ul>
 
         <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted">Tus preguntas</p>
