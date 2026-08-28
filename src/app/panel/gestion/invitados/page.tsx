@@ -180,6 +180,8 @@ export default function InvitadosPage() {
       setFijasOcultas(loadFijasOcultas());
     };
     sync();
+    // Primera vez (lista vacía): abrir directamente la configuración de la tabla.
+    if (loadInvitados().length === 0) setAjustes(true);
     window.addEventListener("webodas:invitados", sync);
     window.addEventListener("webodas:rsvp", sync);
     window.addEventListener("webodas:formulario", sync);
