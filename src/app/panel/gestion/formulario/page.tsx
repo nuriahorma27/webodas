@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui";
-import { RsvpForm } from "@/components/rsvp-form";
 import {
   loadFormulario,
   addPregunta,
@@ -162,9 +161,10 @@ export default function FormularioPage() {
       </Card>
 
       <Card>
-        <h3 className="font-display text-lg">Vista previa</h3>
-        <p className="mt-1 text-sm text-muted">Así verán el formulario tus invitados:</p>
-        <RsvpForm buttonLabel="Abrir el formulario" />
+        <p className="text-sm text-muted">
+          Para ver el formulario tal y como lo verán tus invitados, ábrelo desde el botón «Ver web»
+          del editor, o desde la propia web publicada.
+        </p>
       </Card>
     </div>
   );
