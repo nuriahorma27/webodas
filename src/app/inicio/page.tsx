@@ -28,6 +28,16 @@ function Inicio() {
     setAviso(null);
   };
 
+  // Evita que el botón se quede "pillado" si la llamada nunca responde.
+  function conTimeout<T>(p: Promise<T>, ms = 15000): Promise<T> {
+    return Promise.race([
+      p,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), ms),
+      ),
+    ]);
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -43,15 +53,22 @@ function Inicio() {
         return;
       }
       setPending(true);
-      const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/recuperar`,
-      });
-      setPending(false);
-      if (error) return setError(traducir(error.message));
-      setAviso(
-        "Si hay una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña. Revisa tu correo.",
-      );
+      try {
+        const supabase = createClient();
+        const { error } = await conTimeout(
+          supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/recuperar`,
+          }),
+        );
+        setPending(false);
+        if (error) return setError(traducir(error.message));
+        setAviso(
+          "Si hay una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña. Revisa tu correo.",
+        );
+      } catch {
+        setPending(false);
+        setError("No hemos podido contactar con el servidor. Vuelve a intentarlo.");
+      }
       return;
     }
 
@@ -65,29 +82,38 @@ function Inicio() {
     }
 
     setPending(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    if (modo === "crear") {
-      const { data: res, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: nombre } },
-      });
+      if (modo === "crear") {
+        const { data: res, error } = await conTimeout(
+          supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: nombre } },
+          }),
+        );
+        setPending(false);
+        if (error) return setError(traducir(error.message));
+        if (res.session) {
+          window.location.href = "/panel";
+        } else {
+          setAviso("Cuenta creada. Revisa tu correo para confirmar y luego entra.");
+          setModo("entrar");
+        }
+        return;
+      }
+
+      const { error } = await conTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+      );
       setPending(false);
       if (error) return setError(traducir(error.message));
-      if (res.session) {
-        window.location.href = "/panel";
-      } else {
-        setAviso("Cuenta creada. Revisa tu correo para confirmar y luego entra.");
-        setModo("entrar");
-      }
-      return;
+      window.location.href = "/panel";
+    } catch {
+      setPending(false);
+      setError("No hemos podido contactar con el servidor. Vuelve a intentarlo.");
     }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setPending(false);
-    if (error) return setError(traducir(error.message));
-    window.location.href = "/panel";
   }
 
   return (
