@@ -126,7 +126,14 @@ function def(): FormularioConfig {
   return DEFAULT;
 }
 
+// Override para páginas públicas (el invitado no tiene esto en su navegador).
+let override: FormularioConfig | null = null;
+export function setFormularioOverride(c: FormularioConfig | null) {
+  override = c;
+}
+
 export function loadFormulario(): FormularioConfig {
+  if (override) return override;
   try {
     const r = localStorage.getItem(KEY);
     if (!r) return def();

@@ -1,22 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { parseInline } from "@/lib/rich-text";
-import { loadLista, contribuir, type ListaRegalos, type Gift } from "@/lib/regalos";
+import { loadLista, setListaOverride, contribuir, type ListaRegalos, type Gift } from "@/lib/regalos";
 import { ContribuirModal } from "@/components/contribuir-modal";
-import { boda, eur } from "@/lib/mock";
+import { loadBoda, setBodaOverride, nombrePareja, fechaLarga } from "@/lib/boda";
+import { fetchBundlePublico, pickBundle } from "@/lib/wedding";
 
-export default function ListaPublicaPage() {
+const eur = (n: number) => `${Math.round(n).toLocaleString("es-ES")} €`;
+
+export default function ListaPublicaPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const [lista, setLista] = useState<ListaRegalos | null>(null);
   const [gift, setGift] = useState<Gift | null>(null);
   const [gracias, setGracias] = useState<string | null>(null);
+  const [noExiste, setNoExiste] = useState(false);
+  const boda = loadBoda();
 
   useEffect(() => {
+    let vivo = true;
     const sync = () => setLista(loadLista());
-    sync();
-    window.addEventListener("webodas:regalos", sync);
-    return () => window.removeEventListener("webodas:regalos", sync);
-  }, []);
+    (async () => {
+      if ((slug === "ana-y-leo" || slug === "demo") && localStorage.getItem("webodas:regalos")) {
+        sync();
+        window.addEventListener("webodas:regalos", sync);
+        return;
+      }
+      const res = await fetchBundlePublico(slug);
+      if (!vivo) return;
+      if (!res || !res.found) return setNoExiste(true);
+      setBodaOverride(pickBundle(res.data, "webodas:boda", null));
+      setListaOverride(pickBundle(res.data, "webodas:regalos", null));
+      sync();
+    })();
+    return () => {
+      vivo = false;
+      window.removeEventListener("webodas:regalos", sync);
+      setListaOverride(null);
+      setBodaOverride(null);
+    };
+  }, [slug]);
 
   // Vuelta de Stripe Checkout: confirmar el pago y registrar la aportación.
   useEffect(() => {
@@ -46,6 +69,12 @@ export default function ListaPublicaPage() {
     })();
   }, []);
 
+  if (noExiste)
+    return (
+      <div className="grid min-h-screen place-items-center p-8 text-center text-sm text-neutral-500">
+        Esta lista de regalos no existe o todavía no se ha publicado.
+      </div>
+    );
   if (!lista) return null;
 
   const bg = lista.colorBg || undefined;
@@ -58,8 +87,8 @@ export default function ListaPublicaPage() {
         style={{ background: bg ? "transparent" : "var(--color-surface)" }}
       >
         <p className="text-xs uppercase tracking-[0.25em] opacity-70">Lista de regalos</p>
-        <h1 className="mt-2 font-display text-4xl">{boda.pareja}</h1>
-        <p className="mt-1 text-sm opacity-70">{boda.fechaLarga}</p>
+        <h1 className="mt-2 font-display text-4xl">{nombrePareja(boda)}</h1>
+        <p className="mt-1 text-sm opacity-70">{fechaLarga(boda)}</p>
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-12">

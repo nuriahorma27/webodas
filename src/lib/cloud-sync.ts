@@ -5,6 +5,7 @@
 // No hace falta tocar el resto del código: se intercepta localStorage.setItem.
 
 import { createClient } from "@/lib/supabase/client";
+import { publishWedding } from "@/lib/wedding";
 
 const PREFIX = "webodas:";
 const MARK = "webodas:__cloud_at"; // updated_at de la última sync con la nube
@@ -56,6 +57,8 @@ async function empujar() {
     if (!error && data?.updated_at) {
       localStorage.setItem(MARK, data.updated_at);
     }
+    // Publicar también el contenido para invitados (web, lista, save the date…).
+    await publishWedding();
   } catch {
     /* reintentará en el siguiente cambio */
   } finally {

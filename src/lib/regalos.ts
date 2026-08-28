@@ -61,7 +61,13 @@ export const REGALOS_DEFAULT: ListaRegalos = {
 
 const KEY = "webodas:regalos";
 
+let override: ListaRegalos | null = null;
+export function setListaOverride(l: ListaRegalos | null) {
+  override = l;
+}
+
 export function loadLista(): ListaRegalos {
+  if (override) return override;
   try {
     const r = localStorage.getItem(KEY);
     return r ? (JSON.parse(r) as ListaRegalos) : REGALOS_DEFAULT;

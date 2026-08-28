@@ -67,7 +67,13 @@ const DEFAULT: SaveTheDate = {
   imgY: 0,
 };
 
+let override: SaveTheDate | null = null;
+export function setStdOverride(s: SaveTheDate | null) {
+  override = s ? { ...DEFAULT, ...s } : null;
+}
+
 export function loadStd(): SaveTheDate {
+  if (override) return override;
   try {
     const r = localStorage.getItem(KEY);
     if (!r) return { ...DEFAULT };

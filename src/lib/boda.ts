@@ -23,7 +23,14 @@ const VACIO: BodaPerfil = {
   presupuestoTotal: null,
 };
 
+// Override para páginas públicas (el invitado no tiene el perfil en su navegador).
+let override: BodaPerfil | null = null;
+export function setBodaOverride(b: Partial<BodaPerfil> | null) {
+  override = b ? { ...VACIO, ...b, p1: { ...PERSONA, ...b.p1 }, p2: { ...PERSONA, ...b.p2 } } : null;
+}
+
 export function loadBoda(): BodaPerfil {
+  if (override) return override;
   try {
     const r = localStorage.getItem(KEY);
     if (!r) return VACIO;

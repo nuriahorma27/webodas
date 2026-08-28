@@ -5,6 +5,7 @@ import { Card, Stat } from "@/components/ui";
 import { leerNombresExcel } from "@/lib/import-excel";
 import {
   loadResponses,
+  fetchResponsesServer,
   updateResponse,
   valorRespuesta,
   type RsvpResponse,
@@ -193,6 +194,10 @@ export default function InvitadosPage() {
       setPreguntas(labelsFormulario());
       setRespuestas(loadResponses("demo"));
       setFijasOcultas(loadFijasOcultas());
+      // Respuestas reales de la web (servidor).
+      fetchResponsesServer().then((srv) => {
+        if (srv.length) setRespuestas((prev) => [...srv, ...prev.filter((p) => p.id.startsWith("seed-"))]);
+      });
     };
     sync();
     // Primera vez (lista vacía): abrir directamente la configuración de la tabla.

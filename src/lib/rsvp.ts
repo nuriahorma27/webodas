@@ -57,6 +57,32 @@ export function loadResponses(weddingId: string): RsvpResponse[] {
   }
 }
 
+// Respuestas guardadas en el servidor (las que mandan los invitados por la web).
+export async function fetchResponsesServer(): Promise<RsvpResponse[]> {
+  try {
+    const [{ createClient }, { getWedding }] = await Promise.all([
+      import("@/lib/supabase/client"),
+      import("@/lib/wedding"),
+    ]);
+    const w = await getWedding();
+    if (!w) return [];
+    const { data, error } = await createClient()
+      .from("rsvp_responses")
+      .select("id, created_at, payload")
+      .eq("wedding_id", w.id)
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    const rs = data.map((row) => ({
+      ...(row.payload as RsvpResponse),
+      id: row.id,
+      fecha: (row.payload as RsvpResponse)?.fecha || row.created_at,
+    }));
+    return aplicarOverlay(rs);
+  } catch {
+    return [];
+  }
+}
+
 export function addResponse(weddingId: string, r: RsvpResponse) {
   try {
     const all = [r, ...loadResponses(weddingId)];
@@ -67,10 +93,30 @@ export function addResponse(weddingId: string, r: RsvpResponse) {
   }
 }
 
+// Estado de volcado por respuesta (sirve tanto para las locales como las del servidor).
+const OVERLAY = "webodas:rsvp-volcadas";
+type Overlay = Record<string, Partial<RsvpResponse>>;
+function loadOverlay(): Overlay {
+  try {
+    return JSON.parse(localStorage.getItem(OVERLAY) || "{}") as Overlay;
+  } catch {
+    return {};
+  }
+}
+export function aplicarOverlay(rs: RsvpResponse[]): RsvpResponse[] {
+  const ov = loadOverlay();
+  return rs.map((r) => (ov[r.id] ? { ...r, ...ov[r.id] } : r));
+}
+
 export function updateResponse(weddingId: string, id: string, patch: Partial<RsvpResponse>) {
   try {
+    // local (demo)
     const all = loadResponses(weddingId).map((r) => (r.id === id ? { ...r, ...patch } : r));
     localStorage.setItem(key(weddingId), JSON.stringify(all));
+    // overlay (para respuestas del servidor)
+    const ov = loadOverlay();
+    ov[id] = { ...ov[id], ...patch };
+    localStorage.setItem(OVERLAY, JSON.stringify(ov));
     window.dispatchEvent(new Event("webodas:rsvp"));
   } catch {
     /* noop */

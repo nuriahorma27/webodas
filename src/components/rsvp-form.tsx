@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addResponse } from "@/lib/rsvp";
+import { addResponse, type RsvpResponse } from "@/lib/rsvp";
+import { getPublicWeddingId } from "@/lib/wedding";
+import { createClient } from "@/lib/supabase/client";
 import {
   loadFormulario,
   LABEL_ALERGIAS,
@@ -96,7 +98,7 @@ export function RsvpForm({
       });
     }
 
-    addResponse(weddingId, {
+    const respuesta: RsvpResponse = {
       id: crypto.randomUUID(),
       fecha: new Date().toISOString(),
       nombre: nombre.trim() || "(sin nombre)",
@@ -112,9 +114,21 @@ export function RsvpForm({
             respuestasAcomp,
           }
         : {}),
-    });
+    };
 
-    setSent(true);
+    const weddingId2 = getPublicWeddingId();
+    if (weddingId2) {
+      // Página pública real: guardar en el servidor para que lo vea la pareja.
+      setSent(true);
+      createClient()
+        .from("rsvp_responses")
+        .insert({ wedding_id: weddingId2, payload: respuesta })
+        .then(() => {});
+    } else {
+      // Vista previa del panel: se queda en este navegador.
+      addResponse(weddingId, respuesta);
+      setSent(true);
+    }
   };
 
   const field: React.CSSProperties = {

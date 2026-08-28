@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
 import { CompartirEnlace } from "@/components/compartir-enlace";
+import { EditarEnlace } from "@/components/editar-enlace";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { loadStd, stdConfigurada } from "@/lib/savethedate";
+import { getWedding } from "@/lib/wedding";
 import { TEMPLATES } from "@/lib/puck/config";
 
 const previews: Record<string, React.ReactNode> = {
@@ -43,9 +45,11 @@ export default function WebsPage() {
   const [hasWeb, setHasWeb] = useState<boolean | null>(null);
   const [hasStd, setHasStd] = useState(false);
   const [stdPublicada, setStdPublicada] = useState(false);
+  const [slug, setSlug] = useState<string | null>(null);
   const boda = loadBoda();
 
   useEffect(() => {
+    getWedding().then((w) => w && setSlug(w.slug));
     const sync = () => {
       try {
         const raw = localStorage.getItem("webodas:site:demo");
@@ -88,20 +92,29 @@ export default function WebsPage() {
                 <p className="text-sm text-muted">{fechaLarga(boda)}</p>
               </div>
               <div className="flex items-center gap-4">
-                <a
-                  href="/w/ana-y-leo"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-muted underline"
-                >
-                  Ver
-                </a>
+                {slug && (
+                  <a
+                    href={`/w/${slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-muted underline"
+                  >
+                    Ver
+                  </a>
+                )}
                 <Link href="/editor/demo" className="text-sm font-medium text-accent">
                   Seguir editando →
                 </Link>
               </div>
             </div>
-            <CompartirEnlace path="/w/ana-y-leo" label="Enlace para tus invitados" />
+            {slug ? (
+              <div className="space-y-2">
+                <CompartirEnlace path={`/w/${slug}`} label="Enlace para tus invitados" />
+                <EditarEnlace slug={slug} onChange={setSlug} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted">Preparando tu enlace…</p>
+            )}
           </Card>
           <button
             onClick={empezarDeNuevo}
@@ -141,9 +154,9 @@ export default function WebsPage() {
               Una sola hoja con vuestros nombres, la fecha y una imagen. Para avisar pronto.
             </p>
             <div className="flex items-center gap-4">
-              {hasStd && (
+              {hasStd && slug && (
                 <a
-                  href="/std/ana-y-leo"
+                  href={`/std/${slug}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-sm text-muted underline"
@@ -156,8 +169,8 @@ export default function WebsPage() {
               </Link>
             </div>
           </div>
-          {stdPublicada && (
-            <CompartirEnlace path="/std/ana-y-leo" label="Enlace para tus invitados" />
+          {stdPublicada && slug && (
+            <CompartirEnlace path={`/std/${slug}`} label="Enlace para tus invitados" />
           )}
         </Card>
       </div>
