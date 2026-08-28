@@ -23,8 +23,8 @@ import {
 export default function MesasPage() {
   const [cfg, setCfg] = useState<MesasConfig | null>(null);
   const [inv, setInv] = useState<Invitado[]>([]);
-  const [sel, setSel] = useState<string | null>(null);
   const [porBorrar, setPorBorrar] = useState<Mesa | null>(null);
+  const [addAbierto, setAddAbierto] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -50,17 +50,16 @@ export default function MesasPage() {
   // Invitados que pueden sentarse: vienen ("Sí") o pendientes. No los "No".
   const sentables = inv.filter((i) => (i.nombre || i.apellido) && i.viene !== "No");
   const sentadosIds = new Set(cfg.mesas.flatMap((m) => m.invitados));
-  const sinAsignar = sentables.filter((i) => !sentadosIds.has(i.id));
+  const sinMesa = sentables.filter((i) => !sentadosIds.has(i.id));
 
   const tiposActivos = TIPOS_MESA.filter((t) => cfg.tipos[t.id]?.activo);
 
   const totalPlazas = cfg.mesas.reduce((s, m) => s + m.plazas, 0);
   const totalSentados = cfg.mesas.reduce((s, m) => s + m.invitados.length, 0);
 
-  const colocar = (mesaId: string, pos?: number) => {
-    if (!sel) return;
-    sentar(mesaId, sel, pos);
-    setSel(null);
+  const anadirMesa = (tipo: TipoMesa) => {
+    addMesa(tipo);
+    setAddAbierto(false);
   };
 
   return (
@@ -145,50 +144,45 @@ export default function MesasPage() {
             <h2 className="font-display text-lg">3 · Mesas</h2>
             <p className="text-sm text-muted">
               {cfg.mesas.length} mesas · {totalSentados}/{totalPlazas} plazas ocupadas ·{" "}
-              {sinAsignar.length} sin sentar
+              {sinMesa.length} sin mesa
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {tiposActivos.length === 0 && (
-              <span className="text-xs text-muted">Activa algún tipo de mesa arriba.</span>
-            )}
-            {tiposActivos.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => addMesa(t.id)}
-                className="rounded-full border border-line px-3 py-1 text-xs font-medium hover:border-accent hover:text-accent"
-              >
-                + Mesa {t.label.toLowerCase()}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Pool de sin asignar */}
-        <div className="rounded-lg border border-line bg-surface p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Sin sentar ({sinAsignar.length})
-          </p>
-          {sel && (
-            <p className="mt-1 text-xs text-accent">
-              «{nombreCompleto(nombreDe(sel))}» seleccionado — pulsa una mesa o una silla para sentarlo.{" "}
-              <button onClick={() => setSel(null)} className="underline">
-                cancelar
+          <div className="relative">
+            {tiposActivos.length === 0 ? (
+              <span className="text-xs text-muted">Activa algún tipo de mesa arriba.</span>
+            ) : tiposActivos.length === 1 ? (
+              <button
+                onClick={() => anadirMesa(tiposActivos[0].id)}
+                className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+              >
+                + Añadir mesa
               </button>
-            </p>
-          )}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {sinAsignar.length === 0 && (
-              <span className="text-sm text-muted">Todo el mundo tiene sitio 🎉</span>
+            ) : (
+              <>
+                <button
+                  onClick={() => setAddAbierto((v) => !v)}
+                  onBlur={() => setTimeout(() => setAddAbierto(false), 150)}
+                  className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                >
+                  + Añadir mesa ▾
+                </button>
+                {addAbierto && (
+                  <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-md border border-line bg-background text-sm shadow-lg">
+                    {tiposActivos.map((t) => (
+                      <button
+                        key={t.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => anadirMesa(t.id)}
+                        className="block w-full px-3 py-2 text-left hover:bg-accent-soft/40"
+                      >
+                        Mesa {t.label.toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
-            {sinAsignar.map((i) => (
-              <ChipInvitado
-                key={i.id}
-                inv={i}
-                activo={sel === i.id}
-                onClick={() => setSel(sel === i.id ? null : i.id)}
-              />
-            ))}
           </div>
         </div>
 
@@ -201,10 +195,9 @@ export default function MesasPage() {
                 key={m.id}
                 mesa={m}
                 modo={cfg.modo}
-                sel={sel}
+                sinMesa={sinMesa}
                 nombreDe={nombreDe}
-                onColocar={(pos) => colocar(m.id, pos)}
-                onSelSilla={(id) => setSel(sel === id ? null : id)}
+                onSentar={(id, pos) => sentar(m.id, id, pos)}
                 onQuitar={quitarDeMesa}
                 onMover={(id, dir) => moverEnMesa(m.id, id, dir)}
                 onRename={(nombre) => updateMesa(m.id, { nombre })}
@@ -228,7 +221,7 @@ export default function MesasPage() {
             <h3 className="font-display text-lg">Eliminar mesa</h3>
             <p className="mt-1 text-sm text-muted">
               ¿Seguro que quieres eliminar «{porBorrar.nombre}»? Sus{" "}
-              {porBorrar.invitados.length} invitados volverán a «sin sentar».
+              {porBorrar.invitados.length} invitados volverán a «sin mesa».
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -281,37 +274,12 @@ function EstadoPunto({ inv }: { inv?: Invitado }) {
   );
 }
 
-function ChipInvitado({
-  inv,
-  activo,
-  onClick,
-}: {
-  inv: Invitado;
-  activo: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm transition ${
-        activo
-          ? "border-accent bg-accent text-white"
-          : "border-line bg-background hover:border-accent"
-      }`}
-    >
-      <EstadoPunto inv={inv} />
-      {nombreCompleto(inv)}
-    </button>
-  );
-}
-
 function MesaCard({
   mesa,
   modo,
-  sel,
+  sinMesa,
   nombreDe,
-  onColocar,
-  onSelSilla,
+  onSentar,
   onQuitar,
   onMover,
   onRename,
@@ -320,10 +288,9 @@ function MesaCard({
 }: {
   mesa: Mesa;
   modo: "asignado" | "libre";
-  sel: string | null;
+  sinMesa: Invitado[];
   nombreDe: (id: string) => Invitado | undefined;
-  onColocar: (pos?: number) => void;
-  onSelSilla: (id: string) => void;
+  onSentar: (id: string, pos?: number) => void;
   onQuitar: (id: string) => void;
   onMover: (id: string, dir: -1 | 1) => void;
   onRename: (nombre: string) => void;
@@ -331,6 +298,22 @@ function MesaCard({
   onBorrar: () => void;
 }) {
   const llena = mesa.invitados.length > mesa.plazas;
+  // picker: null = cerrado; { pos } = eligiendo a quién sentar (en la silla pos si viene)
+  const [picker, setPicker] = useState<{ pos?: number } | null>(null);
+  const [q, setQ] = useState("");
+
+  const abrirPicker = (pos?: number) => {
+    setQ("");
+    setPicker({ pos });
+  };
+  const elegir = (id: string) => {
+    onSentar(id, picker?.pos);
+    setPicker(null);
+  };
+
+  const filtrados = q.trim()
+    ? sinMesa.filter((i) => nombreCompleto(i).toLowerCase().includes(q.trim().toLowerCase()))
+    : sinMesa;
 
   return (
     <div className="rounded-xl border border-line p-4">
@@ -367,17 +350,11 @@ function MesaCard({
 
       {modo === "asignado" && (
         <div className="my-3 flex justify-center">
-          <MesaDibujo
-            mesa={mesa}
-            nombreDe={nombreDe}
-            sel={sel}
-            onColocar={onColocar}
-            onSelSilla={onSelSilla}
-          />
+          <MesaDibujo mesa={mesa} nombreDe={nombreDe} onSilla={abrirPicker} />
         </div>
       )}
 
-      {/* Lista ordenable (sillas numeradas o personas de la mesa libre) */}
+      {/* Lista ordenable */}
       <ol className="mt-2 space-y-1">
         {mesa.invitados.map((id, idx) => {
           const i = nombreDe(id);
@@ -390,12 +367,7 @@ function MesaCard({
             >
               <span className="w-6 shrink-0 text-center text-xs text-muted">{idx + 1}</span>
               <EstadoPunto inv={i} />
-              <button
-                onClick={() => onSelSilla(id)}
-                className={`min-w-0 flex-1 truncate text-left ${sel === id ? "font-semibold text-accent" : ""}`}
-              >
-                {nombreCompleto(i)}
-              </button>
+              <span className="min-w-0 flex-1 truncate">{nombreCompleto(i)}</span>
               <span className="flex shrink-0 text-muted">
                 <button
                   onClick={() => onMover(id, -1)}
@@ -429,13 +401,53 @@ function MesaCard({
         )}
       </ol>
 
-      <button
-        onClick={() => onColocar()}
-        disabled={!sel}
-        className="mt-2 w-full rounded-md border border-dashed border-line py-1.5 text-xs font-medium text-accent hover:border-accent disabled:opacity-40"
-      >
-        {sel ? "Sentar aquí a la persona seleccionada" : "Selecciona a alguien de «sin sentar»"}
-      </button>
+      {picker ? (
+        <div className="mt-2 rounded-lg border border-line bg-surface p-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted">
+              {picker.pos !== undefined ? `Sentar en la silla ${picker.pos + 1}` : "Añadir a la mesa"}
+            </span>
+            <button
+              onClick={() => setPicker(null)}
+              className="text-xs text-muted underline hover:text-foreground"
+            >
+              cerrar
+            </button>
+          </div>
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por nombre…"
+            className="mt-1.5 w-full rounded border border-line bg-background px-2 py-1 text-sm outline-none focus:border-accent"
+          />
+          <ul className="mt-1.5 max-h-52 overflow-auto">
+            {filtrados.length === 0 && (
+              <li className="px-1 py-1.5 text-sm text-muted">
+                {sinMesa.length === 0 ? "Todos tienen mesa." : "Sin coincidencias."}
+              </li>
+            )}
+            {filtrados.map((i) => (
+              <li key={i.id}>
+                <button
+                  onClick={() => elegir(i.id)}
+                  className="flex w-full items-center gap-2 rounded px-1 py-1.5 text-left text-sm hover:bg-accent-soft/40"
+                >
+                  <EstadoPunto inv={i} />
+                  {nombreCompleto(i)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <button
+          onClick={() => abrirPicker()}
+          className="mt-2 w-full rounded-md border border-dashed border-line py-1.5 text-xs font-medium text-accent hover:border-accent"
+        >
+          + Sentar invitado
+        </button>
+      )}
     </div>
   );
 }
@@ -445,37 +457,23 @@ function MesaCard({
 function MesaDibujo({
   mesa,
   nombreDe,
-  sel,
-  onColocar,
-  onSelSilla,
+  onSilla,
 }: {
   mesa: Mesa;
   nombreDe: (id: string) => Invitado | undefined;
-  sel: string | null;
-  onColocar: (pos?: number) => void;
-  onSelSilla: (id: string) => void;
+  onSilla: (pos: number) => void;
 }) {
   const n = Math.max(mesa.plazas, mesa.invitados.length);
   const seats = Array.from({ length: n }, (_, i) => i);
   const posiciones = posicionesSillas(mesa.tipo, n);
 
-  // Tamaño del lienzo en función del número de sillas.
   const base = mesa.tipo === "rectangular" ? 260 : 220;
   const W = mesa.tipo === "rectangular" ? Math.min(360, base + Math.max(0, n - 8) * 12) : base;
   const H = mesa.tipo === "rectangular" ? 170 : base;
   const seatPx = n > 16 ? 24 : n > 10 ? 28 : 32;
 
-  const clickSeat = (idx: number, ocupanteId?: string) => {
-    if (ocupanteId) {
-      onSelSilla(ocupanteId);
-    } else if (sel) {
-      onColocar(idx);
-    }
-  };
-
   return (
     <div className="relative" style={{ width: W, height: H }}>
-      {/* superficie de la mesa */}
       <div
         className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
         style={{
@@ -490,20 +488,15 @@ function MesaDibujo({
         const p = posiciones[idx];
         const ocupanteId = mesa.invitados[idx];
         const inv = ocupanteId ? nombreDe(ocupanteId) : undefined;
-        const activo = sel && ocupanteId === sel;
         return (
           <button
             key={idx}
-            onClick={() => clickSeat(idx, ocupanteId)}
+            onClick={() => onSilla(idx)}
             title={inv ? `Silla ${idx + 1} · ${nombreCompleto(inv)}` : `Silla ${idx + 1} (libre)`}
             className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border text-[10px] font-semibold transition ${
               ocupanteId
-                ? activo
-                  ? "border-accent bg-accent text-white"
-                  : "border-accent/60 bg-background text-foreground"
-                : sel
-                  ? "border-dashed border-accent bg-accent-soft/40 text-accent hover:bg-accent-soft"
-                  : "border-line bg-surface text-muted"
+                ? "border-accent/60 bg-background text-foreground"
+                : "border-dashed border-line bg-surface text-muted hover:border-accent hover:bg-accent-soft/40 hover:text-accent"
             }`}
             style={{ left: `${p.x}%`, top: `${p.y}%`, width: seatPx, height: seatPx }}
           >
@@ -515,7 +508,7 @@ function MesaDibujo({
   );
 }
 
-// Devuelve posiciones en % (centro del asiento) para cada silla según el tipo.
+// Posiciones en % (centro del asiento) para cada silla según el tipo.
 function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[] {
   if (n === 0) return [];
   if (tipo === "redonda") {
@@ -527,7 +520,6 @@ function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[]
     });
   }
   if (tipo === "rectangular") {
-    // Mitad arriba, mitad abajo, repartidas a lo largo; sobrantes en los lados cortos.
     const top = Math.ceil(n / 2);
     const bottom = n - top;
     const out: { x: number; y: number }[] = [];
@@ -535,7 +527,6 @@ function posicionesSillas(tipo: TipoMesa, n: number): { x: number; y: number }[]
     for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 94 });
     return out;
   }
-  // cuadrada: repartir por los 4 lados
   const perSide = Math.ceil(n / 4);
   const out: { x: number; y: number }[] = [];
   const sides: ("t" | "r" | "b" | "l")[] = ["t", "r", "b", "l"];
