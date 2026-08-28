@@ -10,7 +10,7 @@ import {
   valorRespuesta,
   type RsvpResponse,
 } from "@/lib/rsvp";
-import { labelsFormulario, loadFormulario } from "@/lib/formulario";
+import { labelsFormulario, loadFormulario, formatoPregunta } from "@/lib/formulario";
 import Link from "next/link";
 import {
   loadInvitados,
@@ -159,22 +159,11 @@ export default function InvitadosPage() {
         <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
       ) : (
         <>
-      <div className="sticky top-0 z-30 flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-line bg-surface/95 px-4 py-2 text-sm shadow-sm backdrop-blur">
-        <span>
-          <strong className="font-display text-base">{r.personas}</strong> personas
-        </span>
-        <span className="text-emerald-700">
-          <strong className="font-display text-base">{r.confirmadas}</strong> vienen
-        </span>
-        <span>
-          <strong className="font-display text-base">{r.pendientes}</strong> pendientes
-        </span>
-        <span className="text-[#7b2233]">
-          <strong className="font-display text-base">{r.noVienen}</strong> no vienen
-        </span>
-        <span className="text-muted">
-          {r.adultos} adultos · {r.ninos} niños
-        </span>
+      <div className="sticky top-0 z-30 -my-2 grid gap-3 bg-background py-2 sm:grid-cols-4">
+        <Stat label="Personas" value={String(r.personas)} sub={`${r.adultos} adultos · ${r.ninos} niños`} />
+        <Stat label="Confirmadas" value={String(r.confirmadas)} tone="positive" />
+        <Stat label="Pendientes" value={String(r.pendientes)} />
+        <Stat label="No vienen" value={String(r.noVienen)} tone="negative" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -232,9 +221,30 @@ export default function InvitadosPage() {
               {cols.map((c, i) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
                   <span className="font-medium">{c.nombre}</span>
-                  <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
-                    {TIPO_COLUMNA_LABEL[c.tipo]}
-                  </span>
+                  {c.preguntaRsvp ? (
+                    <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
+                      🔒 {TIPO_COLUMNA_LABEL[c.tipo]} (del formulario)
+                    </span>
+                  ) : (
+                    <select
+                      value={c.tipo}
+                      onChange={(e) => updateColumna(c.id, { tipo: e.target.value as TipoColumna })}
+                      className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                    >
+                      <option value="texto">Texto</option>
+                      <option value="sino">Sí / No</option>
+                      <option value="numero">Número</option>
+                      <option value="lista">Listado</option>
+                    </select>
+                  )}
+                  {c.tipo === "lista" && !c.preguntaRsvp && (
+                    <input
+                      defaultValue={c.opciones ?? ""}
+                      onBlur={(e) => updateColumna(c.id, { opciones: e.target.value })}
+                      placeholder="Opciones separadas por comas"
+                      className="min-w-[10rem] flex-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                    />
+                  )}
                   <div className="ml-auto flex items-center gap-1 text-xs text-muted">
                     <button
                       onClick={() => moveColumna(c.id, -1)}
@@ -258,7 +268,19 @@ export default function InvitadosPage() {
                     Se rellena con la pregunta:
                     <select
                       value={c.preguntaRsvp ?? ""}
-                      onChange={(e) => updateColumna(c.id, { preguntaRsvp: e.target.value })}
+                      onChange={(e) => {
+                        const pregunta = e.target.value;
+                        if (!pregunta) {
+                          updateColumna(c.id, { preguntaRsvp: "" });
+                        } else {
+                          const f = formatoPregunta(pregunta);
+                          updateColumna(c.id, {
+                            preguntaRsvp: pregunta,
+                            tipo: f.tipo,
+                            opciones: f.opciones,
+                          });
+                        }
+                      }}
                       className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
                     >
                       <option value="">— ninguna</option>

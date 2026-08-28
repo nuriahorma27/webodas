@@ -108,3 +108,17 @@ export function labelsFormulario(): string[] {
   const pack = c.pack ? ["¿Asistirás?", "¿Vienes con acompañante?"] : [];
   return [...pack, ...c.preguntas.map((p) => p.label).filter(Boolean)];
 }
+
+// Tipo (y opciones) que debe tener una columna asociada a esa pregunta.
+export function formatoPregunta(label: string): {
+  tipo: "texto" | "sino" | "numero" | "lista";
+  opciones?: string;
+} {
+  if (label === "¿Asistirás?" || label === "¿Vienes con acompañante?") return { tipo: "sino" };
+  const q = loadFormulario().preguntas.find((p) => p.label === label);
+  if (!q) return { tipo: "texto" };
+  if (q.qtype === "si-no") return { tipo: "sino" };
+  if (q.qtype === "numero") return { tipo: "numero" };
+  if (q.qtype === "opcion") return { tipo: "lista", opciones: q.options };
+  return { tipo: "texto" };
+}
