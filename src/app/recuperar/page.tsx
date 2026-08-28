@@ -31,17 +31,24 @@ function Recuperar() {
 
     (async () => {
       const url = new URL(window.location.href);
-      const tokenHash = url.searchParams.get("token_hash");
-      const type = url.searchParams.get("type");
-      const code = url.searchParams.get("code");
-      const errDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
+      const q = url.searchParams;
+      const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
 
-      // 1) ¿ya hay sesión? (el SDK procesa el hash #access_token automáticamente)
+      const err = q.get("error_description") || hash.get("error_description") || q.get("error") || hash.get("error");
+      const access = hash.get("access_token");
+      const refresh = hash.get("refresh_token");
+      const tokenHash = q.get("token_hash");
+      const type = q.get("type") || hash.get("type");
+      const code = q.get("code");
+
+      // 0) ¿ya hay sesión?
       if ((await supabase.auth.getSession()).data.session) return marcarListo();
 
-      // 2) enlace tipo ?token_hash / ?code → canjearlo una sola vez
+      // 1) canjear lo que traiga el enlace (cualquier formato)
       try {
-        if (tokenHash) {
+        if (access && refresh) {
+          await supabase.auth.setSession({ access_token: access, refresh_token: refresh });
+        } else if (tokenHash) {
           await supabase.auth.verifyOtp({ type: (type as "recovery") || "recovery", token_hash: tokenHash });
         } else if (code) {
           await supabase.auth.exchangeCodeForSession(code);
@@ -50,14 +57,14 @@ function Recuperar() {
         /* se comprueba abajo */
       }
 
-      // 3) esperar un poco por si el SDK aún está procesando la URL
-      for (let i = 0; i < 6 && vivo; i++) {
+      // 2) esperar un poco por si el SDK aún está procesando
+      for (let i = 0; i < 8 && vivo; i++) {
         if ((await supabase.auth.getSession()).data.session) return marcarListo();
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 400));
       }
       if (vivo) {
         setEstado("invalido");
-        if (errDesc) setError(decodeURIComponent(errDesc.replace(/\+/g, " ")));
+        if (err) setError(decodeURIComponent(err.replace(/\+/g, " ")));
       }
     })();
 
