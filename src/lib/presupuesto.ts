@@ -121,11 +121,7 @@ export const CATEGORIAS_ESTANDAR: Record<string, string[]> = {
     "Kit de fiesta / abanicos",
     "Cesta de baño",
   ],
-  "Preboda y pedida": [
-    "Pedida de mano",
-    "Fiesta preboda",
-    "Sesión / book preboda",
-  ],
+  "Preboda y pedida": ["Pedida", "Fiesta preboda", "Fotos preboda"],
   "Viaje de novios": [
     "Billetes",
     "Hoteles",
