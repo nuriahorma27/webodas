@@ -119,11 +119,11 @@ export function RsvpForm({
           display: "inline-block",
           marginTop: 24,
           padding: "12px 28px",
-          background: "var(--wf-accent)",
+          background: "var(--wf-accent, #8a6d3b)",
           color: "#fff",
           border: "none",
           letterSpacing: "0.1em",
-          fontFamily: "var(--wf-body)",
+          fontFamily: "var(--wf-body, inherit)",
           cursor: "pointer",
         }}
       >
@@ -155,7 +155,7 @@ export function RsvpForm({
               maxHeight: "90vh",
               overflowY: "auto",
               padding: "28px 26px",
-              fontFamily: "var(--wf-body)",
+              fontFamily: "var(--wf-body, inherit)",
               textAlign: "left",
               position: "relative",
             }}
@@ -171,15 +171,15 @@ export function RsvpForm({
 
             {sent ? (
               <div style={{ padding: "20px 0" }}>
-                <h3 style={{ fontFamily: "var(--wf-heading)", fontSize: 24, marginBottom: 8 }}>¡Gracias!</h3>
+                <h3 style={{ fontFamily: "var(--wf-heading, Georgia, serif)", fontSize: 24, marginBottom: 8 }}>¡Gracias!</h3>
                 <p style={{ fontSize: 15, color: "#555" }}>Hemos recibido tu respuesta.</p>
-                <button type="button" onClick={close} style={{ marginTop: 20, padding: "10px 22px", background: "var(--wf-accent)", color: "#fff", border: "none", cursor: "pointer" }}>
+                <button type="button" onClick={close} style={{ marginTop: 20, padding: "10px 22px", background: "var(--wf-accent, #8a6d3b)", color: "#fff", border: "none", cursor: "pointer" }}>
                   Cerrar
                 </button>
               </div>
             ) : (
               <form onSubmit={submit} style={{ display: "grid", gap: 16 }}>
-                <h3 style={{ fontFamily: "var(--wf-heading)", fontSize: 24, marginBottom: 2 }}>Confirmar asistencia</h3>
+                <h3 style={{ fontFamily: "var(--wf-heading, Georgia, serif)", fontSize: 24, marginBottom: 2 }}>Confirmar asistencia</h3>
                 {cfg.intro && <p style={{ fontSize: 14, color: "#666", marginTop: -6 }}>{cfg.intro}</p>}
 
                 <div style={{ display: "grid", gap: 12, gridTemplateColumns: est.apellidos ? "1fr 1fr" : "1fr" }}>
@@ -248,7 +248,7 @@ export function RsvpForm({
 
                 <button
                   type="submit"
-                  style={{ marginTop: 4, padding: "12px 28px", background: "var(--wf-accent)", color: "#fff", border: "none", letterSpacing: "0.1em", cursor: "pointer" }}
+                  style={{ marginTop: 4, padding: "12px 28px", background: "var(--wf-accent, #8a6d3b)", color: "#fff", border: "none", letterSpacing: "0.1em", cursor: "pointer" }}
                 >
                   Enviar
                 </button>
