@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui";
-import { ImagePicker } from "@/components/image-picker";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
 import {
   loadMesas,
@@ -264,43 +263,89 @@ export default function MesasPage() {
   );
 }
 
+function svgMesa(mesa: Mesa, nombreDe: (id: string) => Invitado | undefined) {
+  const rect = mesa.tipo === "rectangular";
+  const VW = rect ? 400 : 280;
+  const VH = rect ? 240 : 280;
+  const n = Math.max(mesa.plazas, mesa.invitados.length);
+  const pos = posicionesSillas(mesa.tipo, n, Boolean(mesa.cabecera));
+  const r = n > 16 ? 11 : n > 10 ? 13 : 16;
+  const fs = r > 13 ? 11 : 9;
+
+  const mesaShape =
+    mesa.tipo === "redonda"
+      ? `<ellipse cx="${VW / 2}" cy="${VH / 2}" rx="${VW * 0.31}" ry="${VH * 0.31}" fill="#efe7da" stroke="#d9cdb8"/>`
+      : `<rect x="${VW * 0.19}" y="${VH * 0.19}" width="${VW * 0.62}" height="${VH * 0.62}" rx="${rect ? 16 : 8}" fill="#efe7da" stroke="#d9cdb8"/>`;
+
+  const sillas = pos
+    .map((p, i) => {
+      const x = (p.x / 100) * VW;
+      const y = (p.y / 100) * VH;
+      const inv = mesa.invitados[i] ? nombreDe(mesa.invitados[i]) : undefined;
+      const txt = inv ? iniciales(inv) : String(i + 1);
+      return `<g>
+        <circle cx="${x}" cy="${y}" r="${r}" fill="${inv ? "#fff" : "#f7f3ec"}" stroke="#8a6d3b" stroke-width="1"/>
+        <text x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${fs}" font-weight="bold" fill="#1c1a17">${txt}</text>
+      </g>`;
+    })
+    .join("");
+
+  return `<svg viewBox="0 0 ${VW} ${VH}" width="${rect ? 380 : 300}" xmlns="http://www.w3.org/2000/svg">${mesaShape}${sillas}</svg>`;
+}
+
 function imprimirMesas(
   cfg: MesasConfig,
   nombreDe: (id: string) => Invitado | undefined,
 ) {
   const esc = (s: string) =>
     s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+
   const paginas = [...cfg.mesas]
     .sort((a, b) => a.numero - b.numero)
     .map((m) => {
       const filas = m.invitados
-        .map((id, i) => `<li><span class="n">${i + 1}</span> ${esc(nombreCompleto(nombreDe(id)))}</li>`)
+        .map((id, i) => {
+          const inv = nombreDe(id);
+          return `<li><b>${i + 1}</b> ${esc(nombreCompleto(inv))} <span class="ini">${esc(iniciales(inv))}</span></li>`;
+        })
         .join("");
       return `<section class="mesa">
-        ${m.imagen ? `<img src="${m.imagen}" alt=""/>` : ""}
+        ${m.imagen ? `<div class="foto"><img src="${m.imagen}" alt=""/></div>` : ""}
         <h1>Mesa ${m.numero}</h1>
         ${m.nombre ? `<h2>${esc(m.nombre)}</h2>` : ""}
-        <ol>${filas || '<li class="vacia">Sin invitados</li>'}</ol>
+        <div class="dibujo">${svgMesa(m, nombreDe)}</div>
+        <ol>${filas || '<li class="vacia">Sin invitados asignados</li>'}</ol>
       </section>`;
     })
     .join("");
+
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Plano de mesas</title>
   <style>
-    @page { margin: 18mm; }
+    @page { margin: 16mm; }
     * { box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
     body { margin:0; color:#1c1a17; }
-    .mesa { page-break-after: always; text-align:center; padding-top: 10mm; }
+    .mesa { page-break-after: always; text-align:center; }
     .mesa:last-child { page-break-after: auto; }
-    .mesa img { max-width: 70%; max-height: 95mm; object-fit: contain; margin-bottom: 8mm; }
-    h1 { font-size: 30pt; margin: 0; }
-    h2 { font-size: 16pt; font-weight: normal; color:#8a6d3b; margin: 2mm 0 6mm; }
-    ol { list-style:none; padding:0; margin: 6mm auto 0; max-width: 320px; text-align:left; }
-    li { font-size: 13pt; padding: 2mm 0; border-bottom: 1px solid #e5ded2; }
-    li .n { display:inline-block; width: 24px; color:#8a6d3b; }
+    .foto { margin-bottom: 6mm; }
+    .foto img { max-width: 100%; max-height: 80mm; object-fit: contain; }
+    h1 { font-size: 28pt; margin: 0; }
+    h2 { font-size: 15pt; font-weight: normal; color:#8a6d3b; margin: 1mm 0 4mm; }
+    .dibujo { margin: 4mm 0 6mm; }
+    ol { list-style:none; padding:0; margin: 0 auto; max-width: 360px; text-align:left;
+         column-count: 1; }
+    ol.dos { column-count: 2; column-gap: 10mm; }
+    li { font-size: 12pt; padding: 1.5mm 0; border-bottom: 1px solid #e5ded2;
+         break-inside: avoid; }
+    li b { display:inline-block; width: 20px; color:#8a6d3b; }
+    li .ini { color:#999; font-size: 9pt; }
     li.vacia { color:#999; border:none; }
   </style></head><body>${paginas}
-  <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+  <script>
+    document.querySelectorAll('ol').forEach(function(o){ if(o.children.length>10) o.classList.add('dos'); });
+    window.onload=function(){setTimeout(function(){window.print();},350);};
+  <\/script>
   </body></html>`;
+
   const w = window.open("", "_blank");
   if (!w) {
     alert("Permite las ventanas emergentes para poder imprimir el plano.");
@@ -320,6 +365,64 @@ function iniciales(i?: Invitado) {
   const a = (i.nombre || "").trim()[0] ?? "";
   const b = (i.apellido || "").trim()[0] ?? "";
   return (a + b).toUpperCase() || "?";
+}
+
+function MeseroFoto({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (v: string) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const pick = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La imagen no puede pasar de 5 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => onChange(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="mt-2">
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) pick(f);
+          e.target.value = "";
+        }}
+      />
+      {value ? (
+        <div className="flex items-center gap-2 text-xs">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt=""
+            className="h-10 w-10 rounded-md border border-line object-cover"
+          />
+          <span className="text-muted">Imagen del mesero</span>
+          <button onClick={() => ref.current?.click()} className="text-accent hover:underline">
+            Cambiar
+          </button>
+          <button onClick={() => onChange("")} className="text-muted hover:text-red-600">
+            Quitar
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => ref.current?.click()}
+          className="text-xs text-muted hover:text-accent"
+        >
+          + Añadir imagen del mesero (para el plano)
+        </button>
+      )}
+    </div>
+  );
 }
 
 function EstadoPunto({ inv }: { inv?: Invitado }) {
@@ -388,10 +491,12 @@ function MesaCard({
 
   return (
     <div className="rounded-xl border border-line p-4">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-base">Mesa</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-foreground px-2 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+              Mesa
+            </span>
             <input
               type="number"
               min={1}
@@ -406,31 +511,32 @@ function MesaCard({
                   e.target.value = String(mesa.numero);
                 }
               }}
-              className="w-14 rounded border border-line bg-surface px-1 py-0.5 font-display text-base outline-none focus:border-accent"
-            />
-            <input
-              defaultValue={mesa.nombre}
-              placeholder="nombre (opcional)"
-              onBlur={(e) => onRename(e.target.value.trim())}
-              className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm outline-none hover:border-line focus:border-accent"
+              className="w-16 rounded-md border border-line bg-surface px-2 py-1 text-center font-display text-xl outline-none focus:border-accent"
+              title="Número de mesa"
             />
           </div>
+          <input
+            defaultValue={mesa.nombre}
+            placeholder="Ponle un nombre a la mesa (opcional)"
+            onBlur={(e) => onRename(e.target.value.trim())}
+            className="mt-2 w-full rounded-md border border-line bg-surface px-2 py-1 text-sm outline-none focus:border-accent"
+          />
           {errNum && (
-            <p className="px-1 text-xs text-[#7b2233]">Ese número de mesa ya está en uso.</p>
+            <p className="mt-1 text-xs text-[#7b2233]">Ese número de mesa ya está en uso.</p>
           )}
-          <p className="px-1 text-xs text-muted">
-            {LABEL_TIPO[mesa.tipo]} ·{" "}
-            <span className={llena ? "font-semibold text-[#7b2233]" : ""}>
-              {mesa.invitados.length}/{mesa.plazas}
-            </span>{" "}
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+            {LABEL_TIPO[mesa.tipo]} · Plazas
             <input
               type="number"
               min={1}
               value={mesa.plazas}
               onChange={(e) => onPlazas(Math.max(1, Number(e.target.value)))}
-              className="ml-1 w-14 rounded border border-line bg-surface px-1 py-0.5 text-xs outline-none focus:border-accent"
+              className="w-14 rounded border border-line bg-surface px-1 py-0.5 text-xs text-foreground outline-none focus:border-accent"
               title="Plazas de la mesa"
             />
+            <span className={llena ? "font-semibold text-[#7b2233]" : ""}>
+              · {mesa.invitados.length} sentados
+            </span>
           </p>
         </div>
         <button
@@ -442,6 +548,8 @@ function MesaCard({
         </button>
       </div>
 
+      <MeseroFoto value={mesa.imagen} onChange={onImagen} />
+
       {modo === "asignado" && (
         <div className="my-3 flex justify-center">
           <MesaDibujo
@@ -452,15 +560,6 @@ function MesaCard({
           />
         </div>
       )}
-
-      <details className="mt-2 text-xs">
-        <summary className="cursor-pointer text-muted hover:text-accent">
-          🖼 Imagen del mesero (para el plano)
-        </summary>
-        <div className="mt-2">
-          <ImagePicker value={mesa.imagen} onChange={onImagen} />
-        </div>
-      </details>
 
       {/* Lista ordenable */}
       <ol className="mt-2 space-y-1">
