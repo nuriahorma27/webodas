@@ -104,12 +104,34 @@ export function removeInvitado(id: string) {
 
 /* ---------- columnas personalizadas ---------- */
 
+// Columnas que aparecen de serie la primera vez.
+const COLUMNAS_INICIALES: { nombre: string; tipo: "texto" | "sino" }[] = [
+  { nombre: "Invitación entregada", tipo: "sino" },
+  { nombre: "Dirección", tipo: "texto" },
+  { nombre: "Alergias", tipo: "texto" },
+  { nombre: "Bus ida", tipo: "sino" },
+  { nombre: "Bus vuelta", tipo: "sino" },
+  { nombre: "Hora vuelta", tipo: "texto" },
+  { nombre: "Regalo", tipo: "texto" },
+  { nombre: "Cantidad (regalo)", tipo: "texto" },
+  { nombre: "Agradecimiento enviado", tipo: "sino" },
+];
+
+let SEED_COLS: ColumnaInvitado[] | null = null;
+function seedCols(): ColumnaInvitado[] {
+  if (!SEED_COLS)
+    SEED_COLS = COLUMNAS_INICIALES.map((c) => ({ id: crypto.randomUUID(), ...c }));
+  return SEED_COLS;
+}
+
 export function loadColumnas(): ColumnaInvitado[] {
   try {
     const r = localStorage.getItem(COLS_KEY);
-    return r ? (JSON.parse(r) as ColumnaInvitado[]) : [];
+    if (!r) return seedCols();
+    const arr = JSON.parse(r) as ColumnaInvitado[];
+    return Array.isArray(arr) ? arr : seedCols();
   } catch {
-    return [];
+    return seedCols();
   }
 }
 
