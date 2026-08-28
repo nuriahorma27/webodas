@@ -23,7 +23,7 @@ export type Mesa = {
   tipo: TipoMesa;
   plazas: number;
   cabecera?: boolean; // solo rectangular: una silla en cada extremo corto
-  imagen?: string; // imagen del mesero / diseño de la mesa (data URL), para el plano
+  presidencial?: boolean; // mesa presidencial (solo una)
   invitados: string[]; // orden = nº de silla (silla 1 = invitados[0])
 };
 
@@ -66,7 +66,7 @@ export function loadMesas(): MesasConfig {
               : "redonda",
             plazas: Math.max(1, Number(m.plazas) || 8),
             cabecera: Boolean(m.cabecera),
-            imagen: typeof m.imagen === "string" ? m.imagen : undefined,
+            presidencial: Boolean(m.presidencial),
             invitados: Array.isArray(m.invitados) ? m.invitados.filter(Boolean) : [],
           }))
         : [],
@@ -132,6 +132,16 @@ export function setNumeroMesa(id: string, numero: number): boolean {
   c.mesas = c.mesas.map((m) => (m.id === id ? { ...m, numero: n } : m));
   save(c);
   return true;
+}
+
+// Marca (o desmarca) la mesa presidencial. Solo puede haber una.
+export function setPresidencial(id: string, v: boolean) {
+  const c = loadMesas();
+  c.mesas = c.mesas.map((m) => ({
+    ...m,
+    presidencial: m.id === id ? v : v ? false : m.presidencial,
+  }));
+  save(c);
 }
 
 export function updateMesa(id: string, patch: Partial<Omit<Mesa, "id" | "invitados">>) {

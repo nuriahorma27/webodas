@@ -304,6 +304,8 @@ export default function InvitadosPage() {
         />
       )}
 
+      <RecuentoBus inv={inv} cols={cols} />
+
       <Card className="p-0">
         <div className="max-h-[70vh] overflow-auto">
           <table className="w-full min-w-max border-collapse text-sm">
@@ -514,6 +516,87 @@ export default function InvitadosPage() {
   );
 }
 
+function RecuentoBus({ inv, cols }: { inv: Invitado[]; cols: ColumnaInvitado[] }) {
+  const colDe = (label: string) =>
+    cols.find((c) => c.preguntaRsvp === label) ??
+    cols.find((c) => c.nombre.toLowerCase() === label.toLowerCase());
+  const colBus = colDe(LABEL_BUS);
+  const colIda = colDe(LABEL_BUS_IDA);
+  const colVuelta = colDe(LABEL_BUS_VUELTA);
+  if (!colBus && !colIda && !colVuelta) return null;
+
+  const noEs = (v: string) => !v || v.trim().toLowerCase() === "no";
+  const trayecto = (col?: ColumnaInvitado) => {
+    const conteo: Record<string, number> = {};
+    let total = 0;
+    if (col)
+      for (const i of inv) {
+        const v = (i.extra[col.id] ?? "").trim();
+        if (noEs(v)) continue;
+        total++;
+        conteo[v] = (conteo[v] ?? 0) + 1;
+      }
+    return { total, conteo };
+  };
+
+  const ida = trayecto(colIda);
+  const vuelta = trayecto(colVuelta);
+  const pidenBus = colBus
+    ? inv.filter((i) => ["sí", "si"].includes((i.extra[colBus.id] ?? "").trim().toLowerCase())).length
+    : inv.filter(
+        (i) =>
+          !noEs(colIda ? i.extra[colIda.id] ?? "" : "") ||
+          !noEs(colVuelta ? i.extra[colVuelta.id] ?? "" : ""),
+      ).length;
+
+  if (pidenBus === 0 && ida.total === 0 && vuelta.total === 0) return null;
+
+  const Bloque = ({
+    titulo,
+    total,
+    conteo,
+  }: {
+    titulo: string;
+    total: number;
+    conteo?: Record<string, number>;
+  }) => (
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{titulo}</p>
+      <p className="mt-0.5 font-display text-3xl leading-none">{total}</p>
+      {conteo && Object.keys(conteo).length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {Object.entries(conteo)
+            .sort((a, b) => b[1] - a[1])
+            .map(([k, n]) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-1 rounded-full bg-accent-soft/50 px-2 py-0.5 text-xs"
+              >
+                {k} <strong className="text-accent">{n}</strong>
+              </span>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <Card className="space-y-3">
+      <div>
+        <h3 className="font-display text-lg">Autobús</h3>
+        <p className="text-xs text-muted">
+          A partir de la columna del autobús de tu lista (invitados y acompañantes).
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Bloque titulo="Solicitan autobús" total={pidenBus} />
+        <Bloque titulo="Bus de ida" total={ida.total} conteo={ida.conteo} />
+        <Bloque titulo="Bus de vuelta" total={vuelta.total} conteo={vuelta.conteo} />
+      </div>
+    </Card>
+  );
+}
+
 function VistaRespuestas({
   respuestas,
   invitados,
@@ -592,44 +675,6 @@ function VistaRespuestas({
     });
   };
 
-  // Recuento de autobús: cuenta invitado + acompañante de cada respuesta.
-  const mapasBus: Record<string, string>[] = respuestas.flatMap((r) =>
-    r.acompNombre || r.acompApellido
-      ? [r.respuestas, r.respuestasAcomp ?? {}]
-      : [r.respuestas],
-  );
-  const cuentaTrayecto = (label: string) => {
-    const conteo: Record<string, number> = {};
-    let total = 0;
-    for (const m of mapasBus) {
-      const v = (m[label] ?? "").trim();
-      if (!v || v.toLowerCase() === "no") continue;
-      total++;
-      conteo[v] = (conteo[v] ?? 0) + 1;
-    }
-    return { total, conteo };
-  };
-  const pidenBus = mapasBus.filter(
-    (m) => (m[LABEL_BUS] ?? "").toLowerCase() === "sí" || (m[LABEL_BUS] ?? "").toLowerCase() === "si",
-  ).length;
-  const ida = cuentaTrayecto(LABEL_BUS_IDA);
-  const vuelta = cuentaTrayecto(LABEL_BUS_VUELTA);
-  const hayBus = pidenBus > 0 || ida.total > 0 || vuelta.total > 0;
-
-  const Trayecto = ({ titulo, dato }: { titulo: string; dato: ReturnType<typeof cuentaTrayecto> }) => (
-    <div className="rounded-lg border border-line bg-surface p-3">
-      <p className="text-xs uppercase tracking-wide text-muted">{titulo}</p>
-      <p className="font-display text-2xl">{dato.total}</p>
-      <ul className="mt-1 space-y-0.5 text-xs text-muted">
-        {Object.entries(dato.conteo).map(([k, n]) => (
-          <li key={k}>
-            {k}: <strong className="text-foreground">{n}</strong>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -640,22 +685,6 @@ function VistaRespuestas({
           ]}
         />
       </div>
-      {hayBus && (
-        <Card className="space-y-2">
-          <h3 className="font-display text-lg">Autobús</h3>
-          <p className="text-xs text-muted">
-            Suma las respuestas del invitado y de su acompañante.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-line bg-surface p-3">
-              <p className="text-xs uppercase tracking-wide text-muted">Solicitan autobús</p>
-              <p className="font-display text-2xl">{pidenBus}</p>
-            </div>
-            <Trayecto titulo="Bus de ida" dato={ida} />
-            <Trayecto titulo="Bus de vuelta" dato={vuelta} />
-          </div>
-        </Card>
-      )}
       {asociadas.length === 0 && (
         <Card className="text-sm text-muted">
           Consejo: en <strong>⚙ Ajustes de la lista → Columnas</strong> puedes asociar cada

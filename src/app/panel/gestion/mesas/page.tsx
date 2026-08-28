@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
@@ -11,6 +11,7 @@ import {
   addMesa,
   updateMesa,
   setNumeroMesa,
+  setPresidencial,
   removeMesa,
   sentar,
   quitarDeMesa,
@@ -218,7 +219,7 @@ export default function MesasPage() {
                 onNumero={(n) => setNumeroMesa(m.id, n)}
                 onPlazas={(plazas) => updateMesa(m.id, { plazas })}
                 onCabecera={(v) => updateMesa(m.id, { cabecera: v })}
-                onImagen={(v) => updateMesa(m.id, { imagen: v || undefined })}
+                onPresidencial={(v) => setPresidencial(m.id, v)}
                 onBorrar={() => setPorBorrar(m)}
               />
             ))}
@@ -315,7 +316,9 @@ function imprimirMesas(
   </section>`;
 
   const paginas = [...cfg.mesas]
-    .sort((a, b) => a.numero - b.numero)
+    .sort((a, b) =>
+      Number(Boolean(b.presidencial)) - Number(Boolean(a.presidencial)) || a.numero - b.numero,
+    )
     .map((m) => {
       const filas = m.invitados
         .map((id, i) => {
@@ -323,14 +326,15 @@ function imprimirMesas(
           return `<li><span class="li-n">${i + 1}</span><span class="li-nom">${esc(nombreCompleto(inv))}</span><span class="ini">${esc(iniciales(inv))}</span></li>`;
         })
         .join("");
+      const dos = m.invitados.length > 9 ? " dos" : "";
       return `<section class="mesa">
         <div class="mhead">
+          ${m.presidencial ? `<div class="mpres">★ Mesa presidencial</div>` : ""}
           <div class="mnum">Mesa ${m.numero}</div>
           ${m.nombre ? `<div class="mnom">${esc(m.nombre)}</div>` : ""}
         </div>
-        ${m.imagen ? `<div class="foto"><img src="${m.imagen}" alt=""/></div>` : ""}
         <div class="dibujo">${svgMesa(m, nombreDe)}</div>
-        <ol>${filas || '<li class="vacia">Sin invitados asignados</li>'}</ol>
+        <ol class="${dos.trim()}">${filas || '<li class="vacia">Sin invitados asignados</li>'}</ol>
       </section>`;
     })
     .join("");
@@ -357,14 +361,13 @@ function imprimirMesas(
     .pinfo { font-size: 11pt; color:#8a8172; letter-spacing:.04em; }
 
     .mhead { margin-bottom: 5mm; }
+    .mpres { font-family:'EB Garamond',serif; letter-spacing:.24em; text-transform:uppercase;
+      font-size: 10pt; color:#8a6d3b; margin-bottom: 2mm; }
     .mnum { font-family:'Cormorant Garamond',serif; font-weight:600; font-size: 30pt; line-height:1; }
     .mnom { font-family:'Cormorant Garamond',serif; font-size: 15pt; color:#8a6d3b; margin-top:1mm; }
-    .foto { margin: 0 auto 5mm; }
-    .foto img { display:block; margin:0 auto; max-width: 120mm; max-height: 62mm;
-      width:auto; height:auto; border: 1px solid #e3dccd; padding: 2mm; background:#fff; }
     .dibujo { margin: 0 0 6mm; }
     ol { list-style:none; padding:0; margin: 0 auto; max-width: 150mm; text-align:left; }
-    ol.dos { column-count: 2; column-gap: 12mm; }
+    ol.dos { column-count: 2; column-gap: 12mm; max-width: 170mm; }
     li { font-size: 12pt; padding: 1.6mm 0; border-bottom: 1px solid #ece5d6;
       break-inside: avoid; display:flex; align-items:baseline; gap: 3mm; }
     li .li-n { width: 6mm; color:#8a6d3b; font-family:'Cormorant Garamond',serif; font-weight:600; }
@@ -373,7 +376,6 @@ function imprimirMesas(
     li.vacia { color:#a29a89; border:none; font-style:italic; }
   </style></head><body>${portada}${paginas}
   <script>
-    document.querySelectorAll('ol').forEach(function(o){ if(o.children.length>12) o.classList.add('dos'); });
     window.onload=function(){setTimeout(function(){window.print();},450);};
   <\/script>
   </body></html>`;
@@ -397,64 +399,6 @@ function iniciales(i?: Invitado) {
   const a = (i.nombre || "").trim()[0] ?? "";
   const b = (i.apellido || "").trim()[0] ?? "";
   return (a + b).toUpperCase() || "?";
-}
-
-function MeseroFoto({
-  value,
-  onChange,
-}: {
-  value?: string;
-  onChange: (v: string) => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  const pick = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      alert("La imagen no puede pasar de 5 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.readAsDataURL(file);
-  };
-  return (
-    <div className="mt-2">
-      <input
-        ref={ref}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) pick(f);
-          e.target.value = "";
-        }}
-      />
-      {value ? (
-        <div className="flex items-center gap-2 text-xs">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt=""
-            className="h-10 w-10 rounded-md border border-line object-cover"
-          />
-          <span className="text-muted">Imagen del mesero</span>
-          <button onClick={() => ref.current?.click()} className="text-accent hover:underline">
-            Cambiar
-          </button>
-          <button onClick={() => onChange("")} className="text-muted hover:text-red-600">
-            Quitar
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => ref.current?.click()}
-          className="text-xs text-muted hover:text-accent"
-        >
-          + Añadir imagen del mesero (para el plano)
-        </button>
-      )}
-    </div>
-  );
 }
 
 function EstadoPunto({ inv }: { inv?: Invitado }) {
@@ -484,7 +428,7 @@ function MesaCard({
   onNumero,
   onPlazas,
   onCabecera,
-  onImagen,
+  onPresidencial,
   onBorrar,
 }: {
   mesa: Mesa;
@@ -498,7 +442,7 @@ function MesaCard({
   onNumero: (n: number) => boolean;
   onPlazas: (n: number) => void;
   onCabecera: (v: boolean) => void;
-  onImagen: (v: string) => void;
+  onPresidencial: (v: boolean) => void;
   onBorrar: () => void;
 }) {
   const llena = mesa.invitados.length > mesa.plazas;
@@ -522,7 +466,11 @@ function MesaCard({
     : sinMesa;
 
   return (
-    <div className="rounded-xl border border-line p-4">
+    <div
+      className={`rounded-xl border p-4 ${
+        mesa.presidencial ? "border-accent bg-accent-soft/15" : "border-line"
+      }`}
+    >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -546,6 +494,22 @@ function MesaCard({
               className="w-16 rounded-md border border-line bg-surface px-2 py-1 text-center font-display text-xl outline-none focus:border-accent"
               title="Número de mesa"
             />
+            <label
+              className={`ml-auto flex cursor-pointer items-center gap-1 rounded-full border px-2 py-1 text-xs ${
+                mesa.presidencial
+                  ? "border-accent bg-accent text-white"
+                  : "border-line text-muted hover:border-accent"
+              }`}
+              title="Solo puede haber una mesa presidencial"
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(mesa.presidencial)}
+                onChange={(e) => onPresidencial(e.target.checked)}
+                className="hidden"
+              />
+              ★ Presidencial
+            </label>
           </div>
           <input
             defaultValue={mesa.nombre}
@@ -579,8 +543,6 @@ function MesaCard({
           🗑
         </button>
       </div>
-
-      <MeseroFoto value={mesa.imagen} onChange={onImagen} />
 
       {modo === "asignado" && (
         <div className="my-3 flex justify-center">
