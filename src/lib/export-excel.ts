@@ -422,6 +422,79 @@ export async function descargarInvitadosExcel(
   await descargarLibro(wb, `Invitados boda ${fecha}.xlsx`);
 }
 
+export async function descargarAlergiasExcel(
+  invitados: Invitado[],
+  columnas: ColumnaInvitado[],
+) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webodas";
+  wb.created = new Date();
+
+  const esAlergia = (c: ColumnaInvitado) =>
+    c.nombre.toLowerCase().includes("alergia") ||
+    c.nombre.toLowerCase().includes("intoleranc") ||
+    c.preguntaRsvp === "Alergias";
+  const colsAlergia = columnas.filter(esAlergia);
+  const colMesa = columnas.find((c) => c.nombre.toLowerCase().includes("mesa"));
+
+  // No es una alergia real: vacío o respuestas tipo "no", "ninguna", "sin alergias"…
+  const vacio = (v: string) => {
+    const s = (v ?? "").trim().replace(/[.!]+$/, "").toLowerCase();
+    return (
+      !s ||
+      /^(no|-{1,}|n\/a|na|ninguna?|ningún|ninguno|nada|sin|ok|correcto|todo bien)$/.test(s) ||
+      /^(sin |no tengo|no hay|ninguna? )/.test(s)
+    );
+  };
+
+  const filas = invitados
+    .map((i) => {
+      const alergia = colsAlergia.map((c) => i.extra[c.id] ?? "").find((v) => !vacio(v)) ?? "";
+      return {
+        mesa: colMesa ? i.extra[colMesa.id] ?? "" : "",
+        nombre: `${i.nombre} ${i.apellido}`.trim(),
+        grupo: i.grupo,
+        alergia,
+      };
+    })
+    .filter((f) => f.alergia)
+    .sort((a, b) => a.mesa.localeCompare(b.mesa) || a.nombre.localeCompare(b.nombre));
+
+  const conMesa = Boolean(colMesa);
+  const cabeceras = conMesa
+    ? ["Mesa", "Invitado", "Grupo", "Alergia / intolerancia"]
+    : ["Invitado", "Grupo", "Alergia / intolerancia"];
+
+  const ws = wb.addWorksheet("Alergias", {
+    views: [{ state: "frozen", ySplit: 5 }],
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "portrait" },
+  });
+  ws.columns = cabeceras.map((_, i) => ({ width: i === cabeceras.length - 1 ? 40 : 22 }));
+
+  cabecera(ws, cabeceras.length, "Listado de alergias e intolerancias");
+  pintaHead(ws, 5, cabeceras);
+
+  let r = 6;
+  for (const f of filas) {
+    const row = ws.getRow(r);
+    const vals = conMesa
+      ? [f.mesa, f.nombre, f.grupo, f.alergia]
+      : [f.nombre, f.grupo, f.alergia];
+    vals.forEach((v, c) => {
+      row.getCell(c + 1).value = v;
+      row.getCell(c + 1).border = borde;
+    });
+    row.getCell(cabeceras.length).alignment = { wrapText: true };
+    r++;
+  }
+  if (filas.length === 0) {
+    ws.getCell(`A6`).value = "Todavía no hay alergias registradas.";
+  }
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  await descargarLibro(wb, `Alergias boda ${fecha}.xlsx`);
+}
+
 export async function descargarRespuestasExcel(respuestas: RsvpResponse[]) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "webodas";

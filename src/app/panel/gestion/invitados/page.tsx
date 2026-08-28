@@ -16,7 +16,11 @@ import {
   LABEL_BUS_IDA,
   LABEL_BUS_VUELTA,
 } from "@/lib/formulario";
-import { descargarInvitadosExcel, descargarRespuestasExcel } from "@/lib/export-excel";
+import {
+  descargarInvitadosExcel,
+  descargarRespuestasExcel,
+  descargarAlergiasExcel,
+} from "@/lib/export-excel";
 import {
   loadInvitados,
   loadColumnas,
@@ -108,6 +112,42 @@ function CeldaSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+function DescargaMenu({
+  opciones,
+}: {
+  opciones: { label: string; run: () => void }[];
+}) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setAbierto((v) => !v)}
+        onBlur={() => setTimeout(() => setAbierto(false), 150)}
+        className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-accent"
+      >
+        ⬇ Descargar ▾
+      </button>
+      {abierto && (
+        <div className="absolute right-0 z-30 mt-1 w-60 overflow-hidden rounded-md border border-line bg-background text-sm shadow-lg">
+          {opciones.map((o) => (
+            <button
+              key={o.label}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                o.run();
+                setAbierto(false);
+              }}
+              className="block w-full px-3 py-2 text-left hover:bg-accent-soft/40"
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -237,12 +277,14 @@ export default function InvitadosPage() {
             {e === "" ? "Todos" : e === "Sí" ? "Vienen" : e === "No" ? "No vienen" : "Pendientes"}
           </button>
         ))}
-        <button
-          onClick={() => descargarInvitadosExcel(inv, cols, fijasOcultas)}
-          className="ml-auto rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-accent"
-        >
-          ⬇ Descargar Excel
-        </button>
+        <div className="relative ml-auto">
+          <DescargaMenu
+            opciones={[
+              { label: "Descargar Excel de la lista", run: () => descargarInvitadosExcel(inv, cols, fijasOcultas) },
+              { label: "Descargar listado de alergias", run: () => descargarAlergiasExcel(inv, cols) },
+            ]}
+          />
+        </div>
         <button
           onClick={() => setAjustes((v) => !v)}
           className="rounded-full border border-dashed border-line px-3 py-1 text-xs text-muted hover:text-accent"
@@ -591,12 +633,12 @@ function VistaRespuestas({
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
-          onClick={() => descargarRespuestasExcel(respuestas)}
-          className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-accent"
-        >
-          ⬇ Descargar Excel
-        </button>
+        <DescargaMenu
+          opciones={[
+            { label: "Descargar Excel de respuestas", run: () => descargarRespuestasExcel(respuestas) },
+            { label: "Descargar listado de alergias", run: () => descargarAlergiasExcel(invitados, columnas) },
+          ]}
+        />
       </div>
       {hayBus && (
         <Card className="space-y-2">
