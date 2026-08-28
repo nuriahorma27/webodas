@@ -285,10 +285,9 @@ function svgMesa(mesa: Mesa, nombreDe: (id: string) => Invitado | undefined) {
       const x = (p.x / 100) * VW;
       const y = (p.y / 100) * VH;
       const inv = mesa.invitados[i] ? nombreDe(mesa.invitados[i]) : undefined;
-      const txt = inv ? iniciales(inv) : String(i + 1);
       return `<g>
-        <circle cx="${x}" cy="${y}" r="${r}" fill="${inv ? "#fff" : "#faf7f0"}" stroke="#b89b6a" stroke-width="1"/>
-        <text x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${fs}" font-family="${serif}" font-weight="600" fill="#3a342b">${txt}</text>
+        <circle cx="${x}" cy="${y}" r="${r}" fill="${inv ? "#e9ddc6" : "#faf7f0"}" stroke="#b89b6a" stroke-width="1"/>
+        <text x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${fs}" font-family="${serif}" font-weight="600" fill="#3a342b">${i + 1}</text>
       </g>`;
     })
     .join("");
@@ -714,7 +713,7 @@ function MesaDibujo({
             }`}
             style={{ left: `${p.x}%`, top: `${p.y}%`, width: seatPx, height: seatPx }}
           >
-            {inv ? iniciales(inv) : idx + 1}
+            {idx + 1}
           </button>
         );
       })}
