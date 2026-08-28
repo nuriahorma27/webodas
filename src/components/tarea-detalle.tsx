@@ -5,6 +5,7 @@ import Link from "next/link";
 import { resumenInvitados } from "@/lib/invitados";
 import {
   FIELD_SETS,
+  RUTAS_WEBODAS,
   saveDetalle,
   type TareaDetalle,
   type Campo,
@@ -28,10 +29,12 @@ const inputCls =
 export function TareaDetalleForm({
   id,
   tipo,
+  titulo = "",
   inicial,
 }: {
   id: string;
   tipo: string;
+  titulo?: string;
   inicial: TareaDetalle;
 }) {
   const campos = FIELD_SETS[tipo] ?? FIELD_SETS.simple;
@@ -65,6 +68,32 @@ export function TareaDetalleForm({
 
   if (tipo === "invitados") {
     return <FichaInvitados id={id} d={d} upd={upd} persist={persist} />;
+  }
+
+  if (tipo === "webodas") {
+    const ruta = RUTAS_WEBODAS[titulo];
+    return (
+      <div className="rounded-lg border border-line bg-surface p-4">
+        {ruta && (
+          <Link
+            href={ruta.href}
+            className="inline-block rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+          >
+            {ruta.label} →
+          </Link>
+        )}
+        <label className="mt-3 block">
+          <span className="text-xs font-medium text-muted">Notas</span>
+          <textarea
+            rows={2}
+            value={(d.notas as string) ?? ""}
+            onChange={(e) => upd("notas", e.target.value)}
+            onBlur={persist}
+            className={inputCls}
+          />
+        </label>
+      </div>
+    );
   }
 
   if (esProveedor) {
