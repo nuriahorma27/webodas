@@ -15,7 +15,7 @@ export function PageTitle({
         {eyebrow && (
           <p className="text-xs uppercase tracking-[0.2em] text-muted">{eyebrow}</p>
         )}
-        <h1 className="font-display text-3xl tracking-tight">{title}</h1>
+        <h1 className="font-display text-2xl tracking-tight sm:text-3xl">{title}</h1>
       </div>
       {children}
     </div>
@@ -30,7 +30,7 @@ export function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-xl border border-line bg-surface p-5 ${className}`}>
+    <div className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${className}`}>
       {children}
     </div>
   );

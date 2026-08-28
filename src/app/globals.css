@@ -31,3 +31,20 @@ body {
 .font-display {
   font-family: var(--font-cormorant), Georgia, serif;
 }
+
+/* Web de boda publicada: adaptar a móvil sin tocar el diseño de escritorio. */
+@media (max-width: 640px) {
+  .wf-public [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .wf-public [style*="padding: 80px"],
+  .wf-public [style*="padding:80px"] {
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+  }
+  .wf-public [style*="padding: 64px"] {
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+  }
+  .wf-public img[style*="height: 320"] { height: 220px !important; }
+}

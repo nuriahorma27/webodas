@@ -544,7 +544,7 @@ function MesaCard({
       </div>
 
       {modo === "asignado" && (
-        <div className="my-3 flex justify-center">
+        <div className="my-3 flex justify-center overflow-x-auto">
           <MesaDibujo
             mesa={mesa}
             nombreDe={nombreDe}

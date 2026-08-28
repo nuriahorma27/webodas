@@ -41,7 +41,7 @@ export default function ProveedoresPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <Stat label="Proveedores" value={String(lista.length)} />
         <Stat label="Contratados" value={String(contratados)} />
         <Stat label="Importe contratado" value={eur(total)} />

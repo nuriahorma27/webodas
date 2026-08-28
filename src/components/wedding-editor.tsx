@@ -332,18 +332,30 @@ export function WeddingEditor({
   if (!data) return <div className="p-8 text-sm text-neutral-500">Cargando editor…</div>;
 
   return (
-    <Puck
-      config={puckConfig}
-      data={data}
-      onChange={(d) => persist(d)}
-    >
-      <Layout
-        slug={slug}
-        status={status}
-        onSave={() => flash("Guardado en este navegador")}
-        onPublish={() => flash("Web publicada")}
-        onReset={restablecer}
-      />
-    </Puck>
+    <>
+      {/* En móvil el editor visual no cabe: se edita desde ordenador/tablet. */}
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-8 text-center md:hidden">
+        <p className="font-display text-2xl">Edita tu web desde el ordenador</p>
+        <p className="max-w-xs text-sm text-muted">
+          El editor visual necesita una pantalla más grande. Desde el móvil puedes ver tu web y
+          gestionar todo lo demás, pero para diseñarla usa un ordenador o una tablet.
+        </p>
+        <a href="/panel" className="mt-2 text-sm font-medium text-accent underline">
+          Volver al panel
+        </a>
+      </div>
+
+      <div className="hidden md:block">
+        <Puck config={puckConfig} data={data} onChange={(d) => persist(d)}>
+          <Layout
+            slug={slug}
+            status={status}
+            onSave={() => flash("Guardado en este navegador")}
+            onPublish={() => flash("Web publicada")}
+            onReset={restablecer}
+          />
+        </Puck>
+      </div>
+    </>
   );
 }

@@ -517,7 +517,7 @@ export default function TareasPage() {
           />
         )}
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
           {(
             [
               ["Sin empezar", cuenta.sin, "bg-slate-300"],

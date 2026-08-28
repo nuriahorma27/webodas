@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export function TabsNav({ tabs }: { tabs: { href: string; label: string }[] }) {
   const pathname = usePathname();
   return (
-    <div className="flex gap-1 overflow-x-auto border-b border-line">
+    <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0">
       {tabs.map((t) => {
         const active = pathname === t.href;
         return (

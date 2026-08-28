@@ -263,7 +263,7 @@ export default function InvitadosPage() {
         <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
       ) : (
         <>
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Personas" value={String(r.personas)} sub={`${r.adultos} adultos · ${r.ninos} niños`} />
         <Stat label="Confirmadas" value={String(r.confirmadas)} tone="positive" />
         <Stat label="Pendientes" value={String(r.pendientes)} />
@@ -593,7 +593,7 @@ function RecuentoBus({ inv, cols }: { inv: Invitado[]; cols: ColumnaInvitado[] }
           A partir de la columna del autobús de tu lista (invitados y acompañantes).
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Bloque titulo="Solicitan autobús" total={pidenBus} />
         <Bloque titulo="Bus de ida" total={ida.total} conteo={ida.conteo} />
         <Bloque titulo="Bus de vuelta" total={vuelta.total} conteo={vuelta.conteo} />

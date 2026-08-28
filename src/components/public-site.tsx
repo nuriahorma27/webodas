@@ -23,5 +23,9 @@ export function PublicSite({ weddingId, data }: { weddingId?: string; data?: Dat
   }, [weddingId, data]);
 
   if (!d) return null;
-  return <Render config={puckConfig} data={d} />;
+  return (
+    <div className="wf-public">
+      <Render config={puckConfig} data={d} />
+    </div>
+  );
 }

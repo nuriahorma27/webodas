@@ -110,7 +110,7 @@ export default function ResumenPage() {
               Ver respuestas →
             </Link>
           </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             <div className="rounded-lg border border-line bg-surface p-3">
               <p className="font-display text-2xl">{d.respHoy}</p>
               <p className="text-xs text-muted">respuestas hoy</p>
