@@ -167,10 +167,10 @@ export default function FormularioPage() {
               <div className="ml-6 mt-2 grid gap-3 sm:grid-cols-2">
                 {(
                   [
-                    ["Bus de ida", "busIdaModo", "busIdaHorarios"],
-                    ["Bus de vuelta", "busVueltaModo", "busVueltaHorarios"],
+                    ["Bus de ida", "busIdaModo", "busIdaHorarios", "busIdaUbicacion"],
+                    ["Bus de vuelta", "busVueltaModo", "busVueltaHorarios", "busVueltaUbicacion"],
                   ] as const
-                ).map(([titulo, kModo, kHor]) => (
+                ).map(([titulo, kModo, kHor, kUbi]) => (
                   <div key={kModo} className="rounded-md border border-line p-2.5">
                     <p className="text-xs font-medium">{titulo}</p>
                     <select
@@ -191,6 +191,12 @@ export default function FormularioPage() {
                         onBlur={(e) => setEstandar({ [kHor]: e.target.value })}
                       />
                     )}
+                    <input
+                      className={`${box} mt-2`}
+                      placeholder="Punto de recogida (p. ej. Plaza Mayor, junto a la fuente)"
+                      defaultValue={est[kUbi]}
+                      onBlur={(e) => setEstandar({ [kUbi]: e.target.value })}
+                    />
                   </div>
                 ))}
               </div>

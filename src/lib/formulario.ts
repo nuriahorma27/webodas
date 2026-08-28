@@ -22,8 +22,10 @@ export type DatosEstandar = {
   // Cómo se pregunta cada trayecto: "sino" (Sí / No) o "lista" (elegir horario).
   busIdaModo: "sino" | "lista";
   busIdaHorarios: string; // horarios separados por comas (modo "lista")
+  busIdaUbicacion: string; // punto de recogida (texto libre) que se muestra al invitado
   busVueltaModo: "sino" | "lista";
   busVueltaHorarios: string;
+  busVueltaUbicacion: string;
 };
 
 // Etiquetas de pregunta que generan los packs (para asociarlas a columnas).
@@ -57,8 +59,10 @@ const ESTANDAR_DEFAULT: DatosEstandar = {
   busAcomp: false,
   busIdaModo: "sino",
   busIdaHorarios: "",
+  busIdaUbicacion: "",
   busVueltaModo: "sino",
   busVueltaHorarios: "",
+  busVueltaUbicacion: "",
 };
 
 const nueva = (label = "Nueva pregunta"): PreguntaForm => ({

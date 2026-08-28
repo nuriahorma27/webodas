@@ -123,7 +123,13 @@ export function RsvpForm({
   };
   const lab: React.CSSProperties = { display: "block", fontSize: 14, marginBottom: 6, fontWeight: 600 };
 
-  const trayectoBus = (titulo: string, label: string, modo: string, horarios: string) => {
+  const trayectoBus = (
+    titulo: string,
+    label: string,
+    modo: string,
+    horarios: string,
+    ubicacion: string,
+  ) => {
     const opts = horarios.split(",").map((o) => o.trim()).filter(Boolean);
     return (
       <div>
@@ -144,6 +150,9 @@ export function RsvpForm({
             </>
           )}
         </select>
+        {ubicacion.trim() && (
+          <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>📍 {ubicacion.trim()}</p>
+        )}
       </div>
     );
   };
@@ -342,8 +351,8 @@ export function RsvpForm({
                         </select>
                         {answers[LABEL_BUS] === "Sí" && (
                           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
-                            {trayectoBus("Bus de ida", LABEL_BUS_IDA, est.busIdaModo, est.busIdaHorarios)}
-                            {trayectoBus("Bus de vuelta", LABEL_BUS_VUELTA, est.busVueltaModo, est.busVueltaHorarios)}
+                            {trayectoBus("Bus de ida", LABEL_BUS_IDA, est.busIdaModo, est.busIdaHorarios, est.busIdaUbicacion)}
+                            {trayectoBus("Bus de vuelta", LABEL_BUS_VUELTA, est.busVueltaModo, est.busVueltaHorarios, est.busVueltaUbicacion)}
                           </div>
                         )}
                       </div>
