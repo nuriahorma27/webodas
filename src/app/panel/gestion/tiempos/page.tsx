@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, Progress, Badge } from "@/components/ui";
+import { Card, Progress } from "@/components/ui";
 import { EstadoControl, EstadoLeyenda } from "@/components/estado-control";
 import { TareaDetalleForm, detalleResumen } from "@/components/tarea-detalle";
 import { descargarTareasExcel } from "@/lib/export-excel";
@@ -9,7 +9,6 @@ import { loadBoda } from "@/lib/boda";
 import {
   CATEGORIAS,
   FASES,
-  ESTADOS,
   TIPOS_TAREA,
   loadTareas,
   loadEstados,
@@ -24,17 +23,18 @@ import {
   type TareaDetalle,
 } from "@/lib/tareas";
 
-type Vista = "categoria" | "tiempo" | "estado";
+type Vista = "tiempo" | "categoria";
 
 const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
 
 export default function TareasPage() {
-  const [vista, setVista] = useState<Vista>("categoria");
+  const [vista, setVista] = useState<Vista>("tiempo");
   const [tareas, setTareas] = useState<Tarea[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [detalles, setDetalles] = useState<Record<string, TareaDetalle>>({});
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [editando, setEditando] = useState<string | null>(null);
   const [filtroResp, setFiltroResp] = useState<string>("");
   const [addEn, setAddEn] = useState<string | null>(null); // clave de grupo donde se está añadiendo
   const [nombres, setNombres] = useState<string[]>([]);
@@ -76,13 +76,20 @@ export default function TareasPage() {
   const Row = ({ t, meta }: { t: Tarea; meta?: string }) => {
     const e = estadoDe(t.id);
     const open = abierta === t.id;
+    const edit = editando === t.id;
     const resumen = detalleResumen(detalles[t.id]);
     const visible = t.notaVisible || t.nota;
     return (
       <li className="text-sm">
         <div className="flex items-start gap-3 px-4 py-2.5">
           <EstadoControl value={e} onChange={(v) => setEstado(t.id, v)} />
-          <button onClick={() => setAbierta(open ? null : t.id)} className="min-w-0 flex-1 text-left">
+          <button
+            onClick={() => {
+              setEditando(null);
+              setAbierta(open ? null : t.id);
+            }}
+            className="min-w-0 flex-1 text-left"
+          >
             <p
               className={
                 e === "hecho"
@@ -93,18 +100,33 @@ export default function TareasPage() {
               }
             >
               {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
-              {t.custom && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-accent">nueva</span>}
               <span className="ml-1 text-muted">{open ? "▾" : "›"}</span>
             </p>
             {visible && <p className="text-xs text-accent">{visible}</p>}
             {resumen && <p className="text-xs text-accent">{resumen}</p>}
           </button>
-          <div className="flex shrink-0 flex-col items-end gap-0.5">
-            {meta && <span className="text-xs text-muted">{meta}</span>}
-            {t.responsable && <Badge tone="neutral">{t.responsable}</Badge>}
-          </div>
+          {meta && <span className="shrink-0 pt-0.5 text-xs text-muted">{meta}</span>}
+          <button
+            onClick={() => {
+              setAbierta(null);
+              setEditando(edit ? null : t.id);
+            }}
+            title="Editar tarea"
+            className={`shrink-0 rounded px-1.5 text-base leading-none ${
+              edit ? "text-accent" : "text-muted hover:text-foreground"
+            }`}
+          >
+            ⋯
+          </button>
         </div>
+
         {open && (
+          <div className="border-t border-line bg-neutral-50/60 px-4 py-4">
+            <TareaDetalleForm id={t.id} tipo={t.tipo} inicial={detalles[t.id] ?? {}} />
+          </div>
+        )}
+
+        {edit && (
           <div className="space-y-3 border-t border-line bg-neutral-50/60 px-4 py-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
@@ -176,19 +198,25 @@ export default function TareasPage() {
               </label>
             </div>
 
-            <TareaDetalleForm id={t.id} tipo={t.tipo} inicial={detalles[t.id] ?? {}} />
-
-            <button
-              onClick={() => {
-                if (confirm(`¿Quitar la tarea "${t.titulo || "sin nombre"}"?`)) {
-                  removeTarea(t.id);
-                  setAbierta(null);
-                }
-              }}
-              className="text-xs text-muted underline hover:text-red-600"
-            >
-              Quitar esta tarea
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setEditando(null)}
+                className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Listo
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`¿Quitar la tarea "${t.titulo || "sin nombre"}"?`)) {
+                    removeTarea(t.id);
+                    setEditando(null);
+                  }
+                }}
+                className="text-xs text-muted underline hover:text-red-600"
+              >
+                Quitar esta tarea
+              </button>
+            </div>
           </div>
         )}
       </li>
@@ -278,9 +306,8 @@ export default function TareasPage() {
           <div className="flex gap-1 text-sm">
             {(
               [
-                ["categoria", "Por categoría"],
                 ["tiempo", "Por tiempo"],
-                ["estado", "Por estado"],
+                ["categoria", "Por categoría"],
               ] as [Vista, string][]
             ).map(([v, label]) => (
               <button
@@ -374,29 +401,6 @@ export default function TareasPage() {
         </div>
       )}
 
-      {vista === "estado" && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {ESTADOS.map((e) => {
-            const ts = visibles.filter((t) => estadoDe(t.id) === e.value);
-            return (
-              <Card key={e.value} className="p-0">
-                <div className="flex items-center justify-between px-4 py-3">
-                  <h3 className="font-display text-lg">{e.label}</h3>
-                  <Badge tone={e.tone}>{ts.length}</Badge>
-                </div>
-                <ul className="divide-y divide-line">
-                  {ts.map((t) => (
-                    <Row key={t.id} t={t} meta={`${t.categoria} · ${t.fase}`} />
-                  ))}
-                  {ts.length === 0 && (
-                    <li className="px-4 py-6 text-center text-xs text-muted">Nada aquí</li>
-                  )}
-                </ul>
-              </Card>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
