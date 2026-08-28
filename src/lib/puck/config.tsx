@@ -375,7 +375,6 @@ type Props = {
       options: string;
       condLabel: string;
       condValue: string;
-      columna?: string;
     }[];
   };
 };

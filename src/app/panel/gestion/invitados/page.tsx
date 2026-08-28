@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card, Stat } from "@/components/ui";
 import { CampoBoda } from "@/components/campo-boda";
 import { leerNombresExcel } from "@/lib/import-excel";
+import { loadPreguntasRsvp } from "@/lib/rsvp";
 import {
   loadInvitados,
   loadColumnas,
@@ -16,6 +17,7 @@ import {
   updateInvitadoExtra,
   removeInvitado,
   addColumna,
+  updateColumna,
   removeColumna,
   moveColumna,
   resetColumnas,
@@ -23,9 +25,11 @@ import {
   resumenInvitados,
   VIENE_OPCIONES,
   TIPO_OPCIONES,
+  TIPO_COLUMNA_LABEL,
   COLUMNAS_SUGERIDAS,
   type Invitado,
   type ColumnaInvitado,
+  type TipoColumna,
   type Viene,
   type TipoInvitado,
 } from "@/lib/invitados";
@@ -38,6 +42,7 @@ export default function InvitadosPage() {
   const [cols, setCols] = useState<ColumnaInvitado[]>([]);
   const [grupos, setGrupos] = useState<string[]>([]);
   const [subgrupos, setSubgrupos] = useState<string[]>([]);
+  const [preguntas, setPreguntas] = useState<string[]>([]);
   const [filtro, setFiltro] = useState<"" | Viene>("");
   const [modalCol, setModalCol] = useState(false);
   const [ajustes, setAjustes] = useState(false);
@@ -67,6 +72,7 @@ export default function InvitadosPage() {
       setCols(loadColumnas());
       setGrupos(loadGrupos());
       setSubgrupos(loadSubgrupos());
+      setPreguntas(loadPreguntasRsvp());
     };
     sync();
     window.addEventListener("webodas:invitados", sync);
@@ -139,38 +145,62 @@ export default function InvitadosPage() {
             </div>
             <p className="mt-1 text-xs text-muted">
               Nombre, Apellido, ¿Viene?, Grupo, Subgrupo y Adulto/Niño son fijas. Estas se pueden
-              quitar, reordenar o añadir:
+              quitar, reordenar, añadir y <strong>asociar a una pregunta del cuestionario</strong>{" "}
+              (la respuesta se guardará sola en esa columna).
             </p>
             <ul className="mt-2 divide-y divide-line">
               {cols.map((c, i) => (
-                <li key={c.id} className="flex items-center gap-2 py-1.5 text-sm">
-                  <span className="flex-1">{c.nombre}</span>
-                  <span className="text-xs text-muted">
-                    {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+                <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                  <span className="font-medium">{c.nombre}</span>
+                  <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
+                    {TIPO_COLUMNA_LABEL[c.tipo]}
                   </span>
-                  <button
-                    onClick={() => moveColumna(c.id, -1)}
-                    disabled={i === 0}
-                    className="text-xs text-muted hover:text-foreground disabled:opacity-25"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveColumna(c.id, 1)}
-                    disabled={i === cols.length - 1}
-                    className="text-xs text-muted hover:text-foreground disabled:opacity-25"
-                  >
-                    ▼
-                  </button>
-                  <button
-                    onClick={() => removeColumna(c.id)}
-                    className="text-muted hover:text-red-600"
-                  >
-                    ✕
-                  </button>
+                  <div className="ml-auto flex items-center gap-1 text-xs text-muted">
+                    <button
+                      onClick={() => moveColumna(c.id, -1)}
+                      disabled={i === 0}
+                      className="hover:text-foreground disabled:opacity-25"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveColumna(c.id, 1)}
+                      disabled={i === cols.length - 1}
+                      className="hover:text-foreground disabled:opacity-25"
+                    >
+                      ▼
+                    </button>
+                    <button onClick={() => removeColumna(c.id)} className="hover:text-red-600">
+                      ✕
+                    </button>
+                  </div>
+                  <label className="flex w-full items-center gap-2 text-xs text-muted">
+                    Se rellena con la pregunta:
+                    <select
+                      value={c.preguntaRsvp ?? ""}
+                      onChange={(e) => updateColumna(c.id, { preguntaRsvp: e.target.value })}
+                      className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
+                    >
+                      <option value="">— ninguna</option>
+                      {preguntas.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                      {c.preguntaRsvp && !preguntas.includes(c.preguntaRsvp) && (
+                        <option value={c.preguntaRsvp}>{c.preguntaRsvp}</option>
+                      )}
+                    </select>
+                  </label>
                 </li>
               ))}
             </ul>
+            {preguntas.length === 0 && (
+              <p className="mt-1 text-[11px] text-muted">
+                Aún no hay preguntas en el cuestionario. Añádelas en el editor de la web (bloque
+                «Confirmación (RSVP)»).
+              </p>
+            )}
             <button
               onClick={() => setModalCol(true)}
               className="mt-2 text-sm font-medium text-accent"
@@ -310,6 +340,27 @@ export default function InvitadosPage() {
                           <option value="Sí">Sí</option>
                           <option value="No">No</option>
                         </select>
+                      ) : c.tipo === "lista" ? (
+                        <select
+                          value={i.extra[c.id] ?? ""}
+                          onChange={(e) => updateInvitadoExtra(i.id, c.id, e.target.value)}
+                          className={`${cell} text-muted`}
+                        >
+                          <option value="">—</option>
+                          {(c.opciones ?? "")
+                            .split(",")
+                            .map((o) => o.trim())
+                            .filter(Boolean)
+                            .map((o) => (
+                              <option key={o} value={o}>
+                                {o}
+                              </option>
+                            ))}
+                          {i.extra[c.id] &&
+                            !(c.opciones ?? "").split(",").map((o) => o.trim()).includes(i.extra[c.id]) && (
+                              <option value={i.extra[c.id]}>{i.extra[c.id]}</option>
+                            )}
+                        </select>
                       ) : (
                         <input
                           type={c.tipo === "numero" ? "text" : "text"}
@@ -378,8 +429,8 @@ export default function InvitadosPage() {
         <ModalColumna
           existentes={cols.map((c) => c.nombre.toLowerCase())}
           onClose={() => setModalCol(false)}
-          onAdd={(nombre, tipo) => {
-            addColumna(nombre, tipo);
+          onAdd={(nombre, tipo, opciones) => {
+            addColumna(nombre, tipo, opciones);
             setModalCol(false);
           }}
         />
@@ -395,12 +446,17 @@ function ModalColumna({
 }: {
   existentes: string[];
   onClose: () => void;
-  onAdd: (nombre: string, tipo: import("@/lib/invitados").TipoColumna) => void;
+  onAdd: (nombre: string, tipo: TipoColumna, opciones?: string) => void;
 }) {
   const [nombre, setNombre] = useState("");
+  const [tipo, setTipo] = useState<TipoColumna>("texto");
+  const [opciones, setOpciones] = useState("");
   const disponibles = COLUMNAS_SUGERIDAS.filter(
     (c) => !existentes.includes(c.nombre.toLowerCase()),
   );
+  const crear = () => {
+    if (nombre.trim()) onAdd(nombre.trim(), tipo, tipo === "lista" ? opciones : undefined);
+  };
   return (
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
@@ -416,8 +472,9 @@ function ModalColumna({
             ×
           </button>
         </div>
-        <p className="mt-1 text-xs text-muted">Habituales:</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+
+        <p className="mt-2 text-xs text-muted">Habituales:</p>
+        <div className="mt-1.5 flex flex-wrap gap-2">
           {disponibles.map((c) => (
             <button
               key={c.nombre}
@@ -428,20 +485,40 @@ function ModalColumna({
             </button>
           ))}
         </div>
-        <div className="mt-3 flex gap-2">
+
+        <div className="mt-4 border-t border-line pt-3">
+          <p className="text-xs font-medium text-muted">O crea una a medida:</p>
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && nombre.trim() && onAdd(nombre.trim(), "texto")}
-            placeholder="O escribe otra…"
+            placeholder="Nombre de la columna"
             autoFocus
-            className="flex-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+            className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
           />
-          <button
-            onClick={() => nombre.trim() && onAdd(nombre.trim(), "texto")}
-            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white"
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as TipoColumna)}
+            className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
           >
-            Añadir
+            <option value="texto">Texto</option>
+            <option value="sino">Sí / No</option>
+            <option value="numero">Número</option>
+            <option value="lista">Listado de opciones</option>
+          </select>
+          {tipo === "lista" && (
+            <input
+              value={opciones}
+              onChange={(e) => setOpciones(e.target.value)}
+              placeholder="Opciones separadas por comas (Normal, Vegetariano, Niño…)"
+              className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+            />
+          )}
+          <button
+            onClick={crear}
+            disabled={!nombre.trim()}
+            className="mt-3 w-full rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+          >
+            Añadir columna
           </button>
         </div>
       </div>

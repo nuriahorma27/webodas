@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { addResponse, type RsvpQuestion } from "@/lib/rsvp";
-import { upsertInvitadoDesdeRsvp } from "@/lib/invitados";
+import { upsertInvitadoDesdeRsvp, loadColumnas } from "@/lib/invitados";
 
 export function RsvpForm({
   questions,
@@ -63,11 +63,17 @@ export function RsvpForm({
     });
 
     // Vuelca a la lista de invitados: crea/actualiza a la persona y
-    // guarda cada respuesta en su columna asociada.
+    // guarda cada respuesta en la columna que la pareja haya asociado (en Ajustes de invitados).
     const viene = asiste === "Sí" ? "Sí" : "No";
-    const respuestasPorColumna = (questions ?? [])
-      .filter((q) => q.columna && visible(q) && answers[q.label])
-      .map((q) => ({ columna: q.columna as string, valor: answers[q.label] }));
+    const valorPregunta = (label: string): string => {
+      if (label === "¿Asistirás?") return asiste;
+      if (label === "¿Vienes con acompañante?") return acomp;
+      return answers[label] ?? "";
+    };
+    const respuestasPorColumna = loadColumnas()
+      .filter((c) => c.preguntaRsvp)
+      .map((c) => ({ columna: c.nombre, valor: valorPregunta(c.preguntaRsvp as string) }))
+      .filter((x) => x.valor);
     if (nombre.trim() || apellidos.trim()) {
       upsertInvitadoDesdeRsvp({
         nombre,

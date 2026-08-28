@@ -1,7 +1,6 @@
 "use client";
 
 import { usePuck, FieldLabel } from "@measured/puck";
-import { loadColumnas, COLUMNAS_SUGERIDAS } from "@/lib/invitados";
 
 export type Q = {
   label: string;
@@ -9,7 +8,6 @@ export type Q = {
   options: string;
   condLabel: string;
   condValue: string;
-  columna?: string;
 };
 
 const PACK_ITEMS = [
@@ -24,7 +22,7 @@ const PACK_ITEMS = [
 const box =
   "w-full rounded border border-neutral-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-neutral-900";
 
-const empty: Q = { label: "", qtype: "texto", options: "", condLabel: "", condValue: "", columna: "" };
+const empty: Q = { label: "", qtype: "texto", options: "", condLabel: "", condValue: "" };
 
 export function QuestionsEditor({
   value,
@@ -37,12 +35,6 @@ export function QuestionsEditor({
   const packOn = (selectedItem?.props?.packEstandar as string) !== "no";
   const list: Q[] = value ?? [];
 
-  const colNames = Array.from(
-    new Set([
-      ...loadColumnas().map((c) => c.nombre),
-      ...COLUMNAS_SUGERIDAS.map((c) => c.nombre),
-    ]),
-  );
 
   const upd = (i: number, patch: Partial<Q>) =>
     onChange(list.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
@@ -124,17 +116,6 @@ export function QuestionsEditor({
                 />
               )}
 
-              <label className="block text-[11px] text-neutral-500">
-                Guardar la respuesta en la columna de invitados:
-                <input
-                  className={box + " mt-1"}
-                  list="cols-invitados"
-                  placeholder="(ninguna)"
-                  value={q.columna ?? ""}
-                  onChange={(e) => upd(i, { columna: e.target.value })}
-                />
-              </label>
-
               <div className="grid grid-cols-2 gap-2">
                 <select
                   className={box}
@@ -175,12 +156,6 @@ export function QuestionsEditor({
         >
           + Añadir pregunta
         </button>
-
-        <datalist id="cols-invitados">
-          {colNames.map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
       </div>
     </FieldLabel>
   );

@@ -18,7 +18,14 @@ export const GRUPOS_DEFAULT = [
 ];
 export const SUBGRUPOS_DEFAULT: string[] = [];
 
-export type TipoColumna = "texto" | "sino" | "numero";
+export type TipoColumna = "texto" | "sino" | "numero" | "lista";
+
+export const TIPO_COLUMNA_LABEL: Record<TipoColumna, string> = {
+  texto: "Texto",
+  sino: "Sí / No",
+  numero: "Número",
+  lista: "Listado de opciones",
+};
 
 // Columnas extra que se pueden añadir.
 export const COLUMNAS_SUGERIDAS: { nombre: string; tipo: TipoColumna }[] = [
@@ -56,7 +63,13 @@ export type Invitado = {
   extra: Record<string, string>; // valores de columnas personalizadas (por id de columna)
 };
 
-export type ColumnaInvitado = { id: string; nombre: string; tipo: TipoColumna };
+export type ColumnaInvitado = {
+  id: string;
+  nombre: string;
+  tipo: TipoColumna;
+  opciones?: string; // para tipo "lista": opciones separadas por comas
+  preguntaRsvp?: string; // pregunta del cuestionario que rellena esta columna
+};
 
 const KEY = "webodas:invitados";
 const COLS_KEY = "webodas:invitados-columnas:v2";
@@ -209,10 +222,23 @@ function saveColumnas(list: ColumnaInvitado[]) {
   }
 }
 
-export function addColumna(nombre: string, tipo: TipoColumna = "texto"): ColumnaInvitado {
-  const col = { id: crypto.randomUUID(), nombre: nombre.trim() || "Columna", tipo };
+export function addColumna(
+  nombre: string,
+  tipo: TipoColumna = "texto",
+  opciones?: string,
+): ColumnaInvitado {
+  const col: ColumnaInvitado = {
+    id: crypto.randomUUID(),
+    nombre: nombre.trim() || "Columna",
+    tipo,
+    ...(tipo === "lista" && opciones ? { opciones } : {}),
+  };
   saveColumnas([...loadColumnas(), col]);
   return col;
+}
+
+export function updateColumna(id: string, patch: Partial<Omit<ColumnaInvitado, "id">>) {
+  saveColumnas(loadColumnas().map((c) => (c.id === id ? { ...c, ...patch } : c)));
 }
 
 export function moveColumna(id: string, dir: -1 | 1) {

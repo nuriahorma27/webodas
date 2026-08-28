@@ -6,8 +6,26 @@ export type RsvpQuestion = {
   options?: string;
   condLabel?: string;
   condValue?: string;
-  columna?: string; // columna de la lista de invitados donde guardar la respuesta
 };
+
+// Preguntas disponibles del bloque RSVP de la web (para asociarlas a columnas de invitados).
+export function loadPreguntasRsvp(weddingId = "demo"): string[] {
+  try {
+    const raw = localStorage.getItem(`webodas:site:${weddingId}`);
+    if (!raw) return [];
+    const data = JSON.parse(raw) as { content?: { type: string; props?: Record<string, unknown> }[] };
+    const rsvp = (data.content ?? []).find((b) => b.type === "RSVP");
+    if (!rsvp) return [];
+    const pack = (rsvp.props?.packEstandar as string) !== "no";
+    const packQ = pack ? ["¿Asistirás?", "¿Vienes con acompañante?"] : [];
+    const custom = ((rsvp.props?.questions as { label: string }[]) ?? [])
+      .map((q) => q.label)
+      .filter(Boolean);
+    return [...packQ, ...custom];
+  } catch {
+    return [];
+  }
+}
 export type RsvpResponse = {
   id: string;
   fecha: string;
