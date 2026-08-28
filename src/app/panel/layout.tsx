@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Salir } from "@/components/salir";
 import { PerfilBoda } from "@/components/perfil-boda";
+import { CloudSync } from "@/components/cloud-sync";
 import { createClient } from "@/lib/supabase/server";
 
 const nav = [
@@ -20,6 +21,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-background">
+      <CloudSync />
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <Link href="/panel" className="font-display text-xl tracking-tight">

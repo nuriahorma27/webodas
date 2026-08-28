@@ -8,6 +8,7 @@ import { resumenInvitados } from "@/lib/invitados";
 import { loadResponses } from "@/lib/rsvp";
 import { loadPartidas, totales } from "@/lib/presupuesto";
 import { loadTareas, loadEstados } from "@/lib/tareas";
+import { exportarDatos, importarDatos } from "@/lib/cloud-sync";
 
 const eur = (n: number) => `${Math.round(n).toLocaleString("es-ES")} €`;
 
@@ -198,7 +199,61 @@ export default function ResumenPage() {
           </Link>
         </Card>
       </div>
+
+      <CopiaSeguridad />
     </div>
+  );
+}
+
+function CopiaSeguridad() {
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  const descargar = () => {
+    const blob = new Blob([exportarDatos()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `webodas-copia-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const subir = async (file: File) => {
+    const ok = importarDatos(await file.text());
+    setAviso(ok ? "Datos restaurados." : "No se ha podido leer el archivo.");
+    setTimeout(() => setAviso(null), 3000);
+  };
+
+  return (
+    <Card className="space-y-2">
+      <h2 className="font-display text-lg">Copia de seguridad</h2>
+      <p className="text-sm text-muted">
+        Tus datos se guardan en tu cuenta automáticamente. Aun así, puedes descargar una copia o
+        restaurar una que tengas guardada.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={descargar}
+          className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent"
+        >
+          ⬇ Descargar copia
+        </button>
+        <label className="cursor-pointer rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent">
+          ↑ Restaurar copia
+          <input
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) subir(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {aviso && <span className="text-sm text-emerald-700">{aviso}</span>}
+      </div>
+    </Card>
   );
 }
 

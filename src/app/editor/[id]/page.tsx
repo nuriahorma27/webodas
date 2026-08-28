@@ -1,6 +1,7 @@
 import type { Data } from "@measured/puck";
 import { redirect } from "next/navigation";
 import { WeddingEditor } from "@/components/wedding-editor";
+import { CloudSync } from "@/components/cloud-sync";
 import { TEMPLATES, plantillaEditorial } from "@/lib/puck/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,11 +25,14 @@ export default async function EditorPage({
   const data = (tpl ? tpl.data : plantillaEditorial) as Data;
 
   return (
-    <WeddingEditor
-      weddingId={id}
-      initialData={data}
-      seedFromTemplate={Boolean(tpl)}
-      publishedSlug={id === "demo" ? "ana-y-leo" : null}
-    />
+    <>
+      <CloudSync />
+      <WeddingEditor
+        weddingId={id}
+        initialData={data}
+        seedFromTemplate={Boolean(tpl)}
+        publishedSlug={id === "demo" ? "ana-y-leo" : null}
+      />
+    </>
   );
 }
