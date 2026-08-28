@@ -32,6 +32,7 @@ export function PartidaLink({
 }) {
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [creando, setCreando] = useState(false);
+  const [mostrarSelector, setMostrarSelector] = useState(false);
   const [nuevaCat, setNuevaCat] = useState("");
   const [nuevoConcepto, setNuevoConcepto] = useState(conceptoSugerido);
 
@@ -131,6 +132,19 @@ export function PartidaLink({
     );
   }
 
+  if (!mostrarSelector) {
+    return (
+      <div className="mt-3 border-t border-line pt-3">
+        <button
+          onClick={() => setMostrarSelector(true)}
+          className="text-xs font-medium text-accent hover:underline"
+        >
+          + Añadir esta tarea al presupuesto
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-3 border-t border-line pt-3">
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted">
@@ -145,7 +159,7 @@ export function PartidaLink({
           }}
           className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
         >
-          <option value="">Vincular a una partida…</option>
+          <option value="">Elige una partida…</option>
           {cats.map((c) => (
             <optgroup key={c} label={c}>
               {partidas
@@ -161,6 +175,12 @@ export function PartidaLink({
           ))}
           <option value="__nueva">➕ Crear partida nueva…</option>
         </select>
+        <button
+          onClick={() => setMostrarSelector(false)}
+          className="text-xs text-muted underline"
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   );

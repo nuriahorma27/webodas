@@ -81,26 +81,29 @@ export function TareaDetalleForm({
             className={inputCls}
           />
         </label>
-        {d.contratado ? (
-          <PartidaLink
-            tareaId={id}
-            conceptoSugerido={
-              ((d.opciones as ProveedorOpcion[]) ?? []).find((o) => o.id === d.contratado)?.nombre ?? ""
-            }
-          />
-        ) : (
-          <p className="mt-3 text-[11px] text-muted">
-            Marca una opción como contratada para enlazarla con el presupuesto.
-          </p>
-        )}
+        <PartidaLink
+          tareaId={id}
+          conceptoSugerido={
+            ((d.opciones as ProveedorOpcion[]) ?? []).find((o) => o.id === d.contratado)?.nombre ?? ""
+          }
+        />
       </div>
     );
   }
 
-  const link = LINK_LABELS[tipo];
+  const link = LINK_LABELS[tipo] ?? { estimado: "Presupuesto", pagado: "Pagado" };
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4">
+    <div className="relative rounded-lg border border-line bg-surface p-4">
+      {!editando && (
+        <button
+          onClick={() => setEditando(true)}
+          title="Editar"
+          className="absolute right-2.5 top-2.5 text-xs text-muted hover:text-foreground"
+        >
+          ✎ editar
+        </button>
+      )}
       {editando ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -136,26 +139,16 @@ export function TareaDetalleForm({
       ) : (
         <>
           <DetalleLectura campos={campos} d={d} />
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              onClick={() => setEditando(true)}
-              className="flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-sm hover:bg-neutral-100"
-            >
-              ✏️ Editar
-            </button>
-            {guardado && <span className="text-xs text-green-600">Guardado ✓</span>}
-          </div>
+          {guardado && <span className="mt-2 block text-xs text-green-600">Guardado ✓</span>}
         </>
       )}
 
-      {link && (
-        <PartidaLink
-          tareaId={id}
-          conceptoSugerido={(d.lugar as string) || (d.tienda as string) || ""}
-          labelEstimado={link.estimado}
-          labelPagado={link.pagado}
-        />
-      )}
+      <PartidaLink
+        tareaId={id}
+        conceptoSugerido={(d.lugar as string) || (d.tienda as string) || ""}
+        labelEstimado={link.estimado}
+        labelPagado={link.pagado}
+      />
     </div>
   );
 }

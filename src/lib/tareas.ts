@@ -151,7 +151,7 @@ type Def = [titulo: string, fase: string, tipo: string, nota?: string];
 
 const DATA: Record<string, Def[]> = {
   Iglesia: [
-    ["Elegir iglesia y reservar", "12 meses antes", "reserva"],
+    ["Mirar y reservar iglesia", "12 meses antes", "proveedor"],
     ["Cura / oficiante", "12 meses antes", "persona"],
     ["Trámites (documentos del expediente)", "8-9 meses antes", "documentos"],
     ["Cursillo prematrimonial", "4-5 meses antes", "lugarFecha"],
@@ -165,8 +165,7 @@ const DATA: Record<string, Def[]> = {
     ["Arras y alianzas", "4-5 meses antes", "compra"],
   ],
   Finca: [
-    ["Mirar fincas", "12 meses antes", "simple"],
-    ["Elegir y reservar", "12 meses antes", "reserva"],
+    ["Mirar y reservar finca", "12 meses antes", "proveedor"],
     ["Flores de la finca", "2-3 meses antes", "proveedor"],
     ["Prueba de menú", "2-3 meses antes", "eleccion"],
     ["Música en directo", "4-5 meses antes", "proveedor"],
