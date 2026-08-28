@@ -215,7 +215,7 @@ function FichaInvitados({
   upd: (k: string, v: string) => void;
   persist: () => void;
 }) {
-  const [res, setRes] = useState({ grupos: 0, personas: 0, confirmadas: 0, pendientes: 0 });
+  const [res, setRes] = useState<ReturnType<typeof resumenInvitados>>(() => resumenInvitados());
   useEffect(() => {
     const sync = () => setRes(resumenInvitados());
     sync();
