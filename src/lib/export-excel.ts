@@ -1,117 +1,166 @@
-// Exporta el presupuesto a un .xls (HTML que Excel/Numbers/Sheets abren con formato).
-// Sin dependencias externas.
+// Exporta el presupuesto a un .xlsx real (con formato) usando exceljs.
 
+import ExcelJS from "exceljs";
 import { categoriasOrdenadas, estimadoDe, totales, type Partida } from "@/lib/presupuesto";
+import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 
-const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const EUR = '#,##0" €"';
+const ACENTO = "FF8A6D3B";
+const TINTA = "FF1C1A17";
+const BEIGE = "FFEFE7DA";
+const BEIGE_FUERTE = "FFD9CDB8";
+const LINEA = "FFD9D3C9";
 
-// Formato de moneda de Excel: "1.234 €"
-const MONEY = String.raw`#,##0\ \€`;
+const thin = { style: "thin" as const, color: { argb: LINEA } };
+const borde = { top: thin, left: thin, bottom: thin, right: thin };
 
-const money = (n: number) =>
-  `<td class="num" style="mso-number-format:'${MONEY}'">${Math.round(n)}</td>`;
+export async function descargarPresupuestoExcel(
+  partidas: Partida[],
+  presupuestoTotal: number | null,
+) {
+  const boda = loadBoda();
+  const pareja = nombrePareja(boda);
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webodas";
+  wb.created = new Date();
 
-export function presupuestoAHtml(partidas: Partida[], presupuestoTotal: number | null): string {
-  const cats = categoriasOrdenadas(partidas);
+  const ws = wb.addWorksheet("Presupuesto", {
+    views: [{ state: "frozen", ySplit: 5 }],
+    pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "portrait" },
+  });
+
+  ws.columns = [
+    { width: 3 },
+    { width: 36 },
+    { width: 26 },
+    { width: 16 },
+    { width: 16 },
+    { width: 16 },
+  ];
+
+  // ---- Cabecera ----
+  ws.mergeCells("A1:F1");
+  const logo = ws.getCell("A1");
+  logo.value = "webodas";
+  logo.font = { name: "Georgia", size: 20, bold: true, color: { argb: ACENTO } };
+  ws.getRow(1).height = 30;
+
+  ws.mergeCells("A2:F2");
+  const t = ws.getCell("A2");
+  t.value = pareja === "Vuestra boda" ? "Presupuesto de la boda" : `Presupuesto de la boda · ${pareja}`;
+  t.font = { size: 14, bold: true, color: { argb: TINTA } };
+  ws.getRow(2).height = 20;
+
+  ws.mergeCells("A3:F3");
+  const sub = ws.getCell("A3");
+  const partes = [fechaLarga(boda)];
+  if (presupuestoTotal) partes.push(`Presupuesto de referencia: ${Math.round(presupuestoTotal).toLocaleString("es-ES")} €`);
+  sub.value = partes.join("   ·   ");
+  sub.font = { size: 10, color: { argb: "FF7A736A" } };
+
+  // ---- Encabezado de tabla (fila 5) ----
+  const head = ws.getRow(5);
+  head.values = ["", "Concepto", "Proveedor", "Estimado", "Pagado", "Pendiente"];
+  head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  head.alignment = { vertical: "middle" };
+  for (let c = 1; c <= 6; c++) {
+    const cell = head.getCell(c);
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TINTA } };
+    cell.border = borde;
+  }
+  head.height = 18;
+
   const g = totales(partidas);
-  const ref = presupuestoTotal ?? 0;
+  const cats = categoriasOrdenadas(partidas);
 
-  const filas = cats
-    .map((cat) => {
-      const items = partidas.filter((p) => p.categoria === cat);
-      const ct = totales(items);
-      const cabecera = `
-        <tr class="cat">
-          <td colspan="3">${esc(cat.toUpperCase())}</td>
-          ${money(ct.estimado)}
-          ${money(ct.pagado)}
-          ${money(ct.estimado - ct.pagado)}
-        </tr>`;
-      const cuerpo = items
-        .map((p) => {
-          const est = estimadoDe(p);
-          const detalle =
-            p.tipo === "menu" && (p.precioUnidad || p.cantidad)
-              ? ` (${Math.round(p.precioUnidad || 0)} € × ${Math.round(p.cantidad || 0)})`
-              : "";
-          return `
-        <tr>
-          <td></td>
-          <td>${esc(p.concepto || "—")}${detalle}</td>
-          <td>${esc(p.proveedor || "")}</td>
-          ${money(est)}
-          ${money(p.pagado || 0)}
-          ${money(est - (p.pagado || 0))}
-        </tr>`;
-        })
-        .join("");
-      return cabecera + cuerpo;
-    })
-    .join("");
+  const money = (cell: ExcelJS.Cell, n: number) => {
+    cell.value = Math.round(n);
+    cell.numFmt = EUR;
+    cell.alignment = { horizontal: "right" };
+    cell.border = borde;
+  };
 
-  return `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-<head>
-<meta charset="utf-8" />
-<style>
-  table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
-  td, th { border: 0.5pt solid #d9d3c9; padding: 4px 8px; vertical-align: middle; }
-  .title { font-size: 16pt; font-weight: bold; border: none; padding: 8px 0; }
-  .sub { border: none; color: #7a736a; padding: 0 0 10px; }
-  thead th { background: #1c1a17; color: #ffffff; font-weight: bold; text-align: left; }
-  tr.cat td { background: #efe7da; font-weight: bold; }
-  .num { text-align: right; mso-number-format: "${MONEY}"; }
-  tfoot td { background: #d9cdb8; font-weight: bold; }
-</style>
-</head>
-<body>
-<table>
-  <tr><td class="title" colspan="6">Presupuesto de la boda</td></tr>
-  <tr><td class="sub" colspan="6">${
-    ref ? `Presupuesto de referencia: ${Math.round(ref).toLocaleString("es-ES")} €` : ""
-  }</td></tr>
-  <thead>
-    <tr>
-      <th style="width:150px">Categoría</th>
-      <th style="width:280px">Concepto</th>
-      <th style="width:180px">Proveedor</th>
-      <th style="width:100px">Estimado</th>
-      <th style="width:100px">Pagado</th>
-      <th style="width:100px">Pendiente</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${filas}
-  </tbody>
-  <tfoot>
-    <tr>
-      <td colspan="3">TOTAL</td>
-      ${money(g.estimado)}
-      ${money(g.pagado)}
-      ${money(g.estimado - g.pagado)}
-    </tr>
-    ${
-      ref
-        ? `<tr><td colspan="3">Diferencia con el presupuesto de referencia</td>${money(
-            ref - g.estimado,
-          )}<td></td><td></td></tr>`
-        : ""
+  let r = 6;
+  for (const cat of cats) {
+    const items = partidas.filter((p) => p.categoria === cat);
+    const ct = totales(items);
+
+    ws.mergeCells(`A${r}:C${r}`);
+    const catRow = ws.getRow(r);
+    catRow.getCell(1).value = cat.toUpperCase();
+    for (let c = 1; c <= 6; c++) {
+      const cell = catRow.getCell(c);
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      cell.font = { bold: true, color: { argb: TINTA } };
+      cell.border = borde;
     }
-  </tfoot>
-</table>
-</body>
-</html>`;
-}
+    money(catRow.getCell(4), ct.estimado);
+    money(catRow.getCell(5), ct.pagado);
+    money(catRow.getCell(6), ct.estimado - ct.pagado);
+    catRow.getCell(4).font = { bold: true };
+    catRow.getCell(5).font = { bold: true };
+    catRow.getCell(6).font = { bold: true };
+    r++;
 
-export function descargarPresupuestoExcel(partidas: Partida[], presupuestoTotal: number | null) {
-  const html = presupuestoAHtml(partidas, presupuestoTotal);
-  const blob = new Blob(["﻿", html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    for (const p of items) {
+      const est = estimadoDe(p);
+      const detalle =
+        p.tipo === "menu" && (p.precioUnidad || p.cantidad)
+          ? ` (${Math.round(p.precioUnidad || 0)} € × ${Math.round(p.cantidad || 0)})`
+          : "";
+      const row = ws.getRow(r);
+      row.getCell(2).value = (p.concepto || "—") + detalle;
+      row.getCell(3).value = p.proveedor || "";
+      row.getCell(2).border = borde;
+      row.getCell(3).border = borde;
+      row.getCell(1).border = borde;
+      money(row.getCell(4), est);
+      money(row.getCell(5), p.pagado || 0);
+      money(row.getCell(6), est - (p.pagado || 0));
+      row.getCell(4).font = {};
+      row.getCell(5).font = {};
+      row.getCell(6).font = {};
+      r++;
+    }
+    r++; // fila en blanco entre categorías
+  }
+
+  // ---- Totales ----
+  const totRow = ws.getRow(r);
+  ws.mergeCells(`A${r}:C${r}`);
+  totRow.getCell(1).value = "TOTAL";
+  for (let c = 1; c <= 6; c++) {
+    const cell = totRow.getCell(c);
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE_FUERTE } };
+    cell.font = { bold: true };
+    cell.border = borde;
+  }
+  money(totRow.getCell(4), g.estimado);
+  money(totRow.getCell(5), g.pagado);
+  money(totRow.getCell(6), g.estimado - g.pagado);
+  totRow.getCell(4).font = { bold: true };
+  totRow.getCell(5).font = { bold: true };
+  totRow.getCell(6).font = { bold: true };
+  r++;
+
+  if (presupuestoTotal) {
+    const dif = ws.getRow(r);
+    ws.mergeCells(`A${r}:C${r}`);
+    dif.getCell(1).value = "Diferencia con el presupuesto de referencia";
+    dif.getCell(1).font = { italic: true, color: { argb: "FF7A736A" } };
+    money(dif.getCell(4), presupuestoTotal - g.estimado);
+    dif.getCell(4).font = { bold: true };
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const fecha = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `Presupuesto boda ${fecha}.xls`;
+  a.download = `Presupuesto boda ${fecha}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
