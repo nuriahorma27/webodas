@@ -54,7 +54,6 @@ export default function InvitadosPage() {
   const [subgrupos, setSubgrupos] = useState<string[]>([]);
   const [preguntas, setPreguntas] = useState<string[]>([]);
   const [filtro, setFiltro] = useState<"" | Viene>("");
-  const [modalCol, setModalCol] = useState(false);
   const [ajustes, setAjustes] = useState(false);
   const [vista, setVista] = useState<"gestion" | "respuestas">("gestion");
   const [respuestas, setRespuestas] = useState<RsvpResponse[]>([]);
@@ -180,172 +179,15 @@ export default function InvitadosPage() {
       </div>
 
       {ajustes && (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <ListaEditable
-              titulo="Grupos"
-              descripcion="Bloques grandes de invitados (familia de la novia, amigos del novio…)."
-              items={grupos}
-              onChange={saveGrupos}
-              placeholder="Nuevo grupo (p. ej. Familia de la novia)"
-            />
-          </div>
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <ListaEditable
-              titulo="Subgrupos"
-              descripcion="Subdivisiones dentro de un grupo (tíos, primos, universidad…)."
-              items={subgrupos}
-              onChange={saveSubgrupos}
-              placeholder="Nuevo subgrupo (p. ej. Tíos, Primos, Universidad)"
-            />
-          </div>
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h4 className="text-sm font-semibold">Columnas fijas</h4>
-            <p className="text-xs text-muted">
-              Nombre y Apellido siempre están. Estas puedes mostrarlas u ocultarlas:
-            </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              {COLUMNAS_FIJAS.map((f) => (
-                <label key={f.key} className="flex items-center gap-1.5 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={verFija(f.key)}
-                    onChange={() => toggleFija(f.key)}
-                  />
-                  {f.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Columnas añadidas</h4>
-              <button
-                onClick={() => {
-                  if (confirm("¿Volver a las columnas estándar? Se pierden las que hayas añadido.")) resetColumnas();
-                }}
-                className="text-xs text-muted underline hover:text-foreground"
-              >
-                Restablecer estándar
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-muted">
-              Se pueden quitar, reordenar, y <strong>asociar a una pregunta del formulario</strong>{" "}
-              (la respuesta se guardará sola en esa columna).
-            </p>
-            <p className="mt-2 text-xs text-muted">Usa ▲ ▼ para cambiar el orden de las columnas.</p>
-            <ul className="mt-1 divide-y divide-line">
-              {cols.map((c, i) => (
-                <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-                  <span className="flex flex-col text-xs text-muted">
-                    <button
-                      onClick={() => moveColumna(c.id, -1)}
-                      disabled={i === 0}
-                      className="leading-none hover:text-foreground disabled:opacity-20"
-                      title="Subir"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveColumna(c.id, 1)}
-                      disabled={i === cols.length - 1}
-                      className="leading-none hover:text-foreground disabled:opacity-20"
-                      title="Bajar"
-                    >
-                      ▼
-                    </button>
-                  </span>
-                  <span className="font-medium">{c.nombre}</span>
-                  {c.preguntaRsvp ? (
-                    <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
-                      🔒 {TIPO_COLUMNA_LABEL[c.tipo]} (del formulario)
-                    </span>
-                  ) : (
-                    <select
-                      value={c.tipo}
-                      onChange={(e) => updateColumna(c.id, { tipo: e.target.value as TipoColumna })}
-                      className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
-                    >
-                      <option value="texto">Texto</option>
-                      <option value="sino">Sí / No</option>
-                      <option value="numero">Número</option>
-                      <option value="lista">Listado</option>
-                    </select>
-                  )}
-                  {c.tipo === "lista" && !c.preguntaRsvp && (
-                    <input
-                      defaultValue={c.opciones ?? ""}
-                      onBlur={(e) => updateColumna(c.id, { opciones: e.target.value })}
-                      placeholder="Opciones separadas por comas"
-                      className="min-w-[10rem] flex-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
-                    />
-                  )}
-                  <button
-                    onClick={() => removeColumna(c.id)}
-                    className="ml-auto text-xs text-muted hover:text-red-600"
-                    title="Quitar columna"
-                  >
-                    🗑
-                  </button>
-                  <label className="flex w-full items-center gap-2 text-xs text-muted">
-                    Se rellena con la pregunta del formulario:
-                    <select
-                      value={c.preguntaRsvp ?? ""}
-                      onChange={(e) => {
-                        const pregunta = e.target.value;
-                        if (!pregunta) {
-                          updateColumna(c.id, { preguntaRsvp: "" });
-                        } else {
-                          const f = formatoPregunta(pregunta);
-                          updateColumna(c.id, {
-                            preguntaRsvp: pregunta,
-                            tipo: f.tipo,
-                            opciones: f.opciones,
-                          });
-                        }
-                      }}
-                      className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
-                    >
-                      <option value="">— ninguna</option>
-                      {preguntas.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                      {c.preguntaRsvp && !preguntas.includes(c.preguntaRsvp) && (
-                        <option value={c.preguntaRsvp}>{c.preguntaRsvp}</option>
-                      )}
-                    </select>
-                  </label>
-                </li>
-              ))}
-            </ul>
-            {preguntas.length === 0 && (
-              <p className="mt-1 text-[11px] text-muted">
-                Aún no hay preguntas en el cuestionario. Añádelas en el editor de la web (bloque
-                «Formulario de confirmación»).
-              </p>
-            )}
-            <button
-              onClick={() => setModalCol(true)}
-              className="mt-2 text-sm font-medium text-accent"
-            >
-              + Añadir columna
-            </button>
-          </div>
-        </div>
+        <AjustesModal
+          grupos={grupos}
+          subgrupos={subgrupos}
+          cols={cols}
+          fijasOcultas={fijasOcultas}
+          preguntas={preguntas}
+          onClose={() => setAjustes(false)}
+        />
       )}
-
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Lista de invitados</p>
-        <button
-          onClick={() => setModalCol(true)}
-          className="rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-medium hover:border-accent hover:text-accent"
-        >
-          ▦ Columnas de la tabla
-        </button>
-      </div>
 
       <Card className="p-0">
         <div className="max-h-[70vh] overflow-auto">
@@ -565,15 +407,6 @@ export default function InvitadosPage() {
       </Card>
         </>
       )}
-
-      {modalCol && (
-        <ModalColumna
-          columnas={cols}
-          onClose={() => setModalCol(false)}
-          onAdd={(nombre, tipo, opciones) => addColumna(nombre, tipo, opciones)}
-          onRemove={(id) => removeColumna(id)}
-        />
-      )}
     </div>
   );
 }
@@ -715,98 +548,266 @@ function RespuestaCard({
   );
 }
 
-function ModalColumna({
-  columnas,
+function AjustesModal({
+  grupos,
+  subgrupos,
+  cols,
+  fijasOcultas,
+  preguntas,
   onClose,
-  onAdd,
-  onRemove,
 }: {
-  columnas: ColumnaInvitado[];
+  grupos: string[];
+  subgrupos: string[];
+  cols: ColumnaInvitado[];
+  fijasOcultas: string[];
+  preguntas: string[];
   onClose: () => void;
-  onAdd: (nombre: string, tipo: TipoColumna, opciones?: string) => void;
-  onRemove: (id: string) => void;
 }) {
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoColumna>("texto");
   const [opciones, setOpciones] = useState("");
-  const buscar = (n: string) =>
-    columnas.find((c) => c.nombre.toLowerCase() === n.toLowerCase());
+  const verFija = (k: string) => !fijasOcultas.includes(k);
+  const buscarCol = (n: string) =>
+    cols.find((c) => c.nombre.toLowerCase() === n.toLowerCase());
   const crear = () => {
-    if (nombre.trim()) onAdd(nombre.trim(), tipo, tipo === "lista" ? opciones : undefined);
+    if (!nombre.trim()) return;
+    addColumna(nombre.trim(), tipo, tipo === "lista" ? opciones : undefined);
+    setNombre("");
+    setOpciones("");
+    setTipo("texto");
   };
+
+  const sec = "rounded-lg border border-line bg-surface p-4";
+
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-xl bg-surface p-5 shadow-xl"
+        className="my-8 w-full max-w-2xl space-y-4 rounded-xl bg-background p-6 shadow-xl"
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg">Columnas habituales</h3>
-          <button onClick={onClose} className="text-xl text-neutral-400 hover:text-foreground">
+          <h2 className="font-display text-xl">Ajustes de la lista</h2>
+          <button onClick={onClose} className="text-2xl text-neutral-400 hover:text-foreground">
             ×
           </button>
         </div>
-        <p className="mt-1 text-xs text-muted">Marca las que quieras tener en tu lista.</p>
 
-        <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto">
-          {COLUMNAS_SUGERIDAS.map((c) => {
-            const existe = buscar(c.nombre);
-            return (
-              <li key={c.nombre}>
-                <label className="flex cursor-pointer items-center gap-2 py-1.5 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={!!existe}
-                    onChange={() => (existe ? onRemove(existe.id) : onAdd(c.nombre, c.tipo))}
-                  />
-                  <span className="flex-1">{c.nombre}</span>
-                  <span className="text-[11px] text-muted">
-                    {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+        <section className={sec}>
+          <ListaEditable
+            titulo="Grupos"
+            descripcion="Bloques grandes de invitados (familia de la novia, amigos del novio…)."
+            items={grupos}
+            onChange={saveGrupos}
+            placeholder="Nuevo grupo (p. ej. Familia de la novia)"
+          />
+        </section>
+
+        <section className={sec}>
+          <ListaEditable
+            titulo="Subgrupos"
+            descripcion="Subdivisiones dentro de un grupo (tíos, primos, universidad…)."
+            items={subgrupos}
+            onChange={saveSubgrupos}
+            placeholder="Nuevo subgrupo (p. ej. Tíos, Primos, Universidad)"
+          />
+        </section>
+
+        <section className={sec}>
+          <h3 className="text-sm font-semibold">Columnas de la tabla</h3>
+
+          <p className="mt-3 text-xs font-medium text-muted">
+            Columnas fijas <span className="font-normal">(Nombre y Apellido siempre están)</span>
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
+            {COLUMNAS_FIJAS.map((f) => (
+              <label key={f.key} className="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" checked={verFija(f.key)} onChange={() => toggleFija(f.key)} />
+                {f.label}
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-xs font-medium text-muted">Columnas añadidas</p>
+            <button
+              onClick={() => {
+                if (confirm("¿Volver a las columnas estándar? Se pierden las que hayas añadido."))
+                  resetColumnas();
+              }}
+              className="text-xs text-muted underline hover:text-foreground"
+            >
+              Restablecer estándar
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            Reordena con ▲ ▼, quita con 🗑, y asocia cada una a una pregunta del formulario para que
+            la respuesta se guarde sola.
+          </p>
+          {preguntas.length === 0 && (
+            <p className="mt-1 text-[11px] text-muted">
+              Aún no hay preguntas en el formulario (Gestión → Formulario).
+            </p>
+          )}
+          <ul className="mt-2 divide-y divide-line">
+            {cols.map((c, i) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className="flex flex-col text-xs text-muted">
+                  <button
+                    onClick={() => moveColumna(c.id, -1)}
+                    disabled={i === 0}
+                    className="leading-none hover:text-foreground disabled:opacity-20"
+                    title="Subir"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveColumna(c.id, 1)}
+                    disabled={i === cols.length - 1}
+                    className="leading-none hover:text-foreground disabled:opacity-20"
+                    title="Bajar"
+                  >
+                    ▼
+                  </button>
+                </span>
+                <span className="font-medium">{c.nombre}</span>
+                {c.preguntaRsvp ? (
+                  <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
+                    🔒 {TIPO_COLUMNA_LABEL[c.tipo]} (del formulario)
                   </span>
+                ) : (
+                  <select
+                    value={c.tipo}
+                    onChange={(e) => updateColumna(c.id, { tipo: e.target.value as TipoColumna })}
+                    className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                  >
+                    <option value="texto">Texto</option>
+                    <option value="sino">Sí / No</option>
+                    <option value="numero">Número</option>
+                    <option value="lista">Listado</option>
+                  </select>
+                )}
+                {c.tipo === "lista" && !c.preguntaRsvp && (
+                  <input
+                    defaultValue={c.opciones ?? ""}
+                    onBlur={(e) => updateColumna(c.id, { opciones: e.target.value })}
+                    placeholder="Opciones separadas por comas"
+                    className="min-w-[10rem] flex-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                  />
+                )}
+                <button
+                  onClick={() => removeColumna(c.id)}
+                  className="ml-auto text-xs text-muted hover:text-red-600"
+                  title="Quitar columna"
+                >
+                  🗑
+                </button>
+                <label className="flex w-full items-center gap-2 text-xs text-muted">
+                  Se rellena con la pregunta del formulario:
+                  <select
+                    value={c.preguntaRsvp ?? ""}
+                    onChange={(e) => {
+                      const pregunta = e.target.value;
+                      if (!pregunta) {
+                        updateColumna(c.id, { preguntaRsvp: "" });
+                      } else {
+                        const fmt = formatoPregunta(pregunta);
+                        updateColumna(c.id, {
+                          preguntaRsvp: pregunta,
+                          tipo: fmt.tipo,
+                          opciones: fmt.opciones,
+                        });
+                      }
+                    }}
+                    className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
+                  >
+                    <option value="">— ninguna</option>
+                    {preguntas.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                    {c.preguntaRsvp && !preguntas.includes(c.preguntaRsvp) && (
+                      <option value={c.preguntaRsvp}>{c.preguntaRsvp}</option>
+                    )}
+                  </select>
                 </label>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
 
-        <div className="mt-4 border-t border-line pt-3">
-          <p className="text-xs font-medium text-muted">O crea una a medida:</p>
-          <input
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder="Nombre de la columna"
-            autoFocus
-            className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-          />
-          <select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value as TipoColumna)}
-            className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-          >
-            <option value="texto">Texto</option>
-            <option value="sino">Sí / No</option>
-            <option value="numero">Número</option>
-            <option value="lista">Listado de opciones</option>
-          </select>
-          {tipo === "lista" && (
-            <input
-              value={opciones}
-              onChange={(e) => setOpciones(e.target.value)}
-              placeholder="Opciones separadas por comas (Normal, Vegetariano, Niño…)"
-              className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-            />
-          )}
-          <button
-            onClick={crear}
-            disabled={!nombre.trim()}
-            className="mt-3 w-full rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
-          >
-            Añadir columna
-          </button>
-        </div>
+          <div className="mt-4 border-t border-line pt-3">
+            <p className="text-xs font-medium text-muted">Columnas habituales (marca las que quieras)</p>
+            <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto rounded border border-line">
+              {COLUMNAS_SUGERIDAS.map((c) => {
+                const existe = buscarCol(c.nombre);
+                return (
+                  <li key={c.nombre}>
+                    <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!existe}
+                        onChange={() =>
+                          existe ? removeColumna(existe.id) : addColumna(c.nombre, c.tipo)
+                        }
+                      />
+                      <span className="flex-1">{c.nombre}</span>
+                      <span className="text-[11px] text-muted">
+                        {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="mt-4 border-t border-line pt-3">
+            <p className="text-xs font-medium text-muted">Crear una columna a medida</p>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Nombre de la columna"
+                className="min-w-[10rem] flex-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+              />
+              <select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value as TipoColumna)}
+                className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+              >
+                <option value="texto">Texto</option>
+                <option value="sino">Sí / No</option>
+                <option value="numero">Número</option>
+                <option value="lista">Listado</option>
+              </select>
+              <button
+                onClick={crear}
+                disabled={!nombre.trim()}
+                className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+              >
+                Añadir
+              </button>
+            </div>
+            {tipo === "lista" && (
+              <input
+                value={opciones}
+                onChange={(e) => setOpciones(e.target.value)}
+                placeholder="Opciones separadas por comas (Normal, Vegetariano, Niño…)"
+                className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+              />
+            )}
+          </div>
+        </section>
+
+        <button
+          onClick={onClose}
+          className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
+        >
+          Listo
+        </button>
       </div>
     </div>
   );
