@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Progress } from "@/components/ui";
-import { EstadoControl, EstadoLeyenda } from "@/components/estado-control";
+import { EstadoControl } from "@/components/estado-control";
 import { TareaDetalleForm } from "@/components/tarea-detalle";
 import { descargarTareasExcel } from "@/lib/export-excel";
 import { loadBoda } from "@/lib/boda";
@@ -146,11 +146,24 @@ function Row({
   }, [abierto, editar]);
 
   return (
-    <li ref={ref} className={`scroll-mt-4 text-sm ${estado === "hecho" ? "bg-emerald-50" : ""}`}>
+    <li
+      ref={ref}
+      className={`scroll-mt-4 text-sm ${
+        estado === "hecho" ? "bg-emerald-50" : estado === "proceso" ? "bg-amber-50" : ""
+      }`}
+    >
       <div className="flex items-start gap-3 px-4 py-2.5">
         <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
         <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
-          <p className={estado === "hecho" ? "font-medium text-emerald-900" : ""}>
+          <p
+            className={
+              estado === "hecho"
+                ? "font-medium text-emerald-900"
+                : estado === "proceso"
+                  ? "font-medium text-amber-900"
+                  : ""
+            }
+          >
             {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
             <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
           </p>
@@ -352,7 +365,13 @@ export default function TareasPage() {
   const visibles = filtroResp
     ? tareas.filter((t) => (t.responsable ?? "") === filtroResp)
     : tareas;
-  const hechas = visibles.filter((t) => estadoDe(t.id) === "hecho").length;
+  const total = visibles.length;
+  const cuenta = {
+    sin: visibles.filter((t) => estadoDe(t.id) === "sin").length,
+    proceso: visibles.filter((t) => estadoDe(t.id) === "proceso").length,
+    hecho: visibles.filter((t) => estadoDe(t.id) === "hecho").length,
+  };
+  const hechas = cuenta.hecho;
 
   const toggleOpen = (id: string) => {
     setEditando(null);
@@ -498,11 +517,29 @@ export default function TareasPage() {
           />
         )}
 
-        <div className="mt-3">
-          <EstadoLeyenda />
-        </div>
-        <div className="mt-2">
-          <Progress value={visibles.length ? (hechas / visibles.length) * 100 : 0} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {(
+            [
+              ["Sin empezar", cuenta.sin, "bg-slate-300"],
+              ["En proceso", cuenta.proceso, "bg-amber-300"],
+              ["Terminadas", cuenta.hecho, "bg-emerald-400"],
+            ] as [string, number, string][]
+          ).map(([label, n, color]) => {
+            const pct = total ? Math.round((n / total) * 100) : 0;
+            return (
+              <div key={label}>
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="text-muted">{label}</span>
+                  <span className="font-medium">
+                    {n} · {pct}%
+                  </span>
+                </div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-line">
+                  <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-3 flex items-center gap-4">
