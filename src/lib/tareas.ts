@@ -249,7 +249,7 @@ const DATA: Record<string, Def[]> = {
     ["Contratar o comprar el traje del novio", "6-7 meses antes", "proveedor"],
     ["Comprar la camisa del novio", "4-5 meses antes", "compra"],
     ["Comprar los zapatos del novio", "4-5 meses antes", "compra"],
-    ["Comprar los complementos (corbata, gemelos)", "4-5 meses antes", "compra"],
+    ["Comprar los complementos del novio (corbata, gemelos)", "4-5 meses antes", "compra"],
     ["Reservar la barbería para antes de la boda", "Último mes", "lugarFecha"],
   ],
   Papelería: [
