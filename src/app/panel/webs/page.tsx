@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
+import { CompartirEnlace } from "@/components/compartir-enlace";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
+import { loadStd, stdConfigurada } from "@/lib/savethedate";
 import { TEMPLATES } from "@/lib/puck/config";
 
 const previews: Record<string, React.ReactNode> = {
@@ -39,16 +41,26 @@ const previews: Record<string, React.ReactNode> = {
 
 export default function WebsPage() {
   const [hasWeb, setHasWeb] = useState<boolean | null>(null);
+  const [hasStd, setHasStd] = useState(false);
+  const [stdPublicada, setStdPublicada] = useState(false);
   const boda = loadBoda();
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("webodas:site:demo");
-      const parsed = raw ? JSON.parse(raw) : null;
-      setHasWeb(!!parsed && Array.isArray(parsed.content) && parsed.content.length > 0);
-    } catch {
-      setHasWeb(false);
-    }
+    const sync = () => {
+      try {
+        const raw = localStorage.getItem("webodas:site:demo");
+        const parsed = raw ? JSON.parse(raw) : null;
+        setHasWeb(!!parsed && Array.isArray(parsed.content) && parsed.content.length > 0);
+      } catch {
+        setHasWeb(false);
+      }
+      const s = loadStd();
+      setHasStd(stdConfigurada(s));
+      setStdPublicada(s.publicada);
+    };
+    sync();
+    window.addEventListener("webodas:savethedate", sync);
+    return () => window.removeEventListener("webodas:savethedate", sync);
   }, []);
 
   const empezarDeNuevo = () => {
@@ -63,29 +75,33 @@ export default function WebsPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle eyebrow="Servicio" title="Web de boda" />
+      <PageTitle eyebrow="Servicio" title="Webs para tus invitados" />
 
+      {/* WEB DE BODA */}
       {hasWeb === null ? null : hasWeb ? (
         <div className="space-y-3">
-          <h2 className="font-display text-xl">Tu web</h2>
-          <Card className="flex items-center justify-between">
-            <div>
-              <p className="font-display text-lg">{nombrePareja(boda)}</p>
-              <p className="text-sm text-muted">{fechaLarga(boda)}</p>
+          <h2 className="font-display text-xl">Tu web de boda</h2>
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-display text-lg">{nombrePareja(boda)}</p>
+                <p className="text-sm text-muted">{fechaLarga(boda)}</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <a
+                  href="/w/ana-y-leo"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-muted underline"
+                >
+                  Ver
+                </a>
+                <Link href="/editor/demo" className="text-sm font-medium text-accent">
+                  Seguir editando →
+                </Link>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <a
-                href="/w/ana-y-leo"
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-muted underline"
-              >
-                Ver
-              </a>
-              <Link href="/editor/demo" className="text-sm font-medium text-accent">
-                Seguir editando →
-              </Link>
-            </div>
+            <CompartirEnlace path="/w/ana-y-leo" label="Enlace para tus invitados" />
           </Card>
           <button
             onClick={empezarDeNuevo}
@@ -96,7 +112,7 @@ export default function WebsPage() {
         </div>
       ) : (
         <div>
-          <h2 className="font-display text-xl">Crea tu web</h2>
+          <h2 className="font-display text-xl">Crea tu web de boda</h2>
           <p className="mt-1 text-sm text-muted">
             Elige una plantilla para empezar (podrás cambiar todo) o parte de cero.
           </p>
@@ -115,6 +131,36 @@ export default function WebsPage() {
           </div>
         </div>
       )}
+
+      {/* SAVE THE DATE */}
+      <div className="space-y-3">
+        <h2 className="font-display text-xl">Save the date</h2>
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted">
+              Una sola hoja con vuestros nombres, la fecha y una imagen. Para avisar pronto.
+            </p>
+            <div className="flex items-center gap-4">
+              {hasStd && (
+                <a
+                  href="/std/ana-y-leo"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-muted underline"
+                >
+                  Ver
+                </a>
+              )}
+              <Link href="/panel/save-the-date" className="text-sm font-medium text-accent">
+                {hasStd ? "Seguir editando →" : "Crear Save the date →"}
+              </Link>
+            </div>
+          </div>
+          {stdPublicada && (
+            <CompartirEnlace path="/std/ana-y-leo" label="Enlace para tus invitados" />
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
