@@ -21,6 +21,15 @@ export function ProveedorOpciones({
 }) {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
+  const [nuevoId, setNuevoId] = useState<string | null>(null);
+
+  // Quita una opción recién creada si se cierra sin ponerle nombre.
+  const descartarSiVacia = (o: ProveedorOpcion) => {
+    if (o.id === nuevoId && !o.nombre.trim()) {
+      onOpciones(opciones.filter((x) => x.id !== o.id));
+    }
+    setNuevoId(null);
+  };
 
   const upd = (optId: string, patch: Partial<ProveedorOpcion>) =>
     onOpciones(opciones.map((o) => (o.id === optId ? { ...o, ...patch } : o)));
@@ -41,6 +50,7 @@ export function ProveedorOpciones({
     onOpciones([...opciones, nuevo]);
     setAbierta(nuevo.id);
     setEditando(nuevo.id);
+    setNuevoId(nuevo.id);
   };
 
   return (
@@ -57,6 +67,7 @@ export function ProveedorOpciones({
             <div className={`flex items-center gap-3 px-3 py-2 ${isC ? "bg-green-50" : "bg-surface"}`}>
               <button
                 onClick={() => {
+                  if (open) descartarSiVacia(o);
                   setAbierta(open ? null : o.id);
                   setEditando(null);
                 }}
@@ -87,6 +98,7 @@ export function ProveedorOpciones({
 
               <button
                 onClick={() => {
+                  if (open) descartarSiVacia(o);
                   setAbierta(open ? null : o.id);
                   setEditando(null);
                 }}
@@ -127,13 +139,18 @@ export function ProveedorOpciones({
                         onClick={() => {
                           onSave();
                           setEditando(null);
+                          setNuevoId(null);
                         }}
                         className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Guardar
                       </button>
                       <button
-                        onClick={() => setEditando(null)}
+                        onClick={() => {
+                          descartarSiVacia(o);
+                          setEditando(null);
+                          setAbierta(null);
+                        }}
                         className="rounded-md border border-line px-3 py-1.5 text-xs hover:bg-neutral-100"
                       >
                         Cancelar
