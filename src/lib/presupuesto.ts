@@ -13,7 +13,8 @@ export type Partida = {
   cantidad?: number;
 };
 
-const KEY = "webodas:presupuesto";
+// v2: nueva estructura de categorías (arranca con todas las partidas estándar).
+const KEY = "webodas:presupuesto:v2";
 
 // Conceptos que se tratan como "menú" (precio por comensal × nº).
 export const MENU_CONCEPTOS = ["Menú invitados", "Menú niños", "Menú proveedores"];
