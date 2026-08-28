@@ -10,7 +10,6 @@ import { RangeField } from "@/components/range-field";
 import { RichEditor } from "@/components/rich-editor";
 import { RsvpForm } from "@/components/rsvp-form";
 import { SiteNav } from "@/components/site-nav";
-import { QuestionsEditor } from "@/components/questions-editor";
 import { SiteGiftCards } from "@/components/site-gift-cards";
 import { parseInline } from "@/lib/rich-text";
 
@@ -365,17 +364,11 @@ type Props = {
     title: string;
     text: string;
     buttonLabel: string;
-    buttonUrl: string;
     colorText: string;
     colorBg: string;
-    packEstandar: string;
-    questions: {
-      label: string;
-      qtype: string;
-      options: string;
-      condLabel: string;
-      condValue: string;
-    }[];
+    buttonUrl?: string;
+    packEstandar?: string;
+    questions?: unknown[];
   };
 };
 
@@ -1934,22 +1927,9 @@ export const puckConfig: Config<Props, RootProps> = {
             <RichEditor value={value as string} onChange={onChange} label="Texto" />
           ),
         },
-        buttonLabel: { type: "text", label: "Texto del botón (si no hay formulario)" },
-        buttonUrl: { type: "text", label: "Enlace del botón" },
-        packEstandar: {
-          type: "radio",
-          label: "Pack de preguntas estándar (nombre, apellidos, asistencia, acompañante)",
-          options: [
-            { label: "Añadido", value: "si" },
-            { label: "Sin pack", value: "no" },
-          ],
-        },
-        questions: {
-          type: "custom",
-          label: "Preguntas",
-          render: ({ onChange, value }) => (
-            <QuestionsEditor value={value as never} onChange={onChange} />
-          ),
+        buttonLabel: {
+          type: "text",
+          label: "Texto del botón (las preguntas se configuran en Gestión → Formulario)",
         },
         ...colorFields,
       },
@@ -1958,39 +1938,14 @@ export const puckConfig: Config<Props, RootProps> = {
         text: "Confírmanos tu asistencia antes del 1 de agosto.",
         buttonLabel: "Confirmar asistencia",
         buttonUrl: "",
-        packEstandar: "si",
         ...colorDefaults,
-        questions: [
-          { label: "Menú", qtype: "opcion", options: "Normal, Vegetariano, Sin gluten, Infantil", condLabel: "", condValue: "" },
-          { label: "Alergias / intolerancias", qtype: "texto", options: "", condLabel: "", condValue: "" },
-          { label: "¿Necesitas autobús?", qtype: "si-no", options: "", condLabel: "", condValue: "" },
-          { label: "¿En qué parada?", qtype: "opcion", options: "Centro, Estación, Hotel", condLabel: "¿Necesitas autobús?", condValue: "Sí" },
-        ],
       },
-      render: ({ title, text, buttonLabel, buttonUrl, colorText, colorBg, questions, packEstandar }) => (
+      render: ({ title, text, buttonLabel, colorText, colorBg }) => (
         <div style={{ background: colorBg || "color-mix(in srgb, var(--wf-accent) 8%, transparent)" }}>
         <div style={{ ...section, color: colorText || section.color }}>
           <h2 style={{ ...heading, color: colorText || heading.color }}>{parseInline(title)}</h2>
           <p style={body}>{parseInline(text)}</p>
-          {(packEstandar !== "no") || (questions && questions.length > 0) ? (
-            <RsvpForm questions={questions} buttonLabel={buttonLabel} pack={packEstandar !== "no"} />
-          ) : (
-            <a
-              href={buttonUrl || "#"}
-              style={{
-                display: "inline-block",
-                marginTop: 24,
-                padding: "12px 28px",
-                background: "var(--wf-accent)",
-                color: "#fff",
-                textDecoration: "none",
-                letterSpacing: "0.1em",
-                fontFamily: "var(--wf-body)",
-              }}
-            >
-              {buttonLabel}
-            </a>
-          )}
+          <RsvpForm buttonLabel={buttonLabel} />
         </div>
         </div>
       ),

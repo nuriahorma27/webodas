@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { addResponse, type RsvpQuestion } from "@/lib/rsvp";
+import { useEffect, useState } from "react";
+import { addResponse } from "@/lib/rsvp";
+import { loadFormulario, type PreguntaForm } from "@/lib/formulario";
 
 export function RsvpForm({
-  questions,
   buttonLabel = "Confirmar asistencia",
   weddingId = "demo",
-  pack = true,
 }: {
-  questions: RsvpQuestion[];
   buttonLabel?: string;
   weddingId?: string;
-  pack?: boolean;
 }) {
+  const [cfg, setCfg] = useState(() => loadFormulario());
+  useEffect(() => {
+    const sync = () => setCfg(loadFormulario());
+    sync();
+    window.addEventListener("webodas:formulario", sync);
+    return () => window.removeEventListener("webodas:formulario", sync);
+  }, []);
+  const questions: PreguntaForm[] = cfg.preguntas;
+  const pack = cfg.pack;
+
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -38,7 +45,7 @@ export function RsvpForm({
     Acompañante: acomp,
     ...answers,
   };
-  const visible = (q: RsvpQuestion) => {
+  const visible = (q: PreguntaForm) => {
     if (!q.condLabel) return true;
     return (ctx[q.condLabel] ?? "").toLowerCase() === (q.condValue ?? "").toLowerCase();
   };
@@ -48,7 +55,7 @@ export function RsvpForm({
     const respuestas: Record<string, string> = {};
     const acompNom = `${acompNombre} ${acompApellidos}`.trim();
     if (acomp === "Sí" && acompNom) respuestas["Acompañante"] = acompNom;
-    (questions ?? []).forEach((q) => {
+    questions.forEach((q) => {
       if (asiste === "Sí" && visible(q) && answers[q.label]) respuestas[q.label] = answers[q.label];
     });
     addResponse(weddingId, {
@@ -76,7 +83,7 @@ export function RsvpForm({
   };
   const lab: React.CSSProperties = { display: "block", fontSize: 14, marginBottom: 6, fontWeight: 600 };
 
-  const renderQuestion = (q: RsvpQuestion, i: number) => {
+  const renderQuestion = (q: PreguntaForm, i: number) => {
     const opts = (q.options ?? "").split(",").map((o) => o.trim()).filter(Boolean);
     return (
       <div key={i}>
@@ -232,7 +239,7 @@ export function RsvpForm({
                 )}
 
                 {(!pack || asiste === "Sí") &&
-                  (questions ?? []).map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
+                  questions.map((q, i) => (visible(q) ? renderQuestion(q, i) : null))}
 
                 <button
                   type="submit"

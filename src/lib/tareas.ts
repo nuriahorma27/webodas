@@ -102,9 +102,9 @@ export const RUTAS_WEBODAS: Record<string, { href: string; label: string; sub: s
     sub: "Se hace en webodas · Lista de regalos",
   },
   "Recoger las confirmaciones (RSVP)": {
-    href: "/panel/gestion/confirmaciones",
-    label: "Ver las confirmaciones",
-    sub: "Se hace en webodas · Confirmaciones",
+    href: "/panel/gestion/formulario",
+    label: "Ir al formulario de confirmación",
+    sub: "Se hace en webodas · Gestión → Formulario",
   },
 };
 
