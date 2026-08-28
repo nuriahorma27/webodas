@@ -54,10 +54,10 @@ export default function PanelPage() {
   const dias = diasRestantes(boda);
   const meses = mesesRestantes(boda);
 
-  // Tareas cuyo plazo ya ha llegado (o pasado) y no están hechas ni descartadas.
+  // Tareas cuyo plazo ya ha llegado (o pasado) y no están hechas.
   const pend = TAREAS.filter((t) => {
     const e = estadoDe(t.id);
-    if (e === "hecho" || e === "descartada") return false;
+    if (e === "hecho") return false;
     if (meses == null) return t.fase !== "Sin fecha asignada";
     return (FASE_MESES[t.fase] ?? Infinity) >= meses;
   });

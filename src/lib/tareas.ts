@@ -1,13 +1,12 @@
 // Tareas de la boda (plantilla / cuadro de mando).
-// Estado por tarea: "sin" | "proceso" | "hecho" | "descartada" — en localStorage.
+// Estado por tarea: "sin" | "proceso" | "hecho" — en localStorage.
 
-export type Estado = "sin" | "proceso" | "hecho" | "descartada";
+export type Estado = "sin" | "proceso" | "hecho";
 
-export const ESTADOS: { value: Estado; label: string; tone: "neutral" | "amber" | "green" | "muted" }[] = [
+export const ESTADOS: { value: Estado; label: string; tone: "neutral" | "amber" | "green" }[] = [
   { value: "sin", label: "Sin empezar", tone: "neutral" },
   { value: "proceso", label: "En proceso", tone: "amber" },
   { value: "hecho", label: "Terminado", tone: "green" },
-  { value: "descartada", label: "No se hará", tone: "muted" },
 ];
 
 /* ---------- fichas de detalle por tipo de tarea ---------- */
@@ -206,7 +205,8 @@ const DATA: Record<string, Def[]> = {
     ["Hacer la prueba de menú", "2-3 meses antes", "eleccion"],
     ["Decidir barra libre y horas extra", "2-3 meses antes", "eleccion"],
     ["Elegir la bodega y las bebidas", "2-3 meses antes", "eleccion"],
-    ["Contratar el puesto de quesos o la recena", "2-3 meses antes", "proveedor"],
+    ["Contratar la recena", "2-3 meses antes", "proveedor"],
+    ["Contratar el puesto de quesos", "Sin fecha asignada", "proveedor"],
     ["Encargar la tarta nupcial", "4-5 meses antes", "proveedor"],
     ["Comprar las chuches o el candy bar", "Último mes", "compra"],
   ],

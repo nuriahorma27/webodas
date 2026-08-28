@@ -7,7 +7,6 @@ export const ESTADO_DOT: Record<Estado, string> = {
   sin: "bg-slate-200",
   proceso: "bg-amber-200",
   hecho: "bg-emerald-300",
-  descartada: "bg-rose-200",
 };
 
 export function EstadoControl({

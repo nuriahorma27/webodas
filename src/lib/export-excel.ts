@@ -317,8 +317,6 @@ export async function descargarTareasExcel(
       for (let c = 1; c <= 6; c++) row.getCell(c).border = borde;
       if ((estados[t.id] ?? "sin") === "hecho")
         row.getCell(2).font = { color: { argb: "FF3F6212" } };
-      if ((estados[t.id] ?? "sin") === "descartada")
-        row.getCell(2).font = { strike: true, color: { argb: "FF9A9A9A" } };
       r++;
     }
   }

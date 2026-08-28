@@ -66,15 +66,7 @@ function Row({
       <div className="flex items-start gap-3 px-4 py-2.5">
         <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
         <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
-          <p
-            className={
-              estado === "hecho"
-                ? "font-medium text-green-800"
-                : estado === "descartada"
-                  ? "text-neutral-400 line-through"
-                  : ""
-            }
-          >
+          <p className={estado === "hecho" ? "font-medium text-green-800" : ""}>
             {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
             <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
           </p>

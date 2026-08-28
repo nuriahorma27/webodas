@@ -69,15 +69,7 @@ export function TareasResumen() {
                     <li key={t.id} className="flex items-start gap-3 py-2 text-sm">
                       <EstadoControl value={e} onChange={(v) => setEstado(t.id, v)} />
                       <div className="min-w-0 flex-1">
-                        <p
-                          className={
-                            e === "hecho"
-                              ? "font-medium text-green-800"
-                              : e === "descartada"
-                                ? "text-neutral-400 line-through"
-                                : ""
-                          }
-                        >
+                        <p className={e === "hecho" ? "font-medium text-green-800" : ""}>
                           {t.titulo}
                         </p>
                         {detalleResumen(detalles[t.id]) && (
