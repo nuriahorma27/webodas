@@ -21,9 +21,12 @@ function Recuperar() {
     const supabase = createClient();
     let vivo = true;
 
+    const marcarListo = () => {
+      if (vivo) setEstado((s) => (s === "hecho" ? s : "listo"));
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!vivo) return;
-      if (event === "PASSWORD_RECOVERY" || session) setEstado("listo");
+      if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) marcarListo();
     });
 
     (async () => {
@@ -31,21 +34,31 @@ function Recuperar() {
       const tokenHash = url.searchParams.get("token_hash");
       const type = url.searchParams.get("type");
       const code = url.searchParams.get("code");
+      const errDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
+
+      // 1) ¿ya hay sesión? (el SDK procesa el hash #access_token automáticamente)
+      if ((await supabase.auth.getSession()).data.session) return marcarListo();
+
+      // 2) enlace tipo ?token_hash / ?code → canjearlo una sola vez
       try {
-        if (tokenHash && type) {
-          await supabase.auth.verifyOtp({
-            type: type as "recovery",
-            token_hash: tokenHash,
-          });
+        if (tokenHash) {
+          await supabase.auth.verifyOtp({ type: (type as "recovery") || "recovery", token_hash: tokenHash });
         } else if (code) {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
+          await supabase.auth.exchangeCodeForSession(code);
         }
       } catch {
-        /* lo resolvemos con getSession abajo */
+        /* se comprueba abajo */
       }
-      const { data } = await supabase.auth.getSession();
-      if (!vivo) return;
-      setEstado(data.session ? "listo" : "invalido");
+
+      // 3) esperar un poco por si el SDK aún está procesando la URL
+      for (let i = 0; i < 6 && vivo; i++) {
+        if ((await supabase.auth.getSession()).data.session) return marcarListo();
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      if (vivo) {
+        setEstado("invalido");
+        if (errDesc) setError(decodeURIComponent(errDesc.replace(/\+/g, " ")));
+      }
     })();
 
     return () => {
@@ -89,10 +102,11 @@ function Recuperar() {
         {estado === "invalido" && (
           <div className="mt-4 space-y-3">
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-              El enlace no es válido o ha caducado. Pide uno nuevo.
+              {error || "El enlace no es válido o ha caducado."} Abre el correo más reciente y usa
+              su enlace, o pide uno nuevo.
             </p>
             <Link href="/inicio" className="text-sm font-medium text-foreground underline">
-              Volver a inicio
+              Pedir otro enlace
             </Link>
           </div>
         )}
