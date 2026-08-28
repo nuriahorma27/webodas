@@ -630,6 +630,32 @@ function AjustesModal({
             ))}
           </div>
 
+          <div className="mt-4 border-t border-line pt-3">
+            <p className="text-xs font-medium text-muted">Columnas habituales (marca las que quieras)</p>
+            <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto rounded border border-line">
+              {COLUMNAS_SUGERIDAS.map((c) => {
+                const existe = buscarCol(c.nombre);
+                return (
+                  <li key={c.nombre}>
+                    <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!existe}
+                        onChange={() =>
+                          existe ? removeColumna(existe.id) : addColumna(c.nombre, c.tipo)
+                        }
+                      />
+                      <span className="flex-1">{c.nombre}</span>
+                      <span className="text-[11px] text-muted">
+                        {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
           <div className="mt-4 flex items-center justify-between">
             <p className="text-xs font-medium text-muted">Columnas añadidas</p>
             <button
@@ -737,32 +763,6 @@ function AjustesModal({
               </li>
             ))}
           </ul>
-
-          <div className="mt-4 border-t border-line pt-3">
-            <p className="text-xs font-medium text-muted">Columnas habituales (marca las que quieras)</p>
-            <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto rounded border border-line">
-              {COLUMNAS_SUGERIDAS.map((c) => {
-                const existe = buscarCol(c.nombre);
-                return (
-                  <li key={c.nombre}>
-                    <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={!!existe}
-                        onChange={() =>
-                          existe ? removeColumna(existe.id) : addColumna(c.nombre, c.tipo)
-                        }
-                      />
-                      <span className="flex-1">{c.nombre}</span>
-                      <span className="text-[11px] text-muted">
-                        {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
 
           <div className="mt-4 border-t border-line pt-3">
             <p className="text-xs font-medium text-muted">Crear una columna a medida</p>
