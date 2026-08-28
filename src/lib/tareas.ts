@@ -207,23 +207,23 @@ const DATA: Record<string, Def[]> = {
     ["Decidir barra libre y horas extra", "2-3 meses antes", "eleccion"],
     ["Elegir la bodega y las bebidas", "2-3 meses antes", "eleccion"],
     ["Contratar el puesto de quesos o la recena", "Sin fecha asignada", "proveedor"],
-    ["Encargar la tarta nupcial", "2-3 meses antes", "proveedor"],
+    ["Encargar la tarta nupcial", "4-5 meses antes", "proveedor"],
     ["Comprar las chuches o el candy bar", "Último mes", "compra"],
   ],
   Música: [
     ["Contratar la música en directo (cóctel o ceremonia)", "4-5 meses antes", "proveedor"],
     ["Contratar el DJ o la discoteca móvil", "8-9 meses antes", "proveedor"],
-    ["Contratar el photocall o el fotomatón", "2-3 meses antes", "proveedor"],
+    ["Contratar el photocall o el fotomatón", "4-5 meses antes", "proveedor"],
     ["Elegir y preparar el baile nupcial", "2-3 meses antes", "eleccion"],
     ["Elegir las canciones de entrada y salida", "4-5 meses antes", "eleccion"],
   ],
   "Decoración y flores": [
-    ["Flores y centros de mesa", "2-3 meses antes", "proveedor"],
-    ["Decoración de espacios", "2-3 meses antes", "proveedor"],
-    ["Iluminación", "2-3 meses antes", "proveedor"],
+    ["Flores y centros de mesa", "4-5 meses antes", "proveedor"],
+    ["Decoración de espacios", "4-5 meses antes", "proveedor"],
+    ["Iluminación", "4-5 meses antes", "proveedor"],
     ["Velas y atrezzo", "2-3 meses antes", "compra"],
     ["Jarrones, farolillos, pajareras", "6-7 meses antes", "compra"],
-    ["Mantelería y vajilla", "2-3 meses antes", "proveedor"],
+    ["Mantelería y vajilla", "4-5 meses antes", "proveedor"],
     ["Libro de firmas", "2-3 meses antes", "compra"],
   ],
   "Fotografía y vídeo": [
@@ -261,7 +261,7 @@ const DATA: Record<string, Def[]> = {
   ],
   Transporte: [
     ["Reservar el coche de los novios", "8-9 meses antes", "proveedor"],
-    ["Contratar el autobús para los invitados", "2-3 meses antes", "proveedor"],
+    ["Contratar el autobús para los invitados", "4-5 meses antes", "proveedor"],
   ],
   Alojamiento: [
     ["Noche de bodas / hotel", "2-3 meses antes", "reserva"],
@@ -270,7 +270,7 @@ const DATA: Record<string, Def[]> = {
   "Detalles y regalos": [
     ["Detalle para los invitados", "2-3 meses antes", "compra"],
     ["Detalle para los testigos", "2-3 meses antes", "compra"],
-    ["Puros y tabaco", "Último mes", "compra"],
+    ["Puros y tabaco", "2-3 meses antes", "compra"],
     ["Vestidos de los niños de arras", "6-7 meses antes", "proveedor"],
   ],
   "Preboda y pedida": [
