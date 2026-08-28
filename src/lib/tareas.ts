@@ -271,7 +271,7 @@ const DATA: Record<string, Def[]> = {
     ["Detalle para los invitados", "2-3 meses antes", "compra"],
     ["Detalle para los testigos", "2-3 meses antes", "compra"],
     ["Puros y tabaco", "Último mes", "compra"],
-    ["Vestidos de los niños de arras", "6-7 meses antes", "compra"],
+    ["Vestidos de los niños de arras", "6-7 meses antes", "proveedor"],
   ],
   "Preboda y pedida": [
     ["Cena / evento de pedida de mano", "8-9 meses antes", "lugarFecha"],
