@@ -22,28 +22,24 @@ import {
   CATEGORIAS_ESTANDAR,
   type Partida,
 } from "@/lib/presupuesto";
-import { loadTareas, type Tarea } from "@/lib/tareas";
 
 export default function PresupuestoPage() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null);
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
-  const [tareas, setTareas] = useState<Tarea[]>([]);
   const [menuCat, setMenuCat] = useState(false);
+  const [editando, setEditando] = useState(false);
 
   useEffect(() => {
     const sync = () => {
       setPartidas(loadPartidas());
       setPresupuestoTotal(loadBoda().presupuestoTotal);
-      setTareas(loadTareas());
     };
     sync();
     window.addEventListener("webodas:presupuesto", sync);
     window.addEventListener("webodas:boda", sync);
-    window.addEventListener("webodas:tareas", sync);
     return () => {
       window.removeEventListener("webodas:presupuesto", sync);
       window.removeEventListener("webodas:boda", sync);
-      window.removeEventListener("webodas:tareas", sync);
     };
   }, []);
 
@@ -75,6 +71,16 @@ export default function PresupuestoPage() {
       </div>
 
       <div className="flex items-center justify-end gap-4">
+        <button
+          onClick={() => setEditando((v) => !v)}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            editando
+              ? "border-accent bg-accent text-white"
+              : "border-line hover:border-accent hover:text-accent"
+          }`}
+        >
+          {editando ? "Listo" : "✎ Editar"}
+        </button>
         <button
           onClick={() => descargarPresupuestoExcel(partidas, presupuestoTotal)}
           className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
@@ -130,45 +136,54 @@ export default function PresupuestoPage() {
           return (
             <Card key={cat} className="p-0">
               <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
-                <div className="flex shrink-0 flex-col leading-none text-muted">
-                  <button
-                    onClick={() => moveCategoria(cat, -1)}
-                    disabled={ci === 0}
-                    className="text-xs hover:text-foreground disabled:opacity-25"
-                    title="Subir categoría"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveCategoria(cat, 1)}
-                    disabled={ci === categorias.length - 1}
-                    className="text-xs hover:text-foreground disabled:opacity-25"
-                    title="Bajar categoría"
-                  >
-                    ▼
-                  </button>
-                </div>
-                <input
-                  defaultValue={cat}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v && v !== cat) renameCategoria(cat, v);
-                    else e.target.value = cat;
-                  }}
-                  className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
-                />
+                {editando && (
+                  <div className="flex shrink-0 flex-col leading-none text-muted">
+                    <button
+                      onClick={() => moveCategoria(cat, -1)}
+                      disabled={ci === 0}
+                      className="text-xs hover:text-foreground disabled:opacity-25"
+                      title="Subir categoría"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveCategoria(cat, 1)}
+                      disabled={ci === categorias.length - 1}
+                      className="text-xs hover:text-foreground disabled:opacity-25"
+                      title="Bajar categoría"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                )}
+                {editando ? (
+                  <input
+                    defaultValue={cat}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v && v !== cat) renameCategoria(cat, v);
+                      else e.target.value = cat;
+                    }}
+                    className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
+                  />
+                ) : (
+                  <h3 className="min-w-0 flex-1 truncate font-display text-lg">{cat}</h3>
+                )}
                 <span className="shrink-0 text-sm text-muted">
                   {eur(ct.pagado)} / {eur(ct.estimado)}
                 </span>
-                <button
-                  onClick={() => {
-                    if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`)) removeCategoria(cat);
-                  }}
-                  className="shrink-0 text-xs text-muted hover:text-red-600"
-                  title="Eliminar categoría"
-                >
-                  Eliminar
-                </button>
+                {editando && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`))
+                        removeCategoria(cat);
+                    }}
+                    className="shrink-0 text-xs text-muted hover:text-red-600"
+                    title="Eliminar categoría"
+                  >
+                    Eliminar
+                  </button>
+                )}
               </div>
 
               <div className="overflow-x-auto">
@@ -185,26 +200,28 @@ export default function PresupuestoPage() {
                   </thead>
                   <tbody className="divide-y divide-line">
                     {filas.map((p) => (
-                      <Fila key={p.id} p={p} tareas={tareas} />
+                      <Fila key={p.id} p={p} editando={editando} />
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="px-5 py-2.5">
-                <button
-                  onClick={() => addPartida(cat)}
-                  className="text-sm font-medium text-accent"
-                >
-                  + Añadir partida
-                </button>
-              </div>
+              {editando && (
+                <div className="px-5 py-2.5">
+                  <button
+                    onClick={() => addPartida(cat)}
+                    className="text-sm font-medium text-accent"
+                  >
+                    + Añadir partida
+                  </button>
+                </div>
+              )}
             </Card>
           );
         })}
       </div>
 
-      <div className="relative">
+      <div className={`relative ${editando ? "" : "hidden"}`}>
         <button
           onClick={() => setMenuCat((v) => !v)}
           className="w-full rounded-lg border border-dashed border-line py-3 text-sm font-medium text-muted hover:border-accent hover:text-accent"
@@ -246,18 +263,39 @@ export default function PresupuestoPage() {
   );
 }
 
-function Fila({ p, tareas }: { p: Partida; tareas: Tarea[] }) {
+function Fila({ p, editando }: { p: Partida; editando: boolean }) {
   const num = (v: string) => {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
   const est = estimadoDe(p);
   const pct = est ? Math.min(100, (p.pagado / est) * 100) : 0;
-  const tareaVinc = p.tareaId ? tareas.find((t) => t.id === p.tareaId) : undefined;
 
   const cell = "w-full bg-transparent outline-none focus:border-b focus:border-accent";
   const mini =
     "w-16 rounded border border-line bg-transparent px-1.5 py-0.5 text-right text-xs outline-none focus:border-accent";
+
+  if (!editando) {
+    return (
+      <tr>
+        <td className="px-5 py-2">
+          <span className="font-medium">{p.concepto || "—"}</span>
+          {p.tipo === "menu" && (p.precioUnidad || p.cantidad) ? (
+            <span className="ml-1 text-xs text-muted">
+              ({Math.round(p.precioUnidad || 0)} € × {Math.round(p.cantidad || 0)})
+            </span>
+          ) : null}
+        </td>
+        <td className="px-5 py-2 text-muted">{p.proveedor || "—"}</td>
+        <td className="px-3 py-2 text-right">{est ? eur(est) : "—"}</td>
+        <td className="px-3 py-2 text-right">{p.pagado ? eur(p.pagado) : "—"}</td>
+        <td className="px-3 py-2">
+          <Progress value={pct} />
+        </td>
+        <td />
+      </tr>
+    );
+  }
 
   return (
     <tr>
@@ -268,11 +306,6 @@ function Fila({ p, tareas }: { p: Partida; tareas: Tarea[] }) {
           onBlur={(e) => updatePartida(p.id, { concepto: e.target.value })}
           className={`${cell} font-medium`}
         />
-        {tareaVinc && (
-          <span className="mt-0.5 block text-[11px] text-accent">
-            🔗 vinculado a la tarea «{tareaVinc.titulo || "tarea"}»
-          </span>
-        )}
       </td>
       <td className="px-5 py-2">
         <input
