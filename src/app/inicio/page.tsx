@@ -15,12 +15,18 @@ export default function InicioPage() {
 
 function Inicio() {
   const params = useSearchParams();
-  const [modo, setModo] = useState<"entrar" | "crear">(
+  const [modo, setModo] = useState<"entrar" | "crear" | "recuperar">(
     params.get("crear") !== null ? "crear" : "entrar",
   );
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const cambiarModo = (m: typeof modo) => {
+    setModo(m);
+    setError(null);
+    setAviso(null);
+  };
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +36,24 @@ function Inicio() {
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
     const nombre = String(data.get("full_name") ?? "").trim();
+
+    if (modo === "recuperar") {
+      if (!email) {
+        setError("Introduce tu email.");
+        return;
+      }
+      setPending(true);
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/recuperar`,
+      });
+      setPending(false);
+      if (error) return setError(traducir(error.message));
+      setAviso(
+        "Si hay una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña. Revisa tu correo.",
+      );
+      return;
+    }
 
     if (!email || !password) {
       setError("Introduce email y contraseña.");
@@ -94,22 +118,42 @@ function Inicio() {
             webodas
           </Link>
           <h2 className="mt-2 font-display text-3xl">
-            {modo === "entrar" ? "Entra en tu panel" : "Crea tu cuenta"}
+            {modo === "entrar"
+              ? "Entra en tu panel"
+              : modo === "crear"
+                ? "Crea tu cuenta"
+                : "Recuperar contraseña"}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            {modo === "entrar" ? "Introduce tus datos para continuar." : "Empieza a organizar tu boda hoy."}
+            {modo === "entrar"
+              ? "Introduce tus datos para continuar."
+              : modo === "crear"
+                ? "Empieza a organizar tu boda hoy."
+                : "Te enviaremos un enlace a tu correo para crear una nueva."}
           </p>
 
           <form onSubmit={onSubmit} className="mt-7 space-y-4">
             {modo === "crear" && <Field label="Nombre" name="full_name" type="text" autoComplete="name" />}
             <Field label="Email" name="email" type="email" autoComplete="email" required />
-            <Field
-              label="Contraseña"
-              name="password"
-              type="password"
-              autoComplete={modo === "crear" ? "new-password" : "current-password"}
-              required
-            />
+            {modo !== "recuperar" && (
+              <Field
+                label="Contraseña"
+                name="password"
+                type="password"
+                autoComplete={modo === "crear" ? "new-password" : "current-password"}
+                required
+              />
+            )}
+
+            {modo === "entrar" && (
+              <button
+                type="button"
+                onClick={() => cambiarModo("recuperar")}
+                className="text-sm text-muted underline hover:text-foreground"
+              >
+                ¿Has olvidado la contraseña?
+              </button>
+            )}
 
             {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
             {aviso && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{aviso}</p>}
@@ -119,22 +163,38 @@ function Inicio() {
               disabled={pending}
               className="w-full rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
             >
-              {pending ? "Un momento…" : modo === "entrar" ? "Entrar" : "Crear cuenta"}
+              {pending
+                ? "Un momento…"
+                : modo === "entrar"
+                  ? "Entrar"
+                  : modo === "crear"
+                    ? "Crear cuenta"
+                    : "Enviar enlace"}
             </button>
           </form>
 
           <p className="mt-6 text-sm text-muted">
-            {modo === "entrar" ? "¿Aún no tienes cuenta? " : "¿Ya tienes cuenta? "}
-            <button
-              onClick={() => {
-                setModo(modo === "entrar" ? "crear" : "entrar");
-                setError(null);
-                setAviso(null);
-              }}
-              className="font-medium text-foreground underline"
-            >
-              {modo === "entrar" ? "Regístrate" : "Entra"}
-            </button>
+            {modo === "recuperar" ? (
+              <>
+                ¿Ya te acuerdas?{" "}
+                <button
+                  onClick={() => cambiarModo("entrar")}
+                  className="font-medium text-foreground underline"
+                >
+                  Volver a entrar
+                </button>
+              </>
+            ) : (
+              <>
+                {modo === "entrar" ? "¿Aún no tienes cuenta? " : "¿Ya tienes cuenta? "}
+                <button
+                  onClick={() => cambiarModo(modo === "entrar" ? "crear" : "entrar")}
+                  className="font-medium text-foreground underline"
+                >
+                  {modo === "entrar" ? "Regístrate" : "Entra"}
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>
