@@ -85,6 +85,7 @@ export const FIELD_SETS: Record<string, Campo[]> = {
     { key: "presupuesto", label: "Presupuesto (€)", tipo: "eur" },
     { key: "notas", label: "Notas", tipo: "textarea" },
   ],
+  invitados: [{ key: "notas", label: "Notas", tipo: "textarea" }],
   simple: [{ key: "notas", label: "Notas", tipo: "textarea" }],
 };
 
@@ -114,6 +115,7 @@ export const TIPOS_TAREA: { value: string; label: string }[] = [
   { value: "compra", label: "Compra" },
   { value: "eleccion", label: "Decisión / elección" },
   { value: "lista", label: "Lista / listado" },
+  { value: "invitados", label: "Invitados (enlaza con la sección)" },
   { value: "viaje", label: "Viaje" },
   { value: "documentos", label: "Documentos / checklist" },
 ];
@@ -185,7 +187,7 @@ const DATA: Record<string, Def[]> = {
     ["Libro de firmas", "2-3 meses antes", "compra"],
   ],
   "Otros de la boda": [
-    ["Lista de invitados (con direcciones)", "12 meses antes", "lista"],
+    ["Lista de invitados", "12 meses antes", "invitados"],
     ["Coche de los novios", "8-9 meses antes", "proveedor"],
     ["Web / mail «Save the date»", "6-7 meses antes", "simple"],
     ["Crear cuenta y email de la boda", "8-9 meses antes", "simple"],

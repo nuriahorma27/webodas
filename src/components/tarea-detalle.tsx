@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { resumenInvitados } from "@/lib/invitados";
 import {
   FIELD_SETS,
   saveDetalle,
@@ -61,6 +63,10 @@ export function TareaDetalleForm({
     setTimeout(() => setGuardado(false), 1800);
   };
 
+  if (tipo === "invitados") {
+    return <FichaInvitados id={id} d={d} upd={upd} persist={persist} />;
+  }
+
   if (esProveedor) {
     return (
       <div className="rounded-lg border border-line bg-surface p-4">
@@ -81,12 +87,18 @@ export function TareaDetalleForm({
             className={inputCls}
           />
         </label>
-        <PartidaLink
-          tareaId={id}
-          conceptoSugerido={
-            ((d.opciones as ProveedorOpcion[]) ?? []).find((o) => o.id === d.contratado)?.nombre ?? ""
-          }
-        />
+        {d.contratado ? (
+          <PartidaLink
+            tareaId={id}
+            conceptoSugerido={
+              ((d.opciones as ProveedorOpcion[]) ?? []).find((o) => o.id === d.contratado)?.nombre ?? ""
+            }
+          />
+        ) : (
+          <p className="mt-3 border-t border-line pt-3 text-[11px] text-muted">
+            Marca la opción contratada para añadirla al presupuesto.
+          </p>
+        )}
       </div>
     );
   }
@@ -163,6 +175,64 @@ const fmt = (c: Campo, v: string) => {
   if (c.tipo === "eur") return `${v} €`;
   return v;
 };
+
+function FichaInvitados({
+  d,
+  upd,
+  persist,
+}: {
+  id: string;
+  d: TareaDetalle;
+  upd: (k: string, v: string) => void;
+  persist: () => void;
+}) {
+  const [res, setRes] = useState({ grupos: 0, personas: 0, confirmadas: 0, pendientes: 0 });
+  useEffect(() => {
+    const sync = () => setRes(resumenInvitados());
+    sync();
+    window.addEventListener("webodas:invitados", sync);
+    window.addEventListener("webodas:rsvp", sync);
+    return () => {
+      window.removeEventListener("webodas:invitados", sync);
+      window.removeEventListener("webodas:rsvp", sync);
+    };
+  }, []);
+
+  return (
+    <div className="rounded-lg border border-line bg-surface p-4">
+      {res.personas > 0 ? (
+        <div className="flex gap-8">
+          <div>
+            <span className="block text-[11px] uppercase tracking-wide text-muted">Invitados</span>
+            <span className="font-display text-2xl">{res.personas}</span>
+          </div>
+          <div>
+            <span className="block text-[11px] uppercase tracking-wide text-muted">Confirmados</span>
+            <span className="font-display text-2xl">{res.confirmadas}</span>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted">Todavía no has añadido invitados.</p>
+      )}
+      <Link
+        href="/panel/gestion/invitados"
+        className="mt-3 inline-block text-sm font-medium text-accent hover:underline"
+      >
+        Gestionar la lista de invitados →
+      </Link>
+      <label className="mt-3 block">
+        <span className="text-xs font-medium text-muted">Notas</span>
+        <textarea
+          rows={2}
+          value={(d.notas as string) ?? ""}
+          onChange={(e) => upd("notas", e.target.value)}
+          onBlur={persist}
+          className={inputCls}
+        />
+      </label>
+    </div>
+  );
+}
 
 function DetalleLectura({ campos, d }: { campos: Campo[]; d: TareaDetalle }) {
   const filas = campos
