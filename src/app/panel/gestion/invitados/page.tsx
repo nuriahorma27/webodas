@@ -45,7 +45,7 @@ import {
 } from "@/lib/invitados";
 
 
-// Celda que muestra el valor como texto (con tooltip si no cabe) y se edita al hacer doble clic.
+// Celda editable. El texto completo se ve al pasar el ratón (tooltip nativo).
 function CeldaTexto({
   value,
   onSave,
@@ -59,35 +59,16 @@ function CeldaTexto({
   muted?: boolean;
   numero?: boolean;
 }) {
-  const [edit, setEdit] = useState(false);
-  if (edit) {
-    return (
-      <input
-        autoFocus
-        inputMode={numero ? "numeric" : undefined}
-        defaultValue={value}
-        onBlur={(e) => {
-          onSave(e.target.value.trim());
-          setEdit(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-          if (e.key === "Escape") setEdit(false);
-        }}
-        className={`w-full rounded-sm bg-white px-2.5 py-2 text-sm outline outline-2 -outline-offset-1 outline-accent ${align}`}
-      />
-    );
-  }
   return (
-    <div
-      onDoubleClick={() => setEdit(true)}
+    <input
+      inputMode={numero ? "numeric" : undefined}
+      defaultValue={value}
       title={value || undefined}
-      className={`max-w-[16rem] cursor-default truncate px-2.5 py-2 text-sm ${align} ${
+      onBlur={(e) => onSave(e.target.value.trim())}
+      className={`w-full min-w-[7rem] truncate bg-transparent px-2.5 py-2 text-sm outline-none focus:bg-accent-soft/30 ${align} ${
         muted ? "text-muted" : ""
       }`}
-    >
-      {value || <span className="text-neutral-300">—</span>}
-    </div>
+    />
   );
 }
 
@@ -104,36 +85,22 @@ function CeldaSelect({
   tone?: string;
   muted?: boolean;
 }) {
-  const [edit, setEdit] = useState(false);
   const lista = value && !opciones.includes(value) ? [...opciones, value] : opciones;
-  if (edit) {
-    return (
-      <select
-        autoFocus
-        defaultValue={value}
-        onChange={(e) => {
-          onSave(e.target.value);
-          setEdit(false);
-        }}
-        onBlur={() => setEdit(false)}
-        className="w-full rounded-sm bg-white px-2 py-2 text-sm outline outline-2 -outline-offset-1 outline-accent"
-      >
-        {lista.map((o) => (
-          <option key={o || "—"} value={o}>
-            {o || "—"}
-          </option>
-        ))}
-      </select>
-    );
-  }
   return (
-    <div
-      onDoubleClick={() => setEdit(true)}
+    <select
+      value={value}
       title={value || undefined}
-      className={`cursor-default truncate px-2.5 py-2 text-sm ${tone || (muted ? "text-muted" : "")}`}
+      onChange={(e) => onSave(e.target.value)}
+      className={`w-full min-w-[6rem] bg-transparent px-2 py-2 text-sm outline-none focus:bg-accent-soft/30 ${
+        tone || (muted ? "text-muted" : "")
+      }`}
     >
-      {value || <span className="text-neutral-300">—</span>}
-    </div>
+      {lista.map((o) => (
+        <option key={o || "—"} value={o}>
+          {o || "—"}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -661,48 +628,8 @@ function AjustesModal({
         </section>
 
         <section className={sec}>
-          <h3 className="text-sm font-semibold">Columnas de la tabla</h3>
-
-          <p className="mt-3 text-xs font-medium text-muted">
-            Columnas fijas <span className="font-normal">(Nombre y Apellido siempre están)</span>
-          </p>
-          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
-            {COLUMNAS_FIJAS.map((f) => (
-              <label key={f.key} className="flex items-center gap-1.5 text-sm">
-                <input type="checkbox" checked={verFija(f.key)} onChange={() => toggleFija(f.key)} />
-                {f.label}
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-4 border-t border-line pt-3">
-            <p className="text-xs font-medium text-muted">Columnas habituales (marca las que quieras)</p>
-            <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto rounded border border-line">
-              {COLUMNAS_SUGERIDAS.map((c) => {
-                const existe = buscarCol(c.nombre);
-                return (
-                  <li key={c.nombre}>
-                    <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={!!existe}
-                        onChange={() =>
-                          existe ? removeColumna(existe.id) : addColumna(c.nombre, c.tipo)
-                        }
-                      />
-                      <span className="flex-1">{c.nombre}</span>
-                      <span className="text-[11px] text-muted">
-                        {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs font-medium text-muted">Columnas añadidas</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Columnas de la tabla</h3>
             <button
               onClick={() => {
                 if (confirm("¿Volver a las columnas estándar? Se pierden las que hayas añadido."))
@@ -714,104 +641,143 @@ function AjustesModal({
             </button>
           </div>
           <p className="mt-1 text-xs text-muted">
-            Reordena con ▲ ▼, quita con 🗑, y asocia cada una a una pregunta del formulario para que
-            la respuesta se guarde sola.
+            Marca las columnas que quieres ver. Ordénalas con ▲ ▼. Asocia una columna a una pregunta
+            del formulario y sus respuestas se guardarán solas.
           </p>
-          {preguntas.length === 0 && (
-            <p className="mt-1 text-[11px] text-muted">
-              Aún no hay preguntas en el formulario (Gestión → Formulario).
-            </p>
-          )}
-          <ul className="mt-2 divide-y divide-line">
+
+          <ul className="mt-3 divide-y divide-line">
+            <li className="flex items-center gap-2 py-2 text-sm text-muted">
+              <input type="checkbox" checked disabled />
+              <span className="flex-1">Nombre</span>
+              <span className="text-[11px]">siempre</span>
+            </li>
+            <li className="flex items-center gap-2 py-2 text-sm text-muted">
+              <input type="checkbox" checked disabled />
+              <span className="flex-1">Apellido</span>
+              <span className="text-[11px]">siempre</span>
+            </li>
+
+            {COLUMNAS_FIJAS.map((f) => (
+              <li key={f.key} className="flex items-center gap-2 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={verFija(f.key)}
+                  onChange={() => toggleFija(f.key)}
+                />
+                <span className="flex-1">{f.label}</span>
+                <span className="text-[11px] text-muted">columna fija</span>
+              </li>
+            ))}
+
             {cols.map((c, i) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-                <span className="flex flex-col text-xs text-muted">
-                  <button
-                    onClick={() => moveColumna(c.id, -1)}
-                    disabled={i === 0}
-                    className="leading-none hover:text-foreground disabled:opacity-20"
-                    title="Subir"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveColumna(c.id, 1)}
-                    disabled={i === cols.length - 1}
-                    className="leading-none hover:text-foreground disabled:opacity-20"
-                    title="Bajar"
-                  >
-                    ▼
-                  </button>
-                </span>
-                <span className="font-medium">{c.nombre}</span>
-                {c.preguntaRsvp ? (
-                  <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
-                    🔒 {TIPO_COLUMNA_LABEL[c.tipo]} (del formulario)
+              <li key={c.id} className="py-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked
+                    onChange={() => removeColumna(c.id)}
+                    title="Quitar de la tabla"
+                  />
+                  <span className="flex flex-col text-xs text-muted">
+                    <button
+                      onClick={() => moveColumna(c.id, -1)}
+                      disabled={i === 0}
+                      className="leading-none hover:text-foreground disabled:opacity-20"
+                      title="Subir"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveColumna(c.id, 1)}
+                      disabled={i === cols.length - 1}
+                      className="leading-none hover:text-foreground disabled:opacity-20"
+                      title="Bajar"
+                    >
+                      ▼
+                    </button>
                   </span>
-                ) : (
-                  <select
-                    value={c.tipo}
-                    onChange={(e) => updateColumna(c.id, { tipo: e.target.value as TipoColumna })}
-                    className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
-                  >
-                    <option value="texto">Texto</option>
-                    <option value="sino">Sí / No</option>
-                    <option value="numero">Número</option>
-                    <option value="lista">Listado</option>
-                  </select>
-                )}
+                  <span className="flex-1 font-medium">{c.nombre}</span>
+                  {c.preguntaRsvp ? (
+                    <span className="rounded bg-neutral-100 px-1.5 text-[11px] text-muted">
+                      {TIPO_COLUMNA_LABEL[c.tipo]}
+                    </span>
+                  ) : (
+                    <select
+                      value={c.tipo}
+                      onChange={(e) => updateColumna(c.id, { tipo: e.target.value as TipoColumna })}
+                      className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                    >
+                      <option value="texto">Texto</option>
+                      <option value="sino">Sí / No</option>
+                      <option value="numero">Número</option>
+                      <option value="lista">Listado</option>
+                    </select>
+                  )}
+                </div>
                 {c.tipo === "lista" && !c.preguntaRsvp && (
                   <input
                     defaultValue={c.opciones ?? ""}
                     onBlur={(e) => updateColumna(c.id, { opciones: e.target.value })}
                     placeholder="Opciones separadas por comas"
-                    className="min-w-[10rem] flex-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] outline-none focus:border-accent"
+                    className="mt-1.5 w-full rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
                   />
                 )}
-                <button
-                  onClick={() => removeColumna(c.id)}
-                  className="ml-auto text-xs text-muted hover:text-red-600"
-                  title="Quitar columna"
-                >
-                  🗑
-                </button>
-                <label className="flex w-full items-center gap-2 text-xs text-muted">
-                  Se rellena con la pregunta del formulario:
-                  <select
-                    value={c.preguntaRsvp ?? ""}
-                    onChange={(e) => {
-                      const pregunta = e.target.value;
-                      if (!pregunta) {
-                        updateColumna(c.id, { preguntaRsvp: "" });
-                      } else {
-                        const fmt = formatoPregunta(pregunta);
-                        updateColumna(c.id, {
-                          preguntaRsvp: pregunta,
-                          tipo: fmt.tipo,
-                          opciones: fmt.opciones,
-                        });
-                      }
-                    }}
-                    className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
-                  >
-                    <option value="">— ninguna</option>
-                    {preguntas.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                    {c.preguntaRsvp && !preguntas.includes(c.preguntaRsvp) && (
-                      <option value={c.preguntaRsvp}>{c.preguntaRsvp}</option>
-                    )}
-                  </select>
-                </label>
+                {preguntas.length > 0 && (
+                  <label className="mt-1.5 flex items-center gap-2 text-xs text-muted">
+                    Se rellena con la pregunta:
+                    <select
+                      value={c.preguntaRsvp ?? ""}
+                      onChange={(e) => {
+                        const pregunta = e.target.value;
+                        if (!pregunta) {
+                          updateColumna(c.id, { preguntaRsvp: "" });
+                        } else {
+                          const fmt = formatoPregunta(pregunta);
+                          updateColumna(c.id, {
+                            preguntaRsvp: pregunta,
+                            tipo: fmt.tipo,
+                            opciones: fmt.opciones,
+                          });
+                        }
+                      }}
+                      className="rounded border border-line bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
+                    >
+                      <option value="">— ninguna</option>
+                      {preguntas.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                      {c.preguntaRsvp && !preguntas.includes(c.preguntaRsvp) && (
+                        <option value={c.preguntaRsvp}>{c.preguntaRsvp}</option>
+                      )}
+                    </select>
+                  </label>
+                )}
+              </li>
+            ))}
+
+            {COLUMNAS_SUGERIDAS.filter((s) => !buscarCol(s.nombre)).map((s) => (
+              <li key={s.nombre} className="flex items-center gap-2 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={false}
+                  onChange={() => addColumna(s.nombre, s.tipo)}
+                  title="Añadir a la tabla"
+                />
+                <span className="flex-1">{s.nombre}</span>
+                <span className="text-[11px] text-muted">
+                  {s.tipo === "sino" ? "sí/no" : s.tipo === "numero" ? "número" : "texto"}
+                </span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-4 border-t border-line pt-3">
-            <p className="text-xs font-medium text-muted">Crear una columna a medida</p>
-            <div className="mt-1.5 flex flex-wrap gap-2">
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs font-medium text-accent">
+              + Crear una columna a medida
+            </summary>
+            <div className="mt-2 flex flex-wrap gap-2">
               <input
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
@@ -844,7 +810,7 @@ function AjustesModal({
                 className="mt-2 w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent"
               />
             )}
-          </div>
+          </details>
         </section>
 
         <button

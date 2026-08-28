@@ -33,18 +33,20 @@ export default function FormularioPage() {
 
   const est = cfg.estandar;
   const item = (k: keyof typeof est, texto: string, nota?: string) => (
-    <label className="flex items-start gap-2.5 py-1.5 text-sm">
-      <input
-        type="checkbox"
-        checked={est[k]}
-        onChange={(e) => setEstandar({ [k]: e.target.checked })}
-        className="mt-0.5"
-      />
-      <span>
-        {texto}
-        {nota && <span className="block text-xs text-muted">{nota}</span>}
-      </span>
-    </label>
+    <li>
+      <label className="flex items-start gap-2.5 py-2 text-sm">
+        <input
+          type="checkbox"
+          checked={est[k]}
+          onChange={(e) => setEstandar({ [k]: e.target.checked })}
+          className="mt-0.5"
+        />
+        <span>
+          {texto}
+          {nota && <span className="block text-xs text-muted">{nota}</span>}
+        </span>
+      </label>
+    </li>
   );
 
   return (
@@ -94,50 +96,28 @@ export default function FormularioPage() {
         />
       </Card>
 
-      <Card>
-        <h3 className="font-display text-lg">Datos estándar</h3>
-        <p className="mt-0.5 text-sm text-muted">
-          Marca qué datos básicos se piden. El nombre siempre se pide.
+      <Card className="space-y-3">
+        <h3 className="font-display text-lg">Preguntas del formulario</h3>
+        <p className="text-sm text-muted">
+          Marca los datos básicos que quieres pedir y, debajo, añade tus propias preguntas.
         </p>
-        <div className="mt-2 divide-y divide-line">
-          <label className="flex items-center gap-2.5 py-1.5 text-sm text-muted">
-            <input type="checkbox" checked disabled className="mt-0.5" />
+
+        <ul className="divide-y divide-line">
+          <li className="flex items-center gap-2.5 py-2 text-sm text-muted">
+            <input type="checkbox" checked disabled />
             Nombre <span className="text-xs">(siempre)</span>
-          </label>
+          </li>
           {item("apellidos", "Apellidos")}
           {item("email", "Email")}
           {item("asiste", "¿Asistirás? (Sí / No)")}
           {item(
             "acompanante",
             "¿Vienes con acompañante? (Sí / No)",
-            "Si responde «Sí», se piden el nombre y los apellidos del acompañante.",
+            "Si responde «Sí», se le piden nombre y apellidos del acompañante.",
           )}
-        </div>
-      </Card>
+        </ul>
 
-      <Card className="space-y-3">
-        <h3 className="font-display text-lg">Preguntas del formulario</h3>
-
-        <div className="rounded-lg border border-dashed border-line p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Del pack estándar</p>
-          <ul className="mt-1.5 space-y-1 text-sm">
-            <li className="text-muted">Nombre</li>
-            {est.apellidos && <li className="text-muted">Apellidos</li>}
-            {est.email && <li className="text-muted">Email</li>}
-            {est.asiste && <li className="text-muted">¿Asistirás? · Sí / No</li>}
-            {est.acompanante && (
-              <li className="text-muted">
-                ¿Vienes con acompañante? · Sí / No
-                <span className="block text-xs">
-                  → si «Sí»: Nombre y apellidos del acompañante
-                </span>
-              </li>
-            )}
-          </ul>
-          <p className="mt-1.5 text-xs text-muted">Se activan y desactivan arriba, en «Datos estándar».</p>
-        </div>
-
-        <p className="text-xs font-medium uppercase tracking-wide text-muted">Preguntas propias</p>
+        <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted">Tus preguntas</p>
         {cfg.preguntas.length === 0 && (
           <p className="text-sm text-muted">Aún no has añadido ninguna pregunta.</p>
         )}
