@@ -123,27 +123,41 @@ export default function InvitadosPage() {
         <CampoBoda campo="invitadosAprox" label="Invitados aproximados" />
       </div>
 
-      <div className="flex gap-2 text-sm">
+      <div className="grid gap-2 sm:grid-cols-2">
         <button
           onClick={() => setVista("gestion")}
-          className={`rounded-full px-3 py-1 ${
-            vista === "gestion" ? "bg-foreground text-white" : "border border-line text-muted"
+          className={`rounded-xl border px-4 py-3 text-left transition ${
+            vista === "gestion"
+              ? "border-foreground bg-foreground text-white"
+              : "border-line bg-surface hover:border-accent"
           }`}
         >
-          Mi lista de gestión
+          <span className="block font-display text-base">Mi lista de invitados</span>
+          <span className={`block text-xs ${vista === "gestion" ? "text-white/70" : "text-muted"}`}>
+            Tu lista de trabajo: quién viene, mesas, detalles, regalos…
+          </span>
         </button>
         <button
           onClick={() => setVista("respuestas")}
-          className={`rounded-full px-3 py-1 ${
-            vista === "respuestas" ? "bg-foreground text-white" : "border border-line text-muted"
+          className={`rounded-xl border px-4 py-3 text-left transition ${
+            vista === "respuestas"
+              ? "border-foreground bg-foreground text-white"
+              : "border-line bg-surface hover:border-accent"
           }`}
         >
-          Respuestas del formulario
-          {pendientesRespuesta > 0 && (
-            <span className="ml-1.5 rounded-full bg-accent px-1.5 text-xs text-white">
-              {pendientesRespuesta}
-            </span>
-          )}
+          <span className="flex items-center gap-2 font-display text-base">
+            Respuestas del formulario
+            {pendientesRespuesta > 0 && (
+              <span className="rounded-full bg-accent px-1.5 text-xs font-normal text-white">
+                {pendientesRespuesta} sin revisar
+              </span>
+            )}
+          </span>
+          <span
+            className={`block text-xs ${vista === "respuestas" ? "text-white/70" : "text-muted"}`}
+          >
+            Lo que han rellenado tus invitados en la web
+          </span>
         </button>
       </div>
 
