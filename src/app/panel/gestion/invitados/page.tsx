@@ -173,7 +173,7 @@ export default function InvitadosPage() {
         <VistaRespuestas respuestas={respuestas} invitados={inv} columnas={cols} />
       ) : (
         <>
-      <div className="sticky top-0 z-30 -my-2 grid gap-3 bg-background py-2 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Personas" value={String(r.personas)} sub={`${r.adultos} adultos · ${r.ninos} niños`} />
         <Stat label="Confirmadas" value={String(r.confirmadas)} tone="positive" />
         <Stat label="Pendientes" value={String(r.pendientes)} />
@@ -201,20 +201,26 @@ export default function InvitadosPage() {
       </div>
 
       {ajustes && (
-        <Card className="space-y-5">
-          <ListaEditable
-            titulo="Grupos"
-            items={grupos}
-            onChange={saveGrupos}
-            placeholder="Nuevo grupo (p. ej. Familia de la novia)"
-          />
-          <ListaEditable
-            titulo="Subgrupos"
-            items={subgrupos}
-            onChange={saveSubgrupos}
-            placeholder="Nuevo subgrupo (p. ej. Tíos, Primos, Universidad)"
-          />
-          <div>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <ListaEditable
+              titulo="Grupos"
+              descripcion="Bloques grandes de invitados (familia de la novia, amigos del novio…)."
+              items={grupos}
+              onChange={saveGrupos}
+              placeholder="Nuevo grupo (p. ej. Familia de la novia)"
+            />
+          </div>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <ListaEditable
+              titulo="Subgrupos"
+              descripcion="Subdivisiones dentro de un grupo (tíos, primos, universidad…)."
+              items={subgrupos}
+              onChange={saveSubgrupos}
+              placeholder="Nuevo subgrupo (p. ej. Tíos, Primos, Universidad)"
+            />
+          </div>
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">Columnas</h4>
               <button
@@ -324,19 +330,19 @@ export default function InvitadosPage() {
               + Añadir columna
             </button>
           </div>
-        </Card>
+        </div>
       )}
 
       <Card className="p-0">
-        <div className="overflow-x-auto">
+        <div className="max-h-[70vh] overflow-auto">
           <table className="w-full min-w-max border-collapse text-sm">
-            <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-              <tr className="whitespace-nowrap">
-                <th className="sticky left-0 z-20 w-36 bg-surface px-2.5 py-2.5">Nombre</th>
-                <th className="sticky left-36 z-20 w-36 bg-surface px-2.5 py-2.5">Apellido</th>
+            <thead className="text-left text-xs uppercase tracking-wider text-muted">
+              <tr className="whitespace-nowrap [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-line [&>th]:bg-surface">
+                <th className="!z-20 left-0 w-36 px-2.5 py-2.5">Nombre</th>
+                <th className="!z-20 left-36 w-36 px-2.5 py-2.5">Apellido</th>
                 <th className="px-2.5 py-2.5">¿Viene?</th>
-                <th className="px-2.5 py-2.5">Grupo</th>
-                <th className="px-2.5 py-2.5">Subgrupo</th>
+                <th className="bg-emerald-50/60 px-2.5 py-2.5">Grupo</th>
+                <th className="bg-emerald-50/60 px-2.5 py-2.5">Subgrupo</th>
                 <th className="px-2.5 py-2.5">Adulto/Niño</th>
                 {cols.map((c) => (
                   <th key={c.id} className="px-2.5 py-2.5">
@@ -395,7 +401,7 @@ export default function InvitadosPage() {
                       ))}
                     </select>
                   </td>
-                  <td className="px-0">
+                  <td className="border-l border-line bg-emerald-50/40 px-0">
                     <select
                       value={i.grupo}
                       onChange={(e) => updateInvitado(i.id, { grupo: e.target.value })}
@@ -412,7 +418,7 @@ export default function InvitadosPage() {
                       )}
                     </select>
                   </td>
-                  <td className="px-0">
+                  <td className="border-r border-line bg-emerald-50/40 px-0">
                     <select
                       value={i.subgrupo}
                       onChange={(e) => updateInvitado(i.id, { subgrupo: e.target.value })}
@@ -549,12 +555,10 @@ export default function InvitadosPage() {
 
       {modalCol && (
         <ModalColumna
-          existentes={cols.map((c) => c.nombre.toLowerCase())}
+          columnas={cols}
           onClose={() => setModalCol(false)}
-          onAdd={(nombre, tipo, opciones) => {
-            addColumna(nombre, tipo, opciones);
-            setModalCol(false);
-          }}
+          onAdd={(nombre, tipo, opciones) => addColumna(nombre, tipo, opciones)}
+          onRemove={(id) => removeColumna(id)}
         />
       )}
     </div>
@@ -699,20 +703,21 @@ function RespuestaCard({
 }
 
 function ModalColumna({
-  existentes,
+  columnas,
   onClose,
   onAdd,
+  onRemove,
 }: {
-  existentes: string[];
+  columnas: ColumnaInvitado[];
   onClose: () => void;
   onAdd: (nombre: string, tipo: TipoColumna, opciones?: string) => void;
+  onRemove: (id: string) => void;
 }) {
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoColumna>("texto");
   const [opciones, setOpciones] = useState("");
-  const disponibles = COLUMNAS_SUGERIDAS.filter(
-    (c) => !existentes.includes(c.nombre.toLowerCase()),
-  );
+  const buscar = (n: string) =>
+    columnas.find((c) => c.nombre.toLowerCase() === n.toLowerCase());
   const crear = () => {
     if (nombre.trim()) onAdd(nombre.trim(), tipo, tipo === "lista" ? opciones : undefined);
   };
@@ -726,24 +731,33 @@ function ModalColumna({
         className="w-full max-w-sm rounded-xl bg-surface p-5 shadow-xl"
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg">Añadir columna</h3>
+          <h3 className="font-display text-lg">Columnas habituales</h3>
           <button onClick={onClose} className="text-xl text-neutral-400 hover:text-foreground">
             ×
           </button>
         </div>
+        <p className="mt-1 text-xs text-muted">Marca las que quieras tener en tu lista.</p>
 
-        <p className="mt-2 text-xs text-muted">Habituales:</p>
-        <div className="mt-1.5 flex flex-wrap gap-2">
-          {disponibles.map((c) => (
-            <button
-              key={c.nombre}
-              onClick={() => onAdd(c.nombre, c.tipo)}
-              className="rounded-full border border-line px-2.5 py-1 text-xs hover:border-accent hover:text-accent"
-            >
-              {c.nombre}
-            </button>
-          ))}
-        </div>
+        <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto">
+          {COLUMNAS_SUGERIDAS.map((c) => {
+            const existe = buscar(c.nombre);
+            return (
+              <li key={c.nombre}>
+                <label className="flex cursor-pointer items-center gap-2 py-1.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={!!existe}
+                    onChange={() => (existe ? onRemove(existe.id) : onAdd(c.nombre, c.tipo))}
+                  />
+                  <span className="flex-1">{c.nombre}</span>
+                  <span className="text-[11px] text-muted">
+                    {c.tipo === "sino" ? "sí/no" : c.tipo === "numero" ? "número" : "texto"}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
 
         <div className="mt-4 border-t border-line pt-3">
           <p className="text-xs font-medium text-muted">O crea una a medida:</p>
@@ -787,11 +801,13 @@ function ModalColumna({
 
 function ListaEditable({
   titulo,
+  descripcion,
   items,
   onChange,
   placeholder,
 }: {
   titulo: string;
+  descripcion?: string;
   items: string[];
   onChange: (list: string[]) => void;
   placeholder: string;
@@ -805,6 +821,7 @@ function ListaEditable({
   return (
     <div>
       <h4 className="text-sm font-semibold">{titulo}</h4>
+      {descripcion && <p className="text-xs text-muted">{descripcion}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
         {items.length === 0 && <span className="text-xs text-muted">Ninguno todavía.</span>}
         {items.map((it) => (
