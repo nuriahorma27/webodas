@@ -161,11 +161,63 @@ export default function FormularioPage() {
       </Card>
 
       <Card>
-        <p className="text-sm text-muted">
-          Para ver el formulario tal y como lo verán tus invitados, ábrelo desde el botón «Ver web»
-          del editor, o desde la propia web publicada.
-        </p>
+        <h3 className="font-display text-lg">Vista previa</h3>
+        <p className="mt-0.5 text-sm text-muted">Así queda el formulario que verán tus invitados.</p>
+        <div className="mt-3">
+          <Preview cfg={cfg} />
+        </div>
       </Card>
+    </div>
+  );
+}
+
+function Preview({ cfg }: { cfg: FormularioConfig }) {
+  const est = cfg.estandar;
+  const Campo = ({ label, tipo = "texto", options = "" }: { label: string; tipo?: string; options?: string }) => {
+    const opts = options.split(",").map((o) => o.trim()).filter(Boolean);
+    return (
+      <div>
+        <span className="text-xs font-medium text-foreground">{label}</span>
+        <div className="mt-1 rounded border border-line bg-neutral-50 px-2 py-1.5 text-sm text-muted">
+          {tipo === "si-no"
+            ? "Sí  /  No"
+            : tipo === "opcion"
+              ? opts.length
+                ? opts.join(" · ")
+                : "Elige una opción…"
+              : tipo === "numero"
+                ? "0"
+                : " "}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="mx-auto max-w-sm rounded-xl border border-line bg-surface p-5 shadow-sm">
+      <p className="font-display text-lg">Confirmar asistencia</p>
+      {cfg.intro && <p className="mt-1 text-sm text-muted">{cfg.intro}</p>}
+      <div className="mt-3 space-y-3">
+        <Campo label="Nombre" />
+        {est.apellidos && <Campo label="Apellidos" />}
+        {est.email && <Campo label="Email" />}
+        {est.asiste && <Campo label="¿Asistirás?" tipo="si-no" />}
+        {est.acompanante && <Campo label="¿Vienes con acompañante?" tipo="si-no" />}
+        {cfg.preguntas
+          .filter((q) => q.label)
+          .map((q) => (
+            <div key={q.id}>
+              <Campo label={q.label} tipo={q.qtype} options={q.options} />
+              {q.condLabel && (
+                <p className="mt-0.5 text-[11px] text-accent">
+                  Solo aparece si «{q.condLabel}» = {q.condValue || "…"}
+                </p>
+              )}
+            </div>
+          ))}
+      </div>
+      <div className="mt-4 rounded-md bg-foreground py-2 text-center text-sm font-medium text-white">
+        Enviar
+      </div>
     </div>
   );
 }
