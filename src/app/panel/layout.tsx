@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Salir } from "@/components/salir";
 import { PerfilBoda } from "@/components/perfil-boda";
 import { PanelNav } from "@/components/panel-nav";
+import { Migas } from "@/components/migas";
 import { CloudSync } from "@/components/cloud-sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,7 +29,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
+        <Migas />
+        {children}
+      </main>
     </div>
   );
 }
