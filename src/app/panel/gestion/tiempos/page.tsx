@@ -152,39 +152,43 @@ function Row({
         estado === "hecho" ? "bg-emerald-50" : estado === "proceso" ? "bg-amber-50" : ""
       }`}
     >
-      <div className="flex items-start gap-3 px-4 py-2.5">
-        <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
-        <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
-          <p
-            className={
-              estado === "hecho"
-                ? "font-medium text-emerald-900"
-                : estado === "proceso"
-                  ? "font-medium text-amber-900"
-                  : ""
-            }
+      <div className="px-4 py-2.5">
+        <div className="flex items-start gap-3">
+          <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
+          <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
+            <p
+              className={
+                estado === "hecho"
+                  ? "font-medium text-emerald-900"
+                  : estado === "proceso"
+                    ? "font-medium text-amber-900"
+                    : ""
+              }
+            >
+              {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
+              <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
+            </p>
+            {(t.responsable || meta) && (
+              <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                {t.responsable && (
+                  <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
+                    {t.responsable}
+                  </span>
+                )}
+                {meta && <span className="text-muted">{meta}</span>}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={onToggleEdit}
+            title="Editar tarea"
+            className={`shrink-0 rounded px-1.5 text-base leading-none ${
+              editar ? "text-accent" : "text-muted hover:text-foreground"
+            }`}
           >
-            {t.titulo || <span className="text-muted">Tarea sin nombre</span>}
-            <span className="ml-1 text-muted">{abierto ? "▾" : "›"}</span>
-          </p>
-        </button>
-        <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5 text-xs">
-          {t.responsable && (
-            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
-              {t.responsable}
-            </span>
-          )}
-          {meta && <span className="text-muted">{meta}</span>}
+            ⋯
+          </button>
         </div>
-        <button
-          onClick={onToggleEdit}
-          title="Editar tarea"
-          className={`shrink-0 rounded px-1.5 text-base leading-none ${
-            editar ? "text-accent" : "text-muted hover:text-foreground"
-          }`}
-        >
-          ⋯
-        </button>
       </div>
 
       {abierto && (
