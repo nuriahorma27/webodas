@@ -45,7 +45,7 @@ export function EditarEnlace({
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-1.5 text-sm">
-        <span className="text-muted">…/w/</span>
+        <span className="text-muted">…/</span>
         <input
           value={valor}
           onChange={(e) => setValor(e.target.value)}

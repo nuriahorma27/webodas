@@ -94,7 +94,7 @@ export default function WebsPage() {
               <div className="flex items-center gap-4">
                 {slug && (
                   <a
-                    href={`/w/${slug}`}
+                    href={`/${slug}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-sm text-muted underline"
@@ -109,7 +109,7 @@ export default function WebsPage() {
             </div>
             {slug ? (
               <div className="space-y-2">
-                <CompartirEnlace path={`/w/${slug}`} label="Enlace para tus invitados" />
+                <CompartirEnlace path={`/${slug}`} label="Enlace para tus invitados" />
                 <EditarEnlace slug={slug} onChange={setSlug} />
               </div>
             ) : (
@@ -156,7 +156,7 @@ export default function WebsPage() {
             <div className="flex items-center gap-4">
               {hasStd && slug && (
                 <a
-                  href={`/std/${slug}`}
+                  href={`/${slug}/save-the-date`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-sm text-muted underline"
@@ -170,7 +170,7 @@ export default function WebsPage() {
             </div>
           </div>
           {stdPublicada && slug && (
-            <CompartirEnlace path={`/std/${slug}`} label="Enlace para tus invitados" />
+            <CompartirEnlace path={`/${slug}/save-the-date`} label="Enlace para tus invitados" />
           )}
         </Card>
       </div>

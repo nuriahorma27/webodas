@@ -1856,11 +1856,12 @@ export const puckConfig: Config<Props, RootProps> = {
 
             {buttonLabel && (
               <a
-                href={`/lista/${
-                  (typeof window !== "undefined" &&
-                    window.location.pathname.match(/^\/w\/([^/]+)/)?.[1]) ||
-                  "ana-y-leo"
-                }`}
+                href={(() => {
+                  const p = typeof window !== "undefined" ? window.location.pathname : "";
+                  const m = p.match(/^\/(?:w\/)?([^/]+)/);
+                  const s = m && m[1] !== "lista" ? m[1] : "ana-y-leo";
+                  return s === "ana-y-leo" ? "/lista/ana-y-leo" : `/${s}/regalos`;
+                })()}
                 target="_blank"
                 rel="noreferrer"
                 style={{
