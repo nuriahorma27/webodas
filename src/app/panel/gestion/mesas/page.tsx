@@ -322,10 +322,10 @@ function imprimirMesas(
       const filas = m.invitados
         .map((id, i) => {
           const inv = nombreDe(id);
-          return `<li><span class="li-n">${i + 1}</span><span class="li-nom">${esc(nombreCompleto(inv))}</span><span class="ini">${esc(iniciales(inv))}</span></li>`;
+          return `<li><span class="li-n">${i + 1}.</span> ${esc(nombreCompleto(inv))} <span class="ini">${esc(iniciales(inv))}</span></li>`;
         })
         .join("");
-      const dos = m.invitados.length > 9 ? " dos" : "";
+      const dos = m.invitados.length > 6 ? " dos" : "";
       return `<section class="mesa">
         <div class="mhead">
           ${m.presidencial ? `<div class="mpres">★ Mesa presidencial</div>` : ""}
@@ -366,11 +366,10 @@ function imprimirMesas(
     .mnom { font-family:'Cormorant Garamond',serif; font-size: 15pt; color:#8a6d3b; margin-top:1mm; }
     .dibujo { margin: 0 0 6mm; }
     ol { list-style:none; padding:0; margin: 0 auto; max-width: 150mm; text-align:left; }
-    ol.dos { column-count: 2; column-gap: 12mm; max-width: 170mm; }
+    ol.dos { column-count: 2; column-gap: 14mm; max-width: 175mm; }
     li { font-size: 12pt; padding: 1.6mm 0; border-bottom: 1px solid #ece5d6;
-      break-inside: avoid; display:flex; align-items:baseline; gap: 3mm; }
-    li .li-n { width: 6mm; color:#8a6d3b; font-family:'Cormorant Garamond',serif; font-weight:600; }
-    li .li-nom { flex:1; }
+      break-inside: avoid; }
+    li .li-n { color:#8a6d3b; font-family:'Cormorant Garamond',serif; font-weight:600; }
     li .ini { color:#b0a894; font-size: 9pt; letter-spacing:.08em; }
     li.vacia { color:#a29a89; border:none; font-style:italic; }
   </style></head><body>${portada}${paginas}
