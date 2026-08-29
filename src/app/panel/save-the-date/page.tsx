@@ -86,7 +86,16 @@ export default function SaveTheDatePage() {
     <div className="space-y-6">
       <PageTitle eyebrow="Servicio" title="Save the date" />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {/* En móvil no se edita: hace falta pantalla grande para colocar la imagen. */}
+      <div className="rounded-xl border border-line bg-surface p-6 text-center lg:hidden">
+        <p className="font-display text-xl">Diséñalo desde el ordenador</p>
+        <p className="mx-auto mt-1 max-w-xs text-sm text-muted">
+          El editor del Save the date necesita una pantalla más grande para colocar la imagen y el
+          texto. El enlace para compartir lo tienes en <strong>Webs</strong>.
+        </p>
+      </div>
+
+      <div className="hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Controles */}
         <div className="space-y-4">
           <Card className="space-y-3">

@@ -116,6 +116,128 @@ function CeldaSelect({
   );
 }
 
+// Tarjeta de un invitado para móvil (equivalente a una fila de la tabla).
+function InvitadoCard({
+  inv: i,
+  cols,
+  grupos,
+  subgrupos,
+  verFija,
+  onBorrar,
+}: {
+  inv: Invitado;
+  cols: ColumnaInvitado[];
+  grupos: string[];
+  subgrupos: string[];
+  verFija: (k: string) => boolean;
+  onBorrar: () => void;
+}) {
+  const Campo = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex items-center justify-between gap-2 border-t border-line/70 py-1.5">
+      <span className="shrink-0 text-xs text-muted">{label}</span>
+      <div className="min-w-0 flex-1 text-right">{children}</div>
+    </div>
+  );
+  return (
+    <Card className="space-y-1 p-3">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <CeldaTexto
+            value={i.nombre}
+            onSave={(v) => updateInvitado(i.id, { nombre: v })}
+            align="font-medium !min-w-0"
+          />
+          <CeldaTexto
+            value={i.apellido}
+            onSave={(v) => updateInvitado(i.id, { apellido: v })}
+            align="!min-w-0 text-muted"
+          />
+        </div>
+        <button
+          onClick={onBorrar}
+          className="shrink-0 rounded p-1.5 text-muted hover:bg-red-50 hover:text-red-600"
+          aria-label="Eliminar invitado"
+        >
+          🗑
+        </button>
+      </div>
+      {verFija("viene") && (
+        <Campo label="¿Viene?">
+          <CeldaSelect
+            value={i.viene}
+            opciones={[...VIENE_OPCIONES]}
+            onSave={(v) => updateInvitado(i.id, { viene: v as Viene })}
+            tone={
+              i.viene === "Sí"
+                ? "text-emerald-700"
+                : i.viene === "No"
+                  ? "text-[#7b2233]"
+                  : "text-amber-700"
+            }
+          />
+        </Campo>
+      )}
+      {verFija("grupo") && (
+        <Campo label="Grupo">
+          <CeldaSelect
+            value={i.grupo}
+            opciones={["", ...grupos]}
+            onSave={(v) => updateInvitado(i.id, { grupo: v })}
+            muted
+          />
+        </Campo>
+      )}
+      {verFija("subgrupo") && (
+        <Campo label="Subgrupo">
+          <CeldaSelect
+            value={i.subgrupo}
+            opciones={["", ...subgrupos]}
+            onSave={(v) => updateInvitado(i.id, { subgrupo: v })}
+            muted
+          />
+        </Campo>
+      )}
+      {verFija("tipo") && (
+        <Campo label="Adulto / Niño">
+          <CeldaSelect
+            value={i.tipo}
+            opciones={[...TIPO_OPCIONES]}
+            onSave={(v) => updateInvitado(i.id, { tipo: v as TipoInvitado })}
+            muted
+          />
+        </Campo>
+      )}
+      {cols.map((c) => (
+        <Campo key={c.id} label={c.nombre}>
+          {c.tipo === "sino" ? (
+            <CeldaSelect
+              value={i.extra[c.id] ?? ""}
+              opciones={["", "Sí", "No"]}
+              onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+              muted
+            />
+          ) : c.tipo === "lista" ? (
+            <CeldaSelect
+              value={i.extra[c.id] ?? ""}
+              opciones={["", ...(c.opciones ?? "").split(",").map((o) => o.trim()).filter(Boolean)]}
+              onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+              muted
+            />
+          ) : (
+            <CeldaTexto
+              value={i.extra[c.id] ?? ""}
+              onSave={(v) => updateInvitadoExtra(i.id, c.id, v)}
+              muted
+              numero={c.tipo === "numero"}
+              align="!min-w-0 text-right"
+            />
+          )}
+        </Campo>
+      ))}
+    </Card>
+  );
+}
+
 function DescargaMenu({
   opciones,
 }: {
@@ -311,7 +433,33 @@ export default function InvitadosPage() {
 
       <RecuentoBus inv={inv} cols={cols} />
 
-      <Card className="p-0">
+      {/* Móvil: una tarjeta por invitado */}
+      <div className="space-y-3 md:hidden">
+        {filas.length === 0 && (
+          <Card className="text-center text-sm text-muted">
+            {filtro ? "Nadie en este estado." : "Aún no has añadido invitados."}
+          </Card>
+        )}
+        {filas.map((i) => (
+          <InvitadoCard
+            key={i.id}
+            inv={i}
+            cols={cols}
+            grupos={grupos}
+            subgrupos={subgrupos}
+            verFija={verFija}
+            onBorrar={() => setPorBorrar(i)}
+          />
+        ))}
+        <button
+          onClick={() => addInvitado()}
+          className="w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-accent"
+        >
+          + Añadir invitado
+        </button>
+      </div>
+
+      <Card className="hidden p-0 md:block">
         <div className="max-h-[70vh] overflow-auto">
           <table className="w-full min-w-max border-collapse text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted">
