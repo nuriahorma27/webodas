@@ -57,11 +57,11 @@ export default function ProveedoresPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
               <tr>
-                <th className="px-5 py-2.5">Proveedor</th>
-                <th className="px-5 py-2.5">Categoría</th>
-                <th className="px-5 py-2.5">Contacto</th>
-                <th className="px-3 py-2.5 text-right">Importe</th>
-                <th className="px-5 py-2.5">Estado</th>
+                <th className="px-3 py-2.5 sm:px-5">Proveedor</th>
+                <th className="hidden px-5 py-2.5 md:table-cell">Categoría</th>
+                <th className="hidden px-5 py-2.5 lg:table-cell">Contacto</th>
+                <th className="px-2 py-2.5 text-right sm:px-3">Importe</th>
+                <th className="px-3 py-2.5 sm:px-5">Estado</th>
                 <th className="w-8 px-3 py-2.5" />
               </tr>
             </thead>
@@ -108,8 +108,8 @@ function FilaAuto({ p }: { p: Proveedor }) {
           desde: {p.desdeTarea}
         </Link>
       </td>
-      <td className="px-5 py-3 text-muted">{p.categoria}</td>
-      <td className="px-5 py-3 text-muted">{p.contacto || "—"}</td>
+      <td className="hidden px-5 py-3 text-muted md:table-cell">{p.categoria}</td>
+      <td className="hidden px-5 py-3 text-muted lg:table-cell">{p.contacto || "—"}</td>
       <td className="px-3 py-3 text-right">{p.importe ? eur(p.importe) : "—"}</td>
       <td className="px-5 py-3">
         <Badge tone="green">Contratado</Badge>
@@ -130,7 +130,7 @@ function FilaManual({ p }: { p: Proveedor }) {
           className={`${cell} font-medium`}
         />
       </td>
-      <td className="px-5 py-3">
+      <td className="hidden px-5 py-3 md:table-cell">
         <input
           defaultValue={p.categoria}
           placeholder="—"
@@ -138,7 +138,7 @@ function FilaManual({ p }: { p: Proveedor }) {
           className={`${cell} text-muted`}
         />
       </td>
-      <td className="px-5 py-3">
+      <td className="hidden px-5 py-3 lg:table-cell">
         <input
           defaultValue={p.contacto}
           placeholder="tel / email"

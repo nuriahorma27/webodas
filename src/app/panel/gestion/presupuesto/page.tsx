@@ -190,12 +190,12 @@ export default function PresupuestoPage() {
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs uppercase tracking-wider text-muted">
                     <tr>
-                      <th className="px-5 py-2 font-medium">Concepto</th>
-                      <th className="px-5 py-2 font-medium">Proveedor</th>
-                      <th className="px-3 py-2 text-right font-medium">Estimado</th>
-                      <th className="px-3 py-2 text-right font-medium">Pagado</th>
-                      <th className="w-32 px-3 py-2 font-medium">Avance</th>
-                      <th className="w-8 px-3 py-2" />
+                      <th className="px-3 py-2 font-medium sm:px-5">Concepto</th>
+                      <th className="hidden px-5 py-2 font-medium md:table-cell">Proveedor</th>
+                      <th className="px-2 py-2 text-right font-medium sm:px-3">Estimado</th>
+                      <th className="px-2 py-2 text-right font-medium sm:px-3">Pagado</th>
+                      <th className="hidden w-32 px-3 py-2 font-medium lg:table-cell">Avance</th>
+                      <th className="w-8 px-2 py-2 sm:px-3" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -286,10 +286,10 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
             </span>
           ) : null}
         </td>
-        <td className="px-5 py-2 text-muted">{p.proveedor || "—"}</td>
-        <td className="px-3 py-2 text-right">{est ? eur(est) : "—"}</td>
-        <td className="px-3 py-2 text-right">{p.pagado ? eur(p.pagado) : "—"}</td>
-        <td className="px-3 py-2">
+        <td className="hidden px-5 py-2 text-muted md:table-cell">{p.proveedor || "—"}</td>
+        <td className="px-2 py-2 text-right sm:px-3">{est ? eur(est) : "—"}</td>
+        <td className="px-2 py-2 text-right sm:px-3">{p.pagado ? eur(p.pagado) : "—"}</td>
+        <td className="hidden px-3 py-2 lg:table-cell">
           <Progress value={pct} />
         </td>
         <td />
@@ -299,7 +299,7 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
 
   return (
     <tr>
-      <td className="px-5 py-2">
+      <td className="px-3 py-2 sm:px-5">
         <input
           defaultValue={p.concepto}
           placeholder="Concepto"
@@ -307,7 +307,7 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
           className={`${cell} font-medium`}
         />
       </td>
-      <td className="px-5 py-2">
+      <td className="hidden px-5 py-2 md:table-cell">
         <input
           defaultValue={p.proveedor}
           placeholder="—"
@@ -315,7 +315,7 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
           className={`${cell} text-muted`}
         />
       </td>
-      <td className="px-3 py-2 text-right align-middle">
+      <td className="px-2 py-2 text-right align-middle sm:px-3">
         {p.tipo === "menu" ? (
           <div className="flex items-center justify-end gap-1 whitespace-nowrap">
             <input
@@ -348,7 +348,7 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
           />
         )}
       </td>
-      <td className="px-3 py-2 text-right">
+      <td className="px-2 py-2 text-right sm:px-3">
         <input
           type="text"
           inputMode="decimal"
@@ -358,10 +358,10 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
           className={`${cell} text-right`}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="hidden px-3 py-2 lg:table-cell">
         <Progress value={pct} />
       </td>
-      <td className="px-3 py-2 text-right">
+      <td className="px-2 py-2 text-right sm:px-3">
         <button
           onClick={() => removePartida(p.id)}
           className="text-muted hover:text-red-600"
