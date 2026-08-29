@@ -533,6 +533,16 @@ function MesaCard({
               · {mesa.invitados.length} sentados
             </span>
           </p>
+          {mesa.tipo === "rectangular" && (
+            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+              <input
+                type="checkbox"
+                checked={Boolean(mesa.cabecera)}
+                onChange={(e) => onCabecera(e.target.checked)}
+              />
+              Con cabecera (una silla en cada punta)
+            </label>
+          )}
         </div>
         <button
           onClick={onBorrar}
@@ -544,13 +554,8 @@ function MesaCard({
       </div>
 
       {modo === "asignado" && (
-        <div className="my-3 flex justify-center overflow-x-auto">
-          <MesaDibujo
-            mesa={mesa}
-            nombreDe={nombreDe}
-            onSilla={abrirPicker}
-            onCabecera={onCabecera}
-          />
+        <div className="my-3">
+          <MesaDibujo mesa={mesa} nombreDe={nombreDe} onSilla={abrirPicker} />
         </div>
       )}
 
@@ -658,65 +663,59 @@ function MesaDibujo({
   mesa,
   nombreDe,
   onSilla,
-  onCabecera,
 }: {
   mesa: Mesa;
   nombreDe: (id: string) => Invitado | undefined;
   onSilla: (pos: number) => void;
-  onCabecera: (v: boolean) => void;
 }) {
   const n = Math.max(mesa.plazas, mesa.invitados.length);
   const seats = Array.from({ length: n }, (_, i) => i);
   const posiciones = posicionesSillas(mesa.tipo, n, Boolean(mesa.cabecera));
 
-  const base = mesa.tipo === "rectangular" ? 260 : 220;
-  const W = mesa.tipo === "rectangular" ? Math.min(360, base + Math.max(0, n - 8) * 12) : base;
-  const H = mesa.tipo === "rectangular" ? 170 : base;
-  const seatPx = n > 16 ? 24 : n > 10 ? 28 : 32;
+  // Todo en %: el dibujo escala al ancho disponible (móvil incluido).
+  const rect = mesa.tipo === "rectangular";
+  const maxAncho = rect ? 340 : 240;
+  const ratio = rect ? "3 / 2" : "1 / 1";
+  const seatPct = n > 16 ? 9 : n > 10 ? 11 : 13;
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      {mesa.tipo === "rectangular" && (
-        <label className="flex items-center gap-1.5 text-[11px] text-muted">
-          <input
-            type="checkbox"
-            checked={Boolean(mesa.cabecera)}
-            onChange={(e) => onCabecera(e.target.checked)}
-          />
-          Con cabecera (silla en cada extremo)
-        </label>
-      )}
-      <div className="relative" style={{ width: W, height: H }}>
-      <div
-        className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
-        style={{
-          left: "18%",
-          top: "18%",
-          width: "64%",
-          height: "64%",
-          borderRadius: mesa.tipo === "redonda" ? "9999px" : mesa.tipo === "rectangular" ? "16px" : "10px",
-        }}
-      />
-      {seats.map((idx) => {
-        const p = posiciones[idx];
-        const ocupanteId = mesa.invitados[idx];
-        const inv = ocupanteId ? nombreDe(ocupanteId) : undefined;
-        return (
-          <button
-            key={idx}
-            onClick={() => onSilla(idx)}
-            title={inv ? `Silla ${idx + 1} · ${nombreCompleto(inv)}` : `Silla ${idx + 1} (libre)`}
-            className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border text-[10px] font-semibold transition ${
-              ocupanteId
-                ? "border-accent/60 bg-background text-foreground"
-                : "border-dashed border-line bg-surface text-muted hover:border-accent hover:bg-accent-soft/40 hover:text-accent"
-            }`}
-            style={{ left: `${p.x}%`, top: `${p.y}%`, width: seatPx, height: seatPx }}
-          >
-            {idx + 1}
-          </button>
-        );
-      })}
+    <div className="mx-auto w-full" style={{ maxWidth: maxAncho }}>
+      <div className="relative w-full" style={{ aspectRatio: ratio }}>
+        <div
+          className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
+          style={{
+            left: "22%",
+            top: "22%",
+            width: "56%",
+            height: "56%",
+            borderRadius: mesa.tipo === "redonda" ? "9999px" : rect ? "12px" : "8px",
+          }}
+        />
+        {seats.map((idx) => {
+          const p = posiciones[idx];
+          const ocupanteId = mesa.invitados[idx];
+          const inv = ocupanteId ? nombreDe(ocupanteId) : undefined;
+          return (
+            <button
+              key={idx}
+              onClick={() => onSilla(idx)}
+              title={inv ? `Silla ${idx + 1} · ${nombreCompleto(inv)}` : `Silla ${idx + 1} (libre)`}
+              className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border text-[10px] font-semibold transition ${
+                ocupanteId
+                  ? "border-accent/60 bg-background text-foreground"
+                  : "border-dashed border-line bg-surface text-muted hover:border-accent hover:bg-accent-soft/40 hover:text-accent"
+              }`}
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${seatPct}%`,
+                aspectRatio: "1 / 1",
+              }}
+            >
+              {idx + 1}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -729,40 +728,38 @@ function posicionesSillas(
   cabecera: boolean,
 ): { x: number; y: number }[] {
   if (n === 0) return [];
+  // Todo dentro de un margen seguro (~10-90%) para que las sillas no se corten.
   if (tipo === "redonda") {
-    const rx = 46;
-    const ry = 46;
+    const r = 40;
     return Array.from({ length: n }, (_, i) => {
       const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-      return { x: 50 + rx * Math.cos(ang), y: 50 + ry * Math.sin(ang) };
+      return { x: 50 + r * Math.cos(ang), y: 50 + r * Math.sin(ang) };
     });
   }
   if (tipo === "rectangular") {
     const out: { x: number; y: number }[] = [];
-    // Con cabecera: 1 silla en cada extremo corto; el resto en los lados largos.
     const lados = cabecera ? Math.max(0, n - 2) : n;
     const top = Math.ceil(lados / 2);
     const bottom = lados - top;
-    for (let i = 0; i < top; i++) out.push({ x: pct(i, top), y: 6 });
-    for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 94 });
-    if (cabecera && n >= 1) out.push({ x: 3, y: 50 });
-    if (cabecera && n >= 2) out.push({ x: 97, y: 50 });
+    for (let i = 0; i < top; i++) out.push({ x: pct(i, top), y: 14 });
+    for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 86 });
+    if (cabecera && n >= 1) out.push({ x: 10, y: 50 });
+    if (cabecera && n >= 2) out.push({ x: 90, y: 50 });
     return out;
   }
-  // cuadrada: repartir lo más parejo posible entre los 4 lados, sin sillas en las esquinas.
+  // cuadrada: repartir parejo entre los 4 lados, sin sillas en las esquinas.
   const base = Math.floor(n / 4);
   const rem = n % 4;
   const counts = [0, 1, 2, 3].map((k) => base + (k < rem ? 1 : 0)); // t, r, b, l
   const out: { x: number; y: number }[] = [];
-  const spread = (i: number, count: number) =>
-    count === 1 ? 50 : 30 + (i * 40) / (count - 1); // 30%..70%, lejos de las esquinas
+  const spread = (i: number, count: number) => (count === 1 ? 50 : 30 + (i * 40) / (count - 1));
   counts.forEach((count, side) => {
     for (let i = 0; i < count; i++) {
       const t = spread(i, count);
-      if (side === 0) out.push({ x: t, y: 6 }); // top
-      else if (side === 1) out.push({ x: 94, y: t }); // right
-      else if (side === 2) out.push({ x: t, y: 94 }); // bottom
-      else out.push({ x: 6, y: t }); // left
+      if (side === 0) out.push({ x: t, y: 12 });
+      else if (side === 1) out.push({ x: 88, y: t });
+      else if (side === 2) out.push({ x: t, y: 88 });
+      else out.push({ x: 12, y: t });
     }
   });
   return out;
@@ -770,5 +767,5 @@ function posicionesSillas(
 
 function pct(i: number, total: number) {
   if (total === 1) return 50;
-  return 12 + (i * 76) / (total - 1);
+  return 15 + (i * 70) / (total - 1);
 }
