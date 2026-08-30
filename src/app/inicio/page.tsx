@@ -156,7 +156,7 @@ function Inicio() {
           </p>
           <h2 className="mt-3 font-display text-4xl leading-tight text-[#3b3028] sm:text-5xl">
             {modo === "entrar"
-              ? "Volved a vuestra boda"
+              ? "Bienvenidos"
               : modo === "crear"
                 ? "Organizadlo todo juntos"
                 : "Recuperar contraseña"}
