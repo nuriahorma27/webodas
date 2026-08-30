@@ -1,11 +1,24 @@
 // Invitación de boda "clásica de toda la vida" (prototipo: en el navegador).
 // Formato tradicional: padres en las esquinas, participación en el centro.
 
-import type { AcabadoStd, FuenteStd, MarcoStd } from "@/lib/savethedate";
-import { ACABADOS, FUENTES, MARCOS } from "@/lib/savethedate";
+import type { AcabadoStd, MarcoStd } from "@/lib/savethedate";
+import { ACABADOS, MARCOS } from "@/lib/savethedate";
 
-export { ACABADOS, FUENTES, MARCOS };
-export type { AcabadoStd, FuenteStd, MarcoStd };
+export { ACABADOS, MARCOS };
+export type { AcabadoStd, MarcoStd };
+
+// Tipografías de invitación (todas de imprenta / caligráficas clásicas).
+export type FuenteInv = "imprenta" | "formal" | "elegante" | "manuscrita" | "fina";
+export const FUENTES_INV: Record<
+  FuenteInv,
+  { label: string; family: string; escala: number }
+> = {
+  imprenta: { label: "Imprenta", family: "'Pinyon Script', 'Snell Roundhand', cursive", escala: 1.55 },
+  formal: { label: "Formal", family: "'Petit Formal Script', cursive", escala: 1.3 },
+  elegante: { label: "Elegante", family: "'Cormorant Garamond', Georgia, serif", escala: 1 },
+  manuscrita: { label: "Manuscrita", family: "'Parisienne', cursive", escala: 1.35 },
+  fina: { label: "Fina", family: "'Tangerine', cursive", escala: 1.7 },
+};
 
 export type Invitacion = {
   publicada: boolean;
@@ -17,11 +30,11 @@ export type Invitacion = {
   nombres: string; // "Nuria y Javier"  (vacío → nombre de la pareja del perfil)
   cuerpo: string; // párrafo de ceremonia y celebración (multilínea)
   src: string; // "S. R. C."
-  ciudadAno: string; // "Madrid, 2025"
+  ciudadAno: string; // "Madrid, 2025"  (vacío → ciudad del perfil + año)
   colorBg: string;
   colorText: string;
   acabado: AcabadoStd;
-  fuente: FuenteStd; // tipografía del cuerpo
+  fuente: FuenteInv;
   marco: MarcoStd;
   colorMarco: string;
   colorFrutos: string;
@@ -30,9 +43,9 @@ export type Invitacion = {
 const KEY = "webodas:invitacion";
 
 const CUERPO_EJEMPLO =
-  "y tienen el gusto de invitarles a la ceremonia religiosa que se celebrará (D. m.)\n" +
-  "el sábado 18 de octubre a las doce y media del mediodía, en la Iglesia de San Bernabé Apóstol (El Escorial)\n" +
-  "y a la celebración que tendrá lugar a continuación, en la Finca «Palacio de la Margarita».";
+  "y tienen el gusto de invitaros a la ceremonia religiosa que se celebrará (D. m.)\n" +
+  "el sábado 12 de septiembre a la una del mediodía, en la Iglesia de Santa María la Real\n" +
+  "y a la celebración que tendrá lugar a continuación, en la Finca El Olivar.";
 
 const DEFAULT: Invitacion = {
   publicada: false,
@@ -42,13 +55,13 @@ const DEFAULT: Invitacion = {
   direccionNovio: "",
   participan: "Participan el enlace de sus hijos",
   nombres: "",
-  cuerpo: "",
+  cuerpo: CUERPO_EJEMPLO,
   src: "S. R. C.",
   ciudadAno: "",
   colorBg: "#fdfcf8",
   colorText: "#5b6a4c",
   acabado: "liso",
-  fuente: "serif",
+  fuente: "imprenta",
   marco: "ninguno",
   colorMarco: "#6f7650",
   colorFrutos: "#c79a46",
@@ -72,6 +85,7 @@ export function loadInvitacion(): Invitacion {
       ...c,
       acabado: ACABADOS[c.acabado as AcabadoStd] ? (c.acabado as AcabadoStd) : DEFAULT.acabado,
       marco: c.marco && MARCOS[c.marco] ? c.marco : DEFAULT.marco,
+      fuente: c.fuente && FUENTES_INV[c.fuente] ? c.fuente : DEFAULT.fuente,
     };
   } catch {
     return { ...DEFAULT };

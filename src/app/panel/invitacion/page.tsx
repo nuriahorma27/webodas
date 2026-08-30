@@ -9,12 +9,10 @@ import {
   setInvitacion,
   INVITACION_CUERPO_EJEMPLO,
   ACABADOS,
-  FUENTES,
-  MARCOS,
+  FUENTES_INV,
   type Invitacion,
   type AcabadoStd,
-  type FuenteStd,
-  type MarcoStd,
+  type FuenteInv,
 } from "@/lib/invitacion";
 
 const campo =
@@ -114,25 +112,25 @@ export default function InvitacionPage() {
                 k="padresNovia"
                 label="Padres de la novia"
                 area
-                placeholder={"Juan Hormaechea Escós\nPilar Pérez del Yerro Núñez"}
+                placeholder={"Antonio García Ruiz\ny Carmen López Díaz"}
               />
               <Texto
                 k="padresNovio"
                 label="Padres del novio"
                 area
-                placeholder={"Javier Velasco Pascual de Zulueta\nAna Orihuela Moreno"}
+                placeholder={"Manuel Fernández Soto\ny Isabel Moreno Gil"}
               />
               <Texto
                 k="direccionNovia"
                 label="Dirección (novia)"
                 area
-                placeholder={"Calle de Mateo Inurria 35, 2B,\n28036, Madrid"}
+                placeholder={"Calle de la Rosa 12, 3ºA\n28001 Madrid"}
               />
               <Texto
                 k="direccionNovio"
                 label="Dirección (novio)"
                 area
-                placeholder={"Calle de Pastora Imperio 1, 13C,\n28036, Madrid"}
+                placeholder={"Avenida del Parque 4, 2ºB\n28002 Madrid"}
               />
             </div>
           </Card>
@@ -147,7 +145,7 @@ export default function InvitacionPage() {
             <Texto
               k="nombres"
               label="Nombres de los novios"
-              placeholder="Nuria y Javier (o se coge del perfil)"
+              placeholder="Se coge del perfil si lo dejas vacío"
             />
             <label className="block text-sm">
               <span className="flex items-center justify-between text-xs font-medium text-muted">
@@ -199,18 +197,18 @@ export default function InvitacionPage() {
             <div>
               <span className="text-xs font-medium text-muted">Tipo de letra</span>
               <div className="mt-1 flex flex-wrap gap-2">
-                {(Object.keys(FUENTES) as FuenteStd[]).map((f) => (
+                {(Object.keys(FUENTES_INV) as FuenteInv[]).map((f) => (
                   <button
                     key={f}
                     onClick={() => setInvitacion({ fuente: f })}
-                    style={{ fontFamily: FUENTES[f].family }}
-                    className={`rounded-md border px-3 py-1.5 text-base ${
+                    style={{ fontFamily: FUENTES_INV[f].family }}
+                    className={`rounded-md border px-3 py-1.5 text-lg ${
                       inv.fuente === f
                         ? "border-foreground bg-foreground text-white"
                         : "border-line hover:border-accent"
                     }`}
                   >
-                    {FUENTES[f].label}
+                    {FUENTES_INV[f].label}
                   </button>
                 ))}
               </div>
@@ -227,22 +225,6 @@ export default function InvitacionPage() {
                     }`}
                   >
                     {ACABADOS[a].label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted">Marco decorativo</span>
-              <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {(Object.keys(MARCOS) as MarcoStd[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setInvitacion({ marco: m })}
-                    className={`rounded-md border p-1.5 text-xs ${
-                      inv.marco === m ? "border-foreground" : "border-line hover:border-accent"
-                    }`}
-                  >
-                    {MARCOS[m].label}
                   </button>
                 ))}
               </div>
