@@ -152,20 +152,20 @@ function Inicio() {
             <Link href="/" className="text-xs text-[#6f7169]">Volver</Link>
           </div>
           <p className="text-xs uppercase tracking-[.24em] text-[#8a713d]">
-            {modo === "entrar" ? "Bienvenidos de nuevo" : modo === "crear" ? "Empezad hoy" : "Acceso a vuestra cuenta"}
+            {modo === "entrar" ? "Bienvenidos de nuevo" : modo === "crear" ? "Vuestra boda empieza aquí" : "Acceso a vuestra cuenta"}
           </p>
           <h2 className="mt-3 font-display text-4xl leading-tight text-[#3b3028] sm:text-5xl">
             {modo === "entrar"
               ? "Bienvenidos"
               : modo === "crear"
-                ? "Organizadlo todo juntos"
+                ? "Cread vuestra cuenta"
                 : "Recuperar contraseña"}
           </h2>
           <p className="mt-3 max-w-sm text-sm leading-6 text-[#6f7169]">
             {modo === "entrar"
               ? "Acceded a vuestra web, regalos y toda la organización."
               : modo === "crear"
-                ? "Web, invitaciones, regalos y gestión en un mismo lugar."
+                ? "Empezad a preparar vuestra web, las invitaciones y cada detalle de la boda."
                 : "Os enviaremos un enlace para crear una contraseña nueva."}
           </p>
 
@@ -205,7 +205,7 @@ function Inicio() {
                 : modo === "entrar"
                   ? "Entrar en nuestro panel"
                   : modo === "crear"
-                    ? "Empezar gratis"
+                    ? "Crear nuestra cuenta"
                     : "Enviar enlace"}
             </button>
           </form>

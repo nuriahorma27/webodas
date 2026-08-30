@@ -48,14 +48,14 @@ export function OnboardingBoda({
           </button>
         )}
         <h2 className="font-display text-2xl">
-          {editar ? "Datos de la boda" : "Contadnos de vuestra boda"}
+          {editar ? "Datos de la boda" : "Empecemos por vosotros"}
         </h2>
         {!editar && (
-          <p className="mt-1 text-sm text-muted">Con esto preparamos vuestro panel. Podéis cambiarlo luego.</p>
+          <p className="mt-2 text-sm leading-6 text-muted">Añadid vuestros nombres y, si ya los sabéis, la fecha y el lugar. Así personalizaremos todo el panel; podréis cambiarlo cuando queráis.</p>
         )}
 
-        <PersonaFields titulo="Persona 1" p={p1} set={setP1} />
-        <PersonaFields titulo="Persona 2" p={p2} set={setP2} />
+        <PersonaFields titulo="Sobre ti" p={p1} set={setP1} />
+        <PersonaFields titulo="Sobre tu pareja" p={p2} set={setP2} />
 
         <div className="mt-5">
           <span className="text-sm font-medium">Fecha de la boda</span>
@@ -91,7 +91,7 @@ export function OnboardingBoda({
           type="submit"
           className="mt-6 w-full rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
         >
-          {editar ? "Guardar" : "Empezar"}
+          {editar ? "Guardar" : "Preparar nuestro panel"}
         </button>
       </form>
     </div>

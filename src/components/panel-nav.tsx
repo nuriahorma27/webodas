@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const nav = [
   { href: "/panel", label: "Inicio" },
@@ -14,8 +15,14 @@ const nav = [
 export function PanelNav() {
   const [abierto, setAbierto] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const activo = (href: string) =>
     href === "/panel" ? pathname === "/panel" : pathname.startsWith(href);
+  const cerrarSesion = async () => {
+    await createClient().auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -59,6 +66,13 @@ export function PanelNav() {
                 {n.label}
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={cerrarSesion}
+              className="block w-full border-t border-line px-5 py-3 text-left text-sm font-medium text-[#7a4038]"
+            >
+              Cerrar sesión
+            </button>
           </div>
         </div>
       )}
