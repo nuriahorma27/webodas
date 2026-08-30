@@ -297,7 +297,9 @@ function Fila({
               alt={alt}
               width={1400}
               height={1000}
-              className="w-full"
+              loading="eager"
+              sizes="(max-width: 1024px) 100vw, 560px"
+              className="block w-full"
               style={{ aspectRatio: ratio, objectFit: "cover", objectPosition: "top" }}
             />
           </Marco>
