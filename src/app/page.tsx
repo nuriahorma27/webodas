@@ -132,7 +132,7 @@ export default function Landing() {
           />
           <Fila
             eyebrow="Invitación y save the date"
-            titulo="La participación de siempre, y el save the date"
+            titulo="Invitación y save the date, con vuestro estilo"
             texto="La invitación clásica, con su tipografía y su formato. Se rellena y se descarga en PDF al tamaño real, lista para imprenta. El save the date se comparte por un enlace."
             puntos={["PDF listo para imprenta", "Save the date para avisar pronto"]}
             imgs={[
@@ -145,7 +145,7 @@ export default function Landing() {
             eyebrow="Organización"
             titulo="Presupuesto, tareas, invitados y mesas"
             texto="Lista de tareas ordenada por meses, presupuesto por partidas, lista de invitados con sus confirmaciones y plano de mesas. Al contratar un proveedor, el presupuesto se actualiza."
-            puntos={["Exportable a Excel", "Plano de mesas para imprimir"]}
+            puntos={["Exportable a Excel", "Editor visual de mesas"]}
             imgs={[]}
             visual={<GestionRealPreview />}
           />
@@ -365,23 +365,23 @@ function RegalosRusticos() {
 
 function GestionRealPreview() {
   return (
-    <div className="grid items-start sm:grid-cols-[1.08fr_.92fr] sm:gap-3">
-      <div className="col-start-1 row-start-1 w-[84%] overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)] sm:w-auto">
+    <div className="relative min-w-0 max-w-full overflow-hidden sm:grid sm:grid-cols-[1.08fr_.92fr] sm:items-start sm:gap-3">
+      <div className="min-w-0 w-[84%] overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)] sm:w-auto">
         <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: "809 / 1150" }}>
           <Image src="/landing/gestion.png" alt="Pantalla real de presupuesto y tareas" fill sizes="360px" className="object-cover object-top" />
         </div>
       </div>
-      <div className="z-10 col-start-1 row-start-1 mt-36 w-[62%] justify-self-end overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_24px_50px_-22px_rgba(33,29,26,.55)] sm:col-start-2 sm:mt-10 sm:w-auto">
+      <div className="absolute bottom-4 right-0 z-10 min-w-0 w-[62%] max-w-full overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_24px_50px_-22px_rgba(33,29,26,.55)] sm:static sm:mt-10 sm:w-auto">
         <p className="font-display text-lg">Mesas</p>
         <p className="mt-0.5 text-[.55rem] text-muted">1 mesa · 5/10 plazas ocupadas · 46 sin mesa</p>
         <div className="mt-3 rounded-lg border border-[#dfd5c4] p-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 items-center justify-between gap-1">
             <span className="rounded bg-[#211f1c] px-2 py-1 text-[.48rem] font-semibold text-white">MESA 1</span>
-            <span className="rounded-full border border-[#9b793b] px-2 py-1 text-[.46rem] text-[#80632f]">★ Presidencial</span>
+            <span className="min-w-0 truncate rounded-full border border-[#9b793b] px-2 py-1 text-[.46rem] text-[#80632f]">★ Presidencial</span>
           </div>
           <p className="mt-2 rounded border border-[#e3dacb] px-2 py-1 text-[.55rem]">Mesa familia</p>
           <p className="mt-1.5 text-[.46rem] text-muted">Redonda · 10 plazas · 5 sentados</p>
-          <div className="relative mx-auto mt-3 h-32 w-32">
+          <div className="relative mx-auto mt-3 aspect-square w-full max-w-32">
             <div className="absolute inset-[22%] rounded-full border border-[#c9b58e] bg-[#f8f5ee]" />
             {["1","2","3","4","5","6","7","8","9","10"].map((seat, index) => {
               const angle = (index * 36 - 90) * Math.PI / 180;
@@ -391,7 +391,7 @@ function GestionRealPreview() {
             })}
           </div>
           <div className="mt-3 space-y-1.5">
-            {["Javier Urrecho Díaz","Laura Méndez Gil","Rosario Pascual","Carmen Contreras"].map((guest, index) => <div key={guest} className="flex items-center gap-1.5 text-[.46rem]"><span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[.38rem] text-white ${index === 1 ? "bg-emerald-600" : "bg-[#a9864d]"}`}>{index === 1 ? "✓" : "P"}</span><span className="truncate">{guest}</span></div>)}
+            {["Javier Urrecho Díaz","Laura Méndez Gil","Rosario Pascual","Carmen Contreras"].map((guest, index) => <div key={guest} className="flex min-w-0 items-center gap-1.5 text-[.46rem]"><span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[.38rem] text-white ${index === 1 ? "bg-emerald-600" : "bg-[#a9864d]"}`}>{index === 1 ? "✓" : "P"}</span><span className="min-w-0 truncate">{guest}</span></div>)}
           </div>
           <div className="mt-3 rounded border border-dashed border-[#d8ceba] py-1.5 text-center text-[.46rem] text-[#8a6d3b]">+ Sentar invitado</div>
         </div>
