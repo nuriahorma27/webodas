@@ -18,37 +18,39 @@ import {
   type Estado,
 } from "@/lib/tareas";
 import { estimadoDe, loadPartidas, type Partida } from "@/lib/presupuesto";
+import { loadInvitados, type Invitado } from "@/lib/invitados";
+import { loadAportaciones, loadLista, type Aportacion, type ListaRegalos } from "@/lib/regalos";
 import { eur } from "@/lib/mock";
-
-const gestion = [
-  ["Presupuesto", "/panel/gestion/presupuesto"],
-  ["Tareas", "/panel/gestion/tiempos"],
-  ["Invitados", "/panel/gestion/invitados"],
-  ["Mesas", "/panel/gestion/mesas"],
-  ["Proveedores", "/panel/gestion/proveedores"],
-  ["Confirmaciones", "/panel/gestion/confirmaciones"],
-  ["Formulario", "/panel/gestion/formulario"],
-] as const;
 
 export default function PanelPage() {
   const [boda, setBoda] = useState<BodaPerfil | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [partidas, setPartidas] = useState<Partida[]>([]);
+  const [invitados, setInvitados] = useState<Invitado[]>([]);
+  const [listaRegalos, setListaRegalos] = useState<ListaRegalos | null>(null);
+  const [aportaciones, setAportaciones] = useState<Aportacion[]>([]);
 
   useEffect(() => {
     const sync = () => {
       setBoda(loadBoda());
       setEstados(loadEstados());
       setPartidas(loadPartidas());
+      setInvitados(loadInvitados());
+      setListaRegalos(loadLista());
+      setAportaciones(loadAportaciones());
     };
     sync();
     window.addEventListener("webodas:boda", sync);
     window.addEventListener("webodas:tareas", sync);
     window.addEventListener("webodas:presupuesto", sync);
+    window.addEventListener("webodas:invitados", sync);
+    window.addEventListener("webodas:regalos", sync);
     return () => {
       window.removeEventListener("webodas:boda", sync);
       window.removeEventListener("webodas:tareas", sync);
       window.removeEventListener("webodas:presupuesto", sync);
+      window.removeEventListener("webodas:invitados", sync);
+      window.removeEventListener("webodas:regalos", sync);
     };
   }, []);
 
@@ -65,6 +67,11 @@ export default function PanelPage() {
   const enProceso = TAREAS.filter((t) => estadoDe(t.id) === "proceso").length;
   const pendientes = Math.max(0, TAREAS.length - completadas - enProceso);
   const avance = TAREAS.length ? (completadas / TAREAS.length) * 100 : 0;
+  const invitadosSi = invitados.filter((i) => i.viene === "Sí").length;
+  const invitadosNo = invitados.filter((i) => i.viene === "No").length;
+  const invitadosPendientes = invitados.filter((i) => i.viene === "Pendiente").length;
+  const totalAportado = (listaRegalos?.gifts ?? []).reduce((s, g) => s + (g.aportado || 0), 0);
+  const aportacionesPendientes = aportaciones.filter((a) => a.estado === "pendiente").length;
 
   return (
     <div className="space-y-8">
@@ -91,29 +98,23 @@ export default function PanelPage() {
       </div>
 
       <div data-tour="panel-servicios">
-        <p className="text-xs uppercase tracking-[.18em] text-accent">Vuestras herramientas</p>
-        <h2 className="mt-1 font-display text-2xl">Todo en su sitio</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-12">
-          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:col-span-7">
-            <p className="text-xs uppercase tracking-[.16em] text-muted">Diseño y comunicación</p>
-            <h3 className="mt-3 max-w-md font-display text-2xl">Todo lo que compartiréis con vuestros invitados</h3>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-muted">Preparad la web, avisad de la fecha y cread la invitación con el mismo estilo.</p>
-            <div className="mt-6 grid gap-2 sm:grid-cols-3">
-              <EnlaceHerramienta href="/panel/webs">Web de boda</EnlaceHerramienta>
-              <EnlaceHerramienta href="/panel/save-the-date">Save the date</EnlaceHerramienta>
-              <EnlaceHerramienta href="/panel/invitacion">Invitación</EnlaceHerramienta>
+        <p className="text-xs uppercase tracking-[.18em] text-accent">Información general</p>
+        <h2 className="mt-1 font-display text-2xl">Así va vuestra boda</h2>
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Invitados</p><p className="mt-3 font-display text-4xl">{invitados.length}</p><p className="mt-1 text-sm text-muted">personas en la lista</p></div><Link href="/panel/gestion/invitados" className="text-xs text-accent">Ver detalle →</Link></div>
+            <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
+              <MiniDato label="Confirmados" value={invitadosSi} />
+              <MiniDato label="Pendientes" value={invitadosPendientes} />
+              <MiniDato label="No vienen" value={invitadosNo} />
             </div>
           </section>
-          <section className="flex flex-col rounded-2xl border border-[#d9c9ad] bg-[#f3ebde] p-5 sm:p-6 lg:col-span-5">
-            <p className="text-xs uppercase tracking-[.16em] text-[#7b694e]">Lista de regalos</p>
-            <h3 className="mt-3 font-display text-2xl">Regalos y aportaciones, reunidos</h3>
-            <p className="mt-2 flex-1 text-sm leading-6 text-muted">Cread vuestra lista y consultad quién ha participado.</p>
-            <Link href="/panel/regalos" className="mt-6 inline-flex w-fit rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-white">Abrir lista de regalos →</Link>
-          </section>
-          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:col-span-12">
-            <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Organización</p><h3 className="mt-2 font-display text-2xl">La parte práctica de la boda</h3></div><Link href="/panel/gestion" className="text-sm text-accent">Ver resumen de gestión →</Link></div>
-            <div className="mt-5 grid grid-cols-2 border-l border-t border-line sm:grid-cols-4">
-              {gestion.map(([titulo, href]) => <Link key={titulo} href={href} className="group flex min-h-16 items-center justify-between gap-2 border-b border-r border-line px-3 py-3 text-sm transition hover:bg-accent-soft/60 sm:px-4"><span>{titulo}</span><span className="text-accent transition group-hover:translate-x-0.5">→</span></Link>)}
+          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-sm text-muted">aportado hasta ahora</p></div><Link href="/panel/regalos" className="text-xs text-accent">Ver detalle →</Link></div>
+            <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
+              <MiniDato label="Regalos" value={listaRegalos?.gifts.length ?? 0} />
+              <MiniDato label="Aportaciones" value={aportaciones.length} />
+              <MiniDato label="Por confirmar" value={aportacionesPendientes} />
             </div>
           </section>
         </div>
@@ -148,8 +149,8 @@ function DatoPresupuesto({ label, value, accent }: { label: string; value: numbe
   return <div><p className="text-[.62rem] uppercase tracking-wider text-[#786d5f]">{label}</p><p className={`mt-1 font-display text-lg sm:text-xl ${accent ? "text-accent" : ""}`}>{eur(value)}</p></div>;
 }
 
-function EnlaceHerramienta({ href, children }: { href: string; children: React.ReactNode }) {
-  return <Link href={href} className="flex items-center justify-between rounded-lg border border-line px-3.5 py-3 text-sm font-medium transition hover:border-accent hover:bg-accent-soft/50"><span>{children}</span><span className="text-accent">→</span></Link>;
+function MiniDato({ label, value }: { label: string; value: number }) {
+  return <div className="min-w-0 pr-2"><p className="font-display text-xl">{value}</p><p className="mt-1 truncate text-[.65rem] text-muted sm:text-xs">{label}</p></div>;
 }
 
 function PendienteStat({
