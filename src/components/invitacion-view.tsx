@@ -16,7 +16,7 @@ export function InvitacionView({ inv }: { inv: Invitacion }) {
   })();
   const ciudadAno = inv.ciudadAno.trim() || `${boda.lugar?.trim() || "Madrid"}, ${anio}`;
 
-  const f = FUENTES_INV[inv.fuente] ?? FUENTES_INV.formal;
+  const f = FUENTES_INV[inv.fuente] ?? FUENTES_INV.imprenta;
   const k = f.escala;
 
   return (

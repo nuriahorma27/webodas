@@ -13,7 +13,13 @@ export const FUENTES_INV: Record<
   FuenteInv,
   { label: string; family: string; escala: number }
 > = {
-  imprenta: { label: "Imprenta", family: "'Pinyon Script', 'Snell Roundhand', cursive", escala: 1.55 },
+  // La del PDF de referencia: Snell Roundhand (fuente del sistema en Mac).
+  // En equipos sin ella, Pinyon Script es la más parecida.
+  imprenta: {
+    label: "Clásica",
+    family: "'Snell Roundhand', 'Pinyon Script', 'Apple Chancery', cursive",
+    escala: 1.3,
+  },
   formal: { label: "Formal", family: "'Petit Formal Script', cursive", escala: 1.3 },
   elegante: { label: "Elegante", family: "'Cormorant Garamond', Georgia, serif", escala: 1 },
   manuscrita: { label: "Manuscrita", family: "'Parisienne', cursive", escala: 1.35 },
@@ -61,7 +67,7 @@ const DEFAULT: Invitacion = {
   colorBg: "#fdfcf8",
   colorText: "#5b6a4c",
   acabado: "liso",
-  fuente: "formal",
+  fuente: "imprenta",
   marco: "ninguno",
   colorMarco: "#6f7650",
   colorFrutos: "#c79a46",
