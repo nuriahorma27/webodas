@@ -4,16 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
 import { InvitacionView } from "@/components/invitacion-view";
+import { loadBoda, nombrePareja } from "@/lib/boda";
 import {
   loadInvitacion,
   setInvitacion,
   INVITACION_CUERPO_EJEMPLO,
-  ACABADOS,
   FUENTES_INV,
   type Invitacion,
-  type AcabadoStd,
   type FuenteInv,
 } from "@/lib/invitacion";
+
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
 
 const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
@@ -66,22 +68,70 @@ export default function InvitacionPage() {
     </label>
   );
 
-  const descargar = async () => {
-    if (!previewRef.current || descargando) return;
+  const descargar = () => {
+    if (descargando) return;
     setDescargando(true);
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(previewRef.current, {
-        cacheBust: true,
-        pixelRatio: 3,
-        backgroundColor: inv.colorBg,
-      });
-      const a = document.createElement("a");
-      a.download = "invitacion-boda.png";
-      a.href = dataUrl;
-      a.click();
-    } catch {
-      alert("No se ha podido generar la imagen. Vuelve a intentarlo.");
+      const boda = loadBoda();
+      const f = FUENTES_INV[inv.fuente] ?? FUENTES_INV.imprenta;
+      const k = f.escala;
+      const nombres =
+        inv.nombres.trim() || nombrePareja(boda).replace("Vuestra boda", "Vuestros nombres");
+      const y = new Date(boda.fecha).getFullYear();
+      const anio = Number.isFinite(y) ? y : new Date().getFullYear();
+      const ciudadAno = inv.ciudadAno.trim() || `${boda.lugar?.trim() || "Madrid"}, ${anio}`;
+
+      const html = `<!doctype html><html><head><meta charset="utf-8">
+<title>Invitación de boda</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Parisienne&display=swap">
+<style>
+  @page { size: 317.8mm 230.8mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  .hoja { width: 317.8mm; height: 230.8mm; padding: 26mm 26mm; display: flex; flex-direction: column;
+    justify-content: space-between; text-align: center; color: ${inv.colorText};
+    font-family: ${f.family}; font-size: ${11 * k}pt; line-height: 1.6; }
+  .fila { display: flex; justify-content: space-between; gap: 20mm; }
+  .fila p { margin: 0; }
+  .izq { text-align: left; } .der { text-align: right; }
+  .padres { font-size: ${11.5 * k}pt; line-height: 1.4; }
+  .centro { display: flex; flex-direction: column; align-items: center; margin: auto 0; }
+  .centro p { margin: 0; }
+  .nombres { font-size: ${29 * k}pt; line-height: 1.2; margin: 6mm 0 7mm; }
+  .meta { margin-top: 12mm; }
+</style></head><body>
+  <div class="hoja">
+    <div class="fila padres">
+      <p class="izq">${esc(inv.padresNovia)}</p>
+      <p class="der">${esc(inv.padresNovio)}</p>
+    </div>
+    <div class="centro">
+      ${inv.participan ? `<p>${esc(inv.participan)}</p>` : ""}
+      <p class="nombres">${esc(nombres)}</p>
+      ${inv.cuerpo ? `<p>${esc(inv.cuerpo)}</p>` : ""}
+      ${
+        inv.src || ciudadAno
+          ? `<div class="meta">${inv.src ? `<p>${esc(inv.src)}</p>` : ""}${
+              ciudadAno ? `<p>${esc(ciudadAno)}</p>` : ""
+            }</div>`
+          : ""
+      }
+    </div>
+    <div class="fila" style="font-size:${11 * k}pt;line-height:1.4">
+      <p class="izq">${esc(inv.direccionNovia)}</p>
+      <p class="der">${esc(inv.direccionNovio)}</p>
+    </div>
+  </div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
+</body></html>`;
+
+      const w = window.open("", "_blank");
+      if (!w) {
+        alert("Permite las ventanas emergentes para poder descargar el PDF.");
+        return;
+      }
+      w.document.write(html);
+      w.document.close();
     } finally {
       setDescargando(false);
     }
@@ -213,50 +263,26 @@ export default function InvitacionPage() {
                 ))}
               </div>
             </div>
-            <div>
-              <span className="text-xs font-medium text-muted">Acabado</span>
-              <div className="mt-1 flex gap-2">
-                {(Object.keys(ACABADOS) as AcabadoStd[]).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setInvitacion({ acabado: a })}
-                    className={`rounded-md border px-3 py-1.5 text-sm ${
-                      inv.acabado === a ? "border-foreground" : "border-line hover:border-accent"
-                    }`}
-                  >
-                    {ACABADOS[a].label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </Card>
 
           <Card className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="checkbox"
-                checked={inv.publicada}
-                onChange={(e) => setInvitacion({ publicada: e.target.checked })}
-              />
-              Publicar la invitación
-            </label>
-            <p className="text-xs text-muted">
-              {inv.publicada
-                ? "Publicada. El enlace para compartir lo tienes en Webs."
-                : "Al publicarla obtendrás un enlace en Webs. También puedes descargarla como imagen para imprimir o enviar."}
-            </p>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={descargar}
                 disabled={descargando}
                 className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
               >
-                {descargando ? "Generando…" : "⬇ Descargar imagen"}
+                {descargando ? "Generando…" : "⬇ Descargar PDF"}
               </button>
               <Link href="/panel/webs" className="text-sm text-accent underline">
                 ← Volver a webs
               </Link>
             </div>
+            <p className="text-xs text-muted">
+              Se abre el diálogo de impresión: elige <strong>“Guardar como PDF”</strong>. El PDF sale{" "}
+              <strong>sin fondo</strong>, en A5 apaisado, listo para llevar a imprenta sobre el papel
+              que elijas.
+            </p>
           </Card>
         </div>
 

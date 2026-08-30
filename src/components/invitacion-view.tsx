@@ -5,7 +5,7 @@ import { loadBoda, nombrePareja } from "@/lib/boda";
 
 // La invitación clásica española: apaisada, padres arriba en las esquinas,
 // participación centrada, direcciones abajo en las esquinas.
-export function InvitacionView({ inv }: { inv: Invitacion }) {
+export function InvitacionView({ inv, sinFondo = false }: { inv: Invitacion; sinFondo?: boolean }) {
   const boda = loadBoda();
   const nombres =
     inv.nombres.trim() || nombrePareja(boda).replace("Vuestra boda", "Vuestros nombres");
@@ -27,35 +27,15 @@ export function InvitacionView({ inv }: { inv: Invitacion }) {
       />
       <div className="mx-auto w-full" style={{ maxWidth: 920, containerType: "inline-size" }}>
         <div
-          className="relative flex w-full flex-col rounded-sm shadow-md"
+          className={`relative flex w-full flex-col rounded-sm ${sinFondo ? "" : "shadow-md"}`}
           style={{
-            aspectRatio: "1.4 / 1",
-            backgroundColor: inv.colorBg,
+            aspectRatio: "1.377 / 1",
+            backgroundColor: sinFondo ? "transparent" : inv.colorBg,
             color: inv.colorText,
             fontFamily: f.family,
-            ...ACABADOS[inv.acabado]?.style,
+            ...(sinFondo ? {} : ACABADOS[inv.acabado]?.style),
           }}
         >
-          {/* Marcas de corte en las esquinas, como en la imprenta */}
-          {["left-[4%] top-[5%]", "right-[4%] top-[5%]", "left-[4%] bottom-[5%]", "right-[4%] bottom-[5%]"].map(
-            (pos) => (
-              <span
-                key={pos}
-                className={`pointer-events-none absolute ${pos}`}
-                style={{
-                  width: "2.2cqw",
-                  height: "2.2cqw",
-                  borderColor: "currentColor",
-                  opacity: 0.3,
-                  borderTopWidth: pos.includes("top") ? 1 : 0,
-                  borderBottomWidth: pos.includes("bottom") ? 1 : 0,
-                  borderLeftWidth: pos.includes("left") ? 1 : 0,
-                  borderRightWidth: pos.includes("right") ? 1 : 0,
-                }}
-              />
-            ),
-          )}
-
           <div
             className="relative flex flex-1 flex-col justify-between px-[8%] py-[7%] text-center"
             style={{ fontSize: `${1.85 * k}cqw`, lineHeight: 1.55 }}

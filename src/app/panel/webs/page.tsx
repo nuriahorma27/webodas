@@ -47,7 +47,6 @@ export default function WebsPage() {
   const [hasStd, setHasStd] = useState(false);
   const [stdPublicada, setStdPublicada] = useState(false);
   const [hasInv, setHasInv] = useState(false);
-  const [invPublicada, setInvPublicada] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const boda = loadBoda();
 
@@ -64,9 +63,7 @@ export default function WebsPage() {
       const s = loadStd();
       setHasStd(stdConfigurada(s));
       setStdPublicada(s.publicada);
-      const iv = loadInvitacion();
-      setHasInv(invitacionConfigurada(iv));
-      setInvPublicada(iv.publicada);
+      setHasInv(invitacionConfigurada(loadInvitacion()));
     };
     sync();
     window.addEventListener("webodas:savethedate", sync);
@@ -191,28 +188,16 @@ export default function WebsPage() {
         <Card className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-muted">
-              La invitación clásica: familias, ceremonia y celebración. Para compartir o descargar
-              e imprimir.
+              La invitación clásica: familias, ceremonia y celebración. Se descarga en PDF para
+              llevar a imprenta.
             </p>
-            <div className="flex shrink-0 items-center gap-4">
-              {hasInv && slug && (
-                <a
-                  href={`/${slug}/invitacion`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-muted underline"
-                >
-                  Ver
-                </a>
-              )}
-              <Link href="/panel/invitacion" className="text-sm font-medium text-accent">
-                {hasInv ? "Seguir editando →" : "Crear invitación →"}
-              </Link>
-            </div>
+            <Link
+              href="/panel/invitacion"
+              className="shrink-0 text-sm font-medium text-accent"
+            >
+              {hasInv ? "Seguir editando →" : "Crear invitación →"}
+            </Link>
           </div>
-          {invPublicada && slug && (
-            <CompartirEnlace path={`/${slug}/invitacion`} label="Enlace para tus invitados" />
-          )}
         </Card>
       </div>
     </div>
