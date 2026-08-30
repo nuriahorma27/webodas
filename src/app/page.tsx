@@ -365,13 +365,13 @@ function RegalosRusticos() {
 
 function GestionRealPreview() {
   return (
-    <div className="grid grid-cols-[1.12fr_.88fr] items-start gap-3">
+    <div className="grid items-start gap-5 sm:grid-cols-[1.08fr_.92fr] sm:gap-3">
       <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)]">
         <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: "809 / 1150" }}>
           <Image src="/landing/gestion.png" alt="Pantalla real de presupuesto y tareas" fill sizes="360px" className="object-cover object-top" />
         </div>
       </div>
-      <div className="mt-10 overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)]">
+      <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)] sm:mt-10">
         <p className="font-display text-lg">Mesas</p>
         <p className="mt-0.5 text-[.55rem] text-muted">1 mesa · 5/10 plazas ocupadas · 46 sin mesa</p>
         <div className="mt-3 rounded-lg border border-[#dfd5c4] p-2.5">
