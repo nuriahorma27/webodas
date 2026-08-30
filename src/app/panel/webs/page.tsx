@@ -93,7 +93,7 @@ export default function WebsPage() {
         <div className="space-y-3">
           <h2 className="font-display text-xl">Tu web de boda</h2>
           <Card className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-display text-lg">{nombrePareja(boda)}</p>
                 <p className="text-sm text-muted">{fechaLarga(boda)}</p>
@@ -156,11 +156,11 @@ export default function WebsPage() {
       <div className="space-y-3">
         <h2 className="font-display text-xl">Save the date</h2>
         <Card className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted">
               Una sola hoja con vuestros nombres, la fecha y una imagen. Para avisar pronto.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex shrink-0 items-center gap-4">
               {hasStd && slug && (
                 <a
                   href={`/${slug}/save-the-date`}
@@ -186,7 +186,7 @@ export default function WebsPage() {
       <div className="space-y-3">
         <h2 className="font-display text-xl">Invitación de boda</h2>
         <Card className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted">
               La invitación clásica: familias, ceremonia y celebración. Se descarga en PDF para
               llevar a imprenta.

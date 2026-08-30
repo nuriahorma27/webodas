@@ -28,6 +28,7 @@ export default function PresupuestoPage() {
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
   const [menuCat, setMenuCat] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const sync = () => {
@@ -133,9 +134,33 @@ export default function PresupuestoPage() {
         {categorias.map((cat, ci) => {
           const filas = partidas.filter((p) => p.categoria === cat);
           const ct = totales(filas);
+          const abierta = editando || (abiertas[cat] ?? false);
           return (
             <Card key={cat} className="p-0">
-              <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+              <div
+                className={`flex items-center justify-between gap-3 px-5 py-3 ${
+                  abierta ? "border-b border-line" : ""
+                }`}
+              >
+                {!editando && (
+                  <button
+                    type="button"
+                    onClick={() => setAbiertas((s) => ({ ...s, [cat]: !abierta }))}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <span
+                      className="shrink-0 text-muted transition-transform"
+                      style={{ transform: abierta ? "rotate(90deg)" : "none" }}
+                      aria-hidden
+                    >
+                      ▸
+                    </span>
+                    <h3 className="min-w-0 flex-1 truncate font-display text-lg">{cat}</h3>
+                    <span className="shrink-0 text-sm text-muted">
+                      {eur(ct.pagado)} / {eur(ct.estimado)}
+                    </span>
+                  </button>
+                )}
                 {editando && (
                   <div className="flex shrink-0 flex-col leading-none text-muted">
                     <button
@@ -156,37 +181,35 @@ export default function PresupuestoPage() {
                     </button>
                   </div>
                 )}
-                {editando ? (
-                  <input
-                    defaultValue={cat}
-                    onBlur={(e) => {
-                      const v = e.target.value.trim();
-                      if (v && v !== cat) renameCategoria(cat, v);
-                      else e.target.value = cat;
-                    }}
-                    className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
-                  />
-                ) : (
-                  <h3 className="min-w-0 flex-1 truncate font-display text-lg">{cat}</h3>
-                )}
-                <span className="shrink-0 text-sm text-muted">
-                  {eur(ct.pagado)} / {eur(ct.estimado)}
-                </span>
                 {editando && (
-                  <button
-                    onClick={() => {
-                      if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`))
-                        removeCategoria(cat);
-                    }}
-                    className="shrink-0 text-xs text-muted hover:text-red-600"
-                    title="Eliminar categoría"
-                  >
-                    Eliminar
-                  </button>
+                  <>
+                    <input
+                      defaultValue={cat}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v && v !== cat) renameCategoria(cat, v);
+                        else e.target.value = cat;
+                      }}
+                      className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
+                    />
+                    <span className="shrink-0 text-sm text-muted">
+                      {eur(ct.pagado)} / {eur(ct.estimado)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`))
+                          removeCategoria(cat);
+                      }}
+                      className="shrink-0 text-xs text-muted hover:text-red-600"
+                      title="Eliminar categoría"
+                    >
+                      Eliminar
+                    </button>
+                  </>
                 )}
               </div>
 
-              <div className="overflow-x-auto">
+              <div className={`overflow-x-auto ${abierta ? "" : "hidden"}`}>
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs uppercase tracking-wider text-muted">
                     <tr>

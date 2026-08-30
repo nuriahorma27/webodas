@@ -337,6 +337,7 @@ export default function TareasPage() {
   const [gestionResp, setGestionResp] = useState(false);
   const [cats, setCats] = useState<string[]>([]);
   const [catsOcultas, setCatsOcultas] = useState<string[]>([]);
+  const [grupoAbierto, setGrupoAbierto] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const sync = () => {
@@ -391,61 +392,83 @@ export default function TareasPage() {
     ts: Tarea[],
     meta: (t: Tarea) => string | undefined,
     add: { groupKey: string; categoria: string; fase: string },
+    defaultOpen: boolean,
     onDelete?: () => void,
   ) => {
     const done = ts.filter((t) => estadoDe(t.id) === "hecho").length;
+    const abierto = grupoAbierto[add.groupKey] ?? defaultOpen;
     return (
       <Card key={titulo} className="p-0">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={() =>
+            setGrupoAbierto((s) => ({ ...s, [add.groupKey]: !abierto }))
+          }
+          className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        >
+          <span
+            className="shrink-0 text-muted transition-transform"
+            style={{ transform: abierto ? "rotate(90deg)" : "none" }}
+            aria-hidden
+          >
+            ▸
+          </span>
           <h3 className="font-display text-lg">{titulo}</h3>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="text-xs text-muted">
-              {done}/{ts.length}
+          <span className="ml-auto shrink-0 text-xs text-muted">
+            {done}/{ts.length}
+          </span>
+          {onDelete && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="shrink-0 text-xs text-muted hover:text-red-600"
+              title="Eliminar esta categoría"
+            >
+              Eliminar
             </span>
-            {onDelete && (
-              <button
-                onClick={onDelete}
-                className="text-xs text-muted hover:text-red-600"
-                title="Eliminar esta categoría"
-              >
-                Eliminar
-              </button>
-            )}
-          </div>
-        </div>
+          )}
+        </button>
         {ts.length > 0 && (
-          <div className="px-4">
+          <div className="px-4 pb-1">
             <Progress value={(done / ts.length) * 100} />
           </div>
         )}
-        <ul className="mt-2 divide-y divide-line">
-          {ts.map((t) => (
-            <Row
-              key={t.id}
-              t={t}
-              meta={meta(t)}
-              estado={estadoDe(t.id)}
-              abierto={abierta === t.id}
-              editar={editando === t.id}
-              detalle={detalles[t.id]}
-              responsables={responsables}
-              onToggleOpen={() => toggleOpen(t.id)}
-              onToggleEdit={() => toggleEdit(t.id)}
+        {!abierto ? null : (
+          <>
+            <ul className="mt-2 divide-y divide-line">
+              {ts.map((t) => (
+                <Row
+                  key={t.id}
+                  t={t}
+                  meta={meta(t)}
+                  estado={estadoDe(t.id)}
+                  abierto={abierta === t.id}
+                  editar={editando === t.id}
+                  detalle={detalles[t.id]}
+                  responsables={responsables}
+                  onToggleOpen={() => toggleOpen(t.id)}
+                  onToggleEdit={() => toggleEdit(t.id)}
+                />
+              ))}
+            </ul>
+            <AddTarea
+              abierto={addEn === add.groupKey}
+              categoria={add.categoria}
+              fase={add.fase}
+              onOpen={() => setAddEn(add.groupKey)}
+              onClose={() => setAddEn(null)}
+              onAdded={(id) => {
+                setAddEn(null);
+                setEditando(null);
+                setAbierta(id);
+              }}
             />
-          ))}
-        </ul>
-        <AddTarea
-          abierto={addEn === add.groupKey}
-          categoria={add.categoria}
-          fase={add.fase}
-          onOpen={() => setAddEn(add.groupKey)}
-          onClose={() => setAddEn(null)}
-          onAdded={(id) => {
-            setAddEn(null);
-            setEditando(null);
-            setAbierta(id);
-          }}
-        />
+          </>
+        )}
       </Card>
     );
   };
@@ -571,35 +594,52 @@ export default function TareasPage() {
       </Card>
 
       <div className="space-y-4">
-        {vista === "tiempo"
-          ? FASES.map((f) =>
-              renderGrupo(
-                f,
-                visibles.filter((t) => t.fase === f),
-                (t) => t.categoria,
-                { groupKey: `fase-${f}`, categoria: cats[0] ?? "Otros", fase: f },
-              ),
-            )
-          : cats.map((c) =>
-              renderGrupo(
-                c,
-                visibles
+        {(() => {
+          // Abrir por defecto solo el primer grupo con tareas pendientes.
+          let yaAbierto = false;
+          const defaultOpen = (ts: Tarea[]) => {
+            if (yaAbierto) return false;
+            const pendientes = ts.some((t) => estadoDe(t.id) !== "hecho");
+            if (pendientes) {
+              yaAbierto = true;
+              return true;
+            }
+            return false;
+          };
+          return vista === "tiempo"
+            ? FASES.map((f) => {
+                const ts = visibles.filter((t) => t.fase === f);
+                return renderGrupo(
+                  f,
+                  ts,
+                  (t) => t.categoria,
+                  { groupKey: `fase-${f}`, categoria: cats[0] ?? "Otros", fase: f },
+                  defaultOpen(ts),
+                );
+              })
+            : cats.map((c) => {
+                const ts = visibles
                   .filter((t) => t.categoria === c)
-                  .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase)),
-                (t) => t.fase,
-                { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
-                () => {
-                  if (
-                    confirm(
-                      `¿Eliminar la categoría "${c}" y todas sus tareas? Podrás recuperarla luego.`,
-                    )
-                  ) {
-                    ocultarCategoria(c);
-                    if (filtroResp) setFiltroResp("");
-                  }
-                },
-              ),
-            )}
+                  .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase));
+                return renderGrupo(
+                  c,
+                  ts,
+                  (t) => t.fase,
+                  { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
+                  defaultOpen(ts),
+                  () => {
+                    if (
+                      confirm(
+                        `¿Eliminar la categoría "${c}" y todas sus tareas? Podrás recuperarla luego.`,
+                      )
+                    ) {
+                      ocultarCategoria(c);
+                      if (filtroResp) setFiltroResp("");
+                    }
+                  },
+                );
+              });
+        })()}
       </div>
 
       {vista === "categoria" && catsOcultas.length > 0 && (

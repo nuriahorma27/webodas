@@ -162,11 +162,21 @@ export default function PanelPage() {
           {tocaAhora.length === 0 ? (
             <p className="mt-1 text-sm text-muted">Nada pendiente de este periodo. 🎉</p>
           ) : (
-            <ul className="mt-1 max-h-80 divide-y divide-line overflow-y-auto">
-              {tocaAhora.map((t) => (
-                <Fila key={t.id} id={t.id} titulo={t.titulo} fase={t.fase} />
-              ))}
-            </ul>
+            <>
+              <ul className="mt-1 divide-y divide-line">
+                {tocaAhora.slice(0, 8).map((t) => (
+                  <Fila key={t.id} id={t.id} titulo={t.titulo} fase={t.fase} />
+                ))}
+              </ul>
+              {tocaAhora.length > 8 && (
+                <Link
+                  href="/panel/gestion/tiempos"
+                  className="mt-2 inline-block text-sm font-medium text-accent"
+                >
+                  Ver las {tocaAhora.length - 8} tareas restantes →
+                </Link>
+              )}
+            </>
           )}
         </div>
       </Card>
