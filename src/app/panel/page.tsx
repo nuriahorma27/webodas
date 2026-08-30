@@ -6,6 +6,7 @@ import { Card, Progress } from "@/components/ui";
 import { OnboardingBoda } from "@/components/onboarding-boda";
 import {
   loadBoda,
+  saveBoda,
   configurada,
   diasRestantes,
   fechaLarga,
@@ -87,8 +88,8 @@ export default function PanelPage() {
 
       <div data-tour="panel-resumen" className="grid gap-4 lg:grid-cols-[.72fr_1.28fr]">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
-          <DatoPrincipal label="Cuenta atrás" value={dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`} sub={dias == null ? "Añadid la fecha" : "para la boda"} className="rounded-[1.6rem_1.6rem_.65rem_1.6rem] bg-[#eadfce]" />
-          <DatoPrincipal label="Invitados previstos" value={boda.invitadosAprox ? String(boda.invitadosAprox) : "Por definir"} sub={boda.invitadosAprox ? "personas aproximadamente" : "Podéis añadirlos después"} className="rounded-[.65rem_1.6rem_1.6rem_1.6rem] bg-[#e4e6dc]" />
+          <FechaPrincipal fecha={boda.fecha} dias={dias} />
+          <DatoPrincipal label="Invitados previstos" value={String(invitadosSi + invitadosPendientes)} sub={`${invitadosNo} ${invitadosNo === 1 ? "ha indicado" : "han indicado"} que no ${invitadosNo === 1 ? "viene" : "vienen"}`} className="rounded-[.65rem_1.6rem_1.6rem_1.6rem] bg-[#e4e6dc]" />
         </div>
         <Link href="/panel/gestion/presupuesto" className="group">
           <div className="relative h-full overflow-hidden rounded-[2rem_.8rem_2rem_2rem] border border-[#d2bd99] bg-[#d9c7a8] p-5 transition group-hover:border-[#927444] sm:p-7">
@@ -162,6 +163,10 @@ function DatoPresupuesto({ label, value, accent }: { label: string; value: numbe
 
 function MiniDato({ label, value }: { label: string; value: number }) {
   return <div className="min-w-0 pr-2"><p className="font-display text-xl">{value}</p><p className="mt-1 truncate text-[.65rem] text-muted sm:text-xs">{label}</p></div>;
+}
+
+function FechaPrincipal({ fecha, dias }: { fecha: string; dias: number | null }) {
+  return <div className="rounded-[1.6rem_1.6rem_.65rem_1.6rem] border border-black/[.06] bg-[#eadfce] p-4 sm:p-5"><p className="text-[.62rem] uppercase tracking-[.16em] text-[#766c60]">Cuenta atrás</p><p className="mt-2 font-display text-2xl sm:text-3xl">{dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`}</p><label className="mt-3 block"><span className="block text-[.65rem] text-muted">Fecha de la boda</span><input type="date" value={fecha} onChange={(e) => saveBoda({ fecha: e.target.value })} className="mt-1 w-full rounded-lg border border-[#cdbda4] bg-white/55 px-2.5 py-2 text-xs outline-none focus:border-accent sm:text-sm" /></label></div>;
 }
 
 function DatoPrincipal({ label, value, sub, className }: { label: string; value: string; sub: string; className: string }) {
