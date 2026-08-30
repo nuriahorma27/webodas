@@ -82,17 +82,12 @@ export default function Landing() {
           </div>
 
           <div className="lp-rise lp-rise-3 relative mx-auto w-full max-w-xl lg:mx-0">
-            <Marco>
-              <Image
-                src="/landing/web.png"
-                alt="Web de boda creada con webodas"
-                width={1263}
-                height={1400}
-                priority
-                className="w-full"
-                style={{ aspectRatio: "1263 / 760", objectFit: "cover", objectPosition: "top" }}
-              />
-            </Marco>
+            <Cuadro
+              src="/landing/web.png"
+              alt="Web de boda creada con webodas"
+              ratio="1263 / 780"
+              priority
+            />
             <div
               className="absolute -bottom-9 -left-6 hidden w-56 rounded-xl border border-line bg-white p-4 shadow-[0_20px_45px_-20px_rgba(33,29,26,0.3)] sm:block"
               style={{ transform: "rotate(3deg)" }}
@@ -153,7 +148,7 @@ export default function Landing() {
             titulo="Vuestra web, con vuestro enlace"
             texto="Editor visual con plantillas. Portada, cuenta atrás, agenda del día, cómo llegar, galería y confirmación de asistencia. Se edita desde el ordenador y se ve bien en el móvil."
             puntos={["Sin saber de diseño", "Enlace con vuestros nombres"]}
-            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1040"]]}
+            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1000"]]}
           />
           <Fila
             invertida
@@ -161,7 +156,7 @@ export default function Landing() {
             titulo="Regalos por transferencia, Bizum o tarjeta"
             texto="Compartís la lista y los invitados aportan online. webodas no cobra comisión; con pago por tarjeta se aplica solo la tarifa de la pasarela de pago."
             puntos={["Regalos concretos o fondo común", "Veis quién ha aportado"]}
-            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 640"]]}
+            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 720"]]}
           />
           <Fila
             eyebrow="Invitación y save the date"
@@ -169,8 +164,8 @@ export default function Landing() {
             texto="La invitación clásica, con su tipografía y su formato. Se rellena y se descarga en PDF al tamaño real, lista para imprenta. El save the date se comparte por un enlace."
             puntos={["PDF listo para imprenta", "Save the date para avisar pronto"]}
             imgs={[
-              ["/landing/invitacion.png", "Invitación de boda", "1400 / 900"],
-              ["/landing/savethedate.png", "Save the date", "905 / 1080"],
+              ["/landing/invitacion.png", "Invitación de boda", "1400 / 950"],
+              ["/landing/savethedate.png", "Save the date", "858 / 1160"],
             ]}
           />
           <Fila
@@ -179,7 +174,7 @@ export default function Landing() {
             titulo="Presupuesto, tareas, invitados y mesas"
             texto="Lista de tareas ordenada por meses, presupuesto por partidas, lista de invitados con sus confirmaciones y plano de mesas. Al contratar un proveedor, el presupuesto se actualiza."
             puntos={["Exportable a Excel", "Plano de mesas para imprimir"]}
-            imgs={[["/landing/gestion.png", "Panel de organización de la boda", "809 / 950"]]}
+            imgs={[["/landing/gestion.png", "Panel de organización de la boda", "809 / 900"]]}
           />
         </div>
       </section>
@@ -244,20 +239,35 @@ export default function Landing() {
   );
 }
 
-function Marco({ children }: { children: React.ReactNode }) {
+type Img = [src: string, alt: string, ratio: string];
+
+function Cuadro({
+  src,
+  alt,
+  ratio,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  ratio: string;
+  priority?: boolean;
+}) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white shadow-[0_30px_70px_-28px_rgba(33,29,26,0.45)] ring-1 ring-black/[0.03]">
-      <div className="flex items-center gap-1.5 border-b border-line bg-[#f6f2ec] px-3.5 py-2.5">
-        <span className="h-2 w-2 rounded-full bg-line" />
-        <span className="h-2 w-2 rounded-full bg-line" />
-        <span className="h-2 w-2 rounded-full bg-line" />
-      </div>
-      {children}
+    <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,0.4)]">
+      <Image
+        src={src}
+        alt={alt}
+        width={1400}
+        height={1000}
+        loading={priority ? "eager" : "lazy"}
+        priority={priority}
+        sizes="(max-width: 1024px) 100vw, 560px"
+        className="block w-full rounded-md"
+        style={{ aspectRatio: ratio, objectFit: "cover", objectPosition: "top" }}
+      />
     </div>
   );
 }
-
-type Img = [src: string, alt: string, ratio: string];
 
 function Fila({
   eyebrow,
@@ -289,20 +299,13 @@ function Fila({
           ))}
         </ul>
       </div>
-      <div className={`${invertida ? "lg:order-1" : ""} ${imgs.length > 1 ? "space-y-5" : ""}`}>
+      <div
+        className={`${invertida ? "lg:order-1" : ""} ${
+          imgs.length > 1 ? "grid grid-cols-[1.35fr_1fr] items-start gap-4" : ""
+        }`}
+      >
         {imgs.map(([src, alt, ratio]) => (
-          <Marco key={src}>
-            <Image
-              src={src}
-              alt={alt}
-              width={1400}
-              height={1000}
-              loading="eager"
-              sizes="(max-width: 1024px) 100vw, 560px"
-              className="block w-full"
-              style={{ aspectRatio: ratio, objectFit: "cover", objectPosition: "top" }}
-            />
-          </Marco>
+          <Cuadro key={src} src={src} alt={alt} ratio={ratio} />
         ))}
       </div>
     </div>
