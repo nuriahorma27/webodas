@@ -8,7 +8,7 @@ export { ACABADOS, MARCOS };
 export type { AcabadoStd, MarcoStd };
 
 // Tipografías de invitación (todas de imprenta / caligráficas clásicas).
-export type FuenteInv = "imprenta" | "formal" | "elegante" | "manuscrita" | "fina";
+export type FuenteInv = "imprenta" | "elegante" | "manuscrita";
 export const FUENTES_INV: Record<
   FuenteInv,
   { label: string; family: string; escala: number }
@@ -20,10 +20,8 @@ export const FUENTES_INV: Record<
     family: "'Snell Roundhand', 'Pinyon Script', 'Apple Chancery', cursive",
     escala: 1.3,
   },
-  formal: { label: "Formal", family: "'Petit Formal Script', cursive", escala: 1.3 },
   elegante: { label: "Elegante", family: "'Cormorant Garamond', Georgia, serif", escala: 1 },
   manuscrita: { label: "Manuscrita", family: "'Parisienne', cursive", escala: 1.35 },
-  fina: { label: "Fina", family: "'Tangerine', cursive", escala: 1.7 },
 };
 
 export type Invitacion = {

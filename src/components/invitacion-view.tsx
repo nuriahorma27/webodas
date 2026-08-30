@@ -23,7 +23,7 @@ export function InvitacionView({ inv }: { inv: Invitacion }) {
     <>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Petit+Formal+Script&family=Cormorant+Garamond:wght@400;500&family=Parisienne&family=Tangerine:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Parisienne&display=swap"
       />
       <div className="mx-auto w-full" style={{ maxWidth: 920, containerType: "inline-size" }}>
         <div
