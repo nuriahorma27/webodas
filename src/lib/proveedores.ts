@@ -9,6 +9,8 @@ export type Proveedor = {
   nombre: string;
   categoria: string;
   contacto: string;
+  email?: string;
+  telefono?: string;
   estado: string;
   importe: number;
   incluye?: string;
@@ -51,6 +53,8 @@ export function addManual(): Proveedor {
     nombre: "",
     categoria: "",
     contacto: "",
+    email: "",
+    telefono: "",
     estado: "En contacto",
     importe: 0,
   };
@@ -85,6 +89,8 @@ export function proveedoresDeTareas(): Proveedor[] {
           nombre: c.nombre || t.titulo,
           categoria: t.categoria,
           contacto: c.telefono || c.email || "",
+          email: c.email || "",
+          telefono: c.telefono || "",
           estado: "Contratado",
           importe,
           incluye: c.notas || "",

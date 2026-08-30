@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Card, Badge } from "@/components/ui";
 import { eur } from "@/lib/mock";
 import {
@@ -13,7 +12,7 @@ import {
   type Proveedor,
 } from "@/lib/proveedores";
 
-const tono = (estado: string) =>
+const tono = (estado: string): "green" | "red" | "amber" =>
   estado === "Contratado" ? "green" : estado === "Descartado" ? "red" : "amber";
 
 const cell = "w-full bg-transparent outline-none focus:border-b focus:border-accent";
@@ -52,32 +51,14 @@ export default function ProveedoresPage() {
         aquí solos. Puedes añadir otros a mano.
       </p>
 
-      <Card className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-              <tr>
-                <th className="px-3 py-2.5 sm:px-5">Proveedor</th>
-                <th className="hidden px-5 py-2.5 md:table-cell">Categoría</th>
-                <th className="hidden px-5 py-2.5 lg:table-cell">Contacto</th>
-                <th className="px-2 py-2.5 text-right sm:px-3">Importe</th>
-                <th className="px-3 py-2.5 sm:px-5">Estado</th>
-                <th className="w-8 px-3 py-2.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {lista.map((p) => (p.taskId ? <FilaAuto key={p.id} p={p} /> : <FilaManual key={p.id} p={p} />))}
-              {lista.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-muted">
-                    Aún no hay proveedores.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <Card className="p-4 sm:p-5">
+        <div className="grid gap-3 md:grid-cols-2">
+          {lista.map((p) => (p.taskId ? <TarjetaAuto key={p.id} p={p} /> : <TarjetaManual key={p.id} p={p} />))}
+          {lista.length === 0 && (
+            <p className="py-5 text-center text-sm text-muted md:col-span-2">Aún no hay proveedores.</p>
+          )}
         </div>
-        <div className="px-5 py-3">
+        <div className="pt-4">
           <button onClick={() => addManual()} className="text-sm font-medium text-accent">
             + Añadir proveedor
           </button>
@@ -96,88 +77,76 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function FilaAuto({ p }: { p: Proveedor }) {
+function contactoDe(p: Proveedor) {
+  const legado = p.contacto || "";
+  return {
+    email: p.email || (legado.includes("@") ? legado : ""),
+    telefono: p.telefono || (legado && !legado.includes("@") ? legado : ""),
+  };
+}
+
+function TarjetaAuto({ p }: { p: Proveedor }) {
+  const { email, telefono } = contactoDe(p);
   return (
-    <tr className="bg-green-50/40">
-      <td className="px-5 py-3">
-        <span className="font-medium">{p.nombre}</span>
-        <Link
-          href="/panel/gestion/tiempos"
-          className="ml-2 text-xs text-muted underline hover:text-accent"
-        >
-          desde: {p.desdeTarea}
-        </Link>
-      </td>
-      <td className="hidden px-5 py-3 text-muted md:table-cell">{p.categoria}</td>
-      <td className="hidden px-5 py-3 text-muted lg:table-cell">{p.contacto || "—"}</td>
-      <td className="px-3 py-3 text-right">{p.importe ? eur(p.importe) : "—"}</td>
-      <td className="px-5 py-3">
+    <article className="rounded-xl border border-green-200 bg-green-50/30 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 font-medium">{p.nombre}</h3>
         <Badge tone="green">Contratado</Badge>
-      </td>
-      <td />
-    </tr>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+        <Dato label="Importe" valor={p.importe ? eur(p.importe) : "—"} />
+        <Dato label="Estado" valor="Contratado" />
+        <Dato label="Correo" valor={email || "—"} href={email ? `mailto:${email}` : undefined} />
+        <Dato label="Móvil" valor={telefono || "—"} href={telefono ? `tel:${telefono}` : undefined} />
+      </div>
+    </article>
   );
 }
 
-function FilaManual({ p }: { p: Proveedor }) {
+function TarjetaManual({ p }: { p: Proveedor }) {
+  const { email, telefono } = contactoDe(p);
   return (
-    <tr>
-      <td className="px-5 py-3">
+    <article className="rounded-xl border border-line bg-surface p-4">
+      <div className="flex items-start gap-3">
         <input
           defaultValue={p.nombre}
-          placeholder="Nombre"
+          placeholder="Nombre del proveedor"
           onBlur={(e) => updateManual(p.id, { nombre: e.target.value })}
-          className={`${cell} font-medium`}
+          className={`${cell} min-w-0 flex-1 font-medium`}
         />
-      </td>
-      <td className="hidden px-5 py-3 md:table-cell">
-        <input
-          defaultValue={p.categoria}
-          placeholder="—"
-          onBlur={(e) => updateManual(p.id, { categoria: e.target.value })}
-          className={`${cell} text-muted`}
-        />
-      </td>
-      <td className="hidden px-5 py-3 lg:table-cell">
-        <input
-          defaultValue={p.contacto}
-          placeholder="tel / email"
-          onBlur={(e) => updateManual(p.id, { contacto: e.target.value })}
-          className={`${cell} text-muted`}
-        />
-      </td>
-      <td className="px-3 py-3 text-right">
-        <input
-          type="text"
-          inputMode="decimal"
-          defaultValue={p.importe || ""}
-          placeholder="0"
-          onBlur={(e) => updateManual(p.id, { importe: Number(e.target.value.replace(",", ".")) || 0 })}
-          className={`${cell} text-right`}
-        />
-      </td>
-      <td className="px-5 py-3">
-        <select
-          value={p.estado}
-          onChange={(e) => updateManual(p.id, { estado: e.target.value })}
-          className="bg-transparent text-sm outline-none"
-        >
-          {ESTADOS_PROVEEDOR.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="px-3 py-3 text-right">
         <button
           onClick={() => removeManual(p.id)}
-          className="text-muted hover:text-red-600"
+          className="shrink-0 text-muted hover:text-red-600"
           title="Eliminar"
         >
           ✕
         </button>
-      </td>
-    </tr>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+        <Campo label="Importe">
+          <input type="text" inputMode="decimal" defaultValue={p.importe || ""} placeholder="0 €" onBlur={(e) => updateManual(p.id, { importe: Number(e.target.value.replace(",", ".")) || 0 })} className={cell} />
+        </Campo>
+        <Campo label="Estado">
+          <select value={p.estado} onChange={(e) => updateManual(p.id, { estado: e.target.value })} className={`${cell} text-sm`}>
+            {ESTADOS_PROVEEDOR.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Campo>
+        <Campo label="Correo">
+          <input type="email" defaultValue={email} placeholder="correo@ejemplo.com" onBlur={(e) => updateManual(p.id, { email: e.target.value })} className={cell} />
+        </Campo>
+        <Campo label="Móvil">
+          <input type="tel" defaultValue={telefono} placeholder="600 000 000" onBlur={(e) => updateManual(p.id, { telefono: e.target.value })} className={cell} />
+        </Campo>
+      </div>
+      <div className="mt-4"><Badge tone={tono(p.estado)}>{p.estado}</Badge></div>
+    </article>
   );
+}
+
+function Dato({ label, valor, href }: { label: string; valor: string; href?: string }) {
+  return <div className="min-w-0"><p className="text-[.65rem] uppercase tracking-wider text-muted">{label}</p>{href ? <a href={href} className="mt-1 block truncate underline decoration-line underline-offset-2 hover:text-accent">{valor}</a> : <p className="mt-1 truncate">{valor}</p>}</div>;
+}
+
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="min-w-0"><span className="block text-[.65rem] uppercase tracking-wider text-muted">{label}</span><span className="mt-1 block">{children}</span></label>;
 }
