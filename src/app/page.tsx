@@ -365,7 +365,7 @@ function RegalosRusticos() {
 
 function GestionRealPreview() {
   return (
-    <div className="relative min-w-0 max-w-full sm:grid sm:grid-cols-[1.08fr_.92fr] sm:items-start sm:gap-3">
+    <div className="relative min-h-[32rem] min-w-0 max-w-full sm:grid sm:min-h-0 sm:grid-cols-[1.08fr_.92fr] sm:items-start sm:gap-3">
       <div className="min-w-0 w-[84%] overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)] sm:w-auto">
         <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: "809 / 1150" }}>
           <Image src="/landing/gestion.png" alt="Pantalla real de presupuesto y tareas" fill sizes="360px" className="object-cover object-top" />
