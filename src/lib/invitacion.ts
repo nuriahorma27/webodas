@@ -43,9 +43,9 @@ export type Invitacion = {
 const KEY = "webodas:invitacion";
 
 const CUERPO_EJEMPLO =
-  "y tienen el gusto de invitaros a la ceremonia religiosa que se celebrará (D. m.)\n" +
-  "el sábado 12 de septiembre a la una del mediodía, en la Iglesia de Santa María la Real\n" +
-  "y a la celebración que tendrá lugar a continuación, en la Finca El Olivar.";
+  "y tienen el gusto de invitarles a la ceremonia religiosa que se celebrará (D. m.)\n" +
+  "el sábado 18 de octubre a las doce y media del mediodía, en la Iglesia de San Bernabé Apóstol\n" +
+  "y a la celebración que tendrá lugar a continuación, en la Finca “Los Almendros”.";
 
 const DEFAULT: Invitacion = {
   publicada: false,
@@ -61,7 +61,7 @@ const DEFAULT: Invitacion = {
   colorBg: "#fdfcf8",
   colorText: "#5b6a4c",
   acabado: "liso",
-  fuente: "imprenta",
+  fuente: "formal",
   marco: "ninguno",
   colorMarco: "#6f7650",
   colorFrutos: "#c79a46",
