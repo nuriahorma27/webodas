@@ -82,7 +82,7 @@ export default function InvitacionPage() {
       const nodo = exportRef.current;
       const png = await toPng(nodo, {
         cacheBust: true,
-        pixelRatio: 4,
+        pixelRatio: 3,
         width: nodo.offsetWidth,
         height: nodo.offsetHeight,
       });
@@ -91,8 +91,9 @@ export default function InvitacionPage() {
         orientation: "landscape",
         unit: "mm",
         format: [PDF_MM.w, PDF_MM.h],
+        compress: true,
       });
-      pdf.addImage(png, "PNG", 0, 0, PDF_MM.w, PDF_MM.h);
+      pdf.addImage(png, "PNG", 0, 0, PDF_MM.w, PDF_MM.h, undefined, "MEDIUM");
       pdf.save("invitacion-boda.pdf");
     } catch {
       alert("No se ha podido generar el PDF. Vuelve a intentarlo.");
