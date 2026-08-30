@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 const pasos = [
-  ["Creáis la cuenta", "7 días de prueba gratis, sin tarjeta."],
+  ["Creáis la cuenta", "7 días de prueba gratis."],
   ["Montáis la web", "Elegís una plantilla y la adaptáis a vuestra boda."],
   ["Abrís la lista de regalos", "Transferencia, Bizum o tarjeta."],
   ["Organizáis el resto", "Presupuesto, tareas, invitados y mesas."],
@@ -77,7 +77,7 @@ export default function Landing() {
               </a>
             </div>
             <p className="lp-rise lp-rise-4 mt-6 text-xs text-muted">
-              7 días de prueba gratis · sin tarjeta
+              7 días de prueba gratis
             </p>
           </div>
 
@@ -90,7 +90,7 @@ export default function Landing() {
                 height={1400}
                 priority
                 className="w-full"
-                style={{ aspectRatio: "1263 / 900", objectFit: "cover", objectPosition: "top" }}
+                style={{ aspectRatio: "1263 / 760", objectFit: "cover", objectPosition: "top" }}
               />
             </Marco>
             <div
@@ -126,7 +126,7 @@ export default function Landing() {
       <section className="border-y border-line bg-surface">
         <div className="mx-auto grid max-w-5xl gap-6 px-5 py-8 text-center sm:grid-cols-3">
           {[
-            ["7 días gratis", "para probarlo, sin tarjeta"],
+            ["7 días gratis", "para probarlo con calma"],
             ["En español", "hecho para bodas de aquí"],
             ["Un panel", "web, regalos, invitaciones y gestión"],
           ].map(([n, d]) => (
@@ -151,9 +151,9 @@ export default function Landing() {
           <Fila
             eyebrow="Web de boda"
             titulo="Vuestra web, con vuestro enlace"
-            texto="Editor visual con plantillas. Portada, historia, agenda del día, cómo llegar, galería y confirmación de asistencia. Se edita desde el ordenador y se ve bien en el móvil."
+            texto="Editor visual con plantillas. Portada, cuenta atrás, agenda del día, cómo llegar, galería y confirmación de asistencia. Se edita desde el ordenador y se ve bien en el móvil."
             puntos={["Sin saber de diseño", "Enlace con vuestros nombres"]}
-            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1400"]]}
+            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1040"]]}
           />
           <Fila
             invertida
@@ -161,7 +161,7 @@ export default function Landing() {
             titulo="Regalos por transferencia, Bizum o tarjeta"
             texto="Compartís la lista y los invitados aportan online. webodas no cobra comisión; con pago por tarjeta se aplica solo la tarifa de la pasarela de pago."
             puntos={["Regalos concretos o fondo común", "Veis quién ha aportado"]}
-            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 620"]]}
+            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 640"]]}
           />
           <Fila
             eyebrow="Invitación y save the date"
@@ -170,7 +170,7 @@ export default function Landing() {
             puntos={["PDF listo para imprenta", "Save the date para avisar pronto"]}
             imgs={[
               ["/landing/invitacion.png", "Invitación de boda", "1400 / 900"],
-              ["/landing/savethedate.png", "Save the date", "905 / 900"],
+              ["/landing/savethedate.png", "Save the date", "905 / 1080"],
             ]}
           />
           <Fila
@@ -213,7 +213,7 @@ export default function Landing() {
             Empezad la web de vuestra boda
           </h2>
           <p className="mx-auto mt-4 max-w-md text-muted">
-            Prueba gratis de 7 días. No hace falta tarjeta.
+            Prueba gratis de 7 días.
           </p>
           <Link
             href="/inicio?crear=1"
