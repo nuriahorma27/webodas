@@ -20,19 +20,15 @@ import {
 import { estimadoDe, loadPartidas, type Partida } from "@/lib/presupuesto";
 import { eur } from "@/lib/mock";
 
-const accesos = [
-  { href: "/panel/webs", titulo: "Web de boda", grupo: "Diseño" },
-  { href: "/panel/save-the-date", titulo: "Save the date", grupo: "Diseño" },
-  { href: "/panel/invitacion", titulo: "Invitación", grupo: "Diseño" },
-  { href: "/panel/regalos", titulo: "Lista de regalos", grupo: "Regalos" },
-  { href: "/panel/gestion/presupuesto", titulo: "Presupuesto", grupo: "Organización" },
-  { href: "/panel/gestion/tiempos", titulo: "Tareas", grupo: "Organización" },
-  { href: "/panel/gestion/invitados", titulo: "Invitados", grupo: "Organización" },
-  { href: "/panel/gestion/mesas", titulo: "Mesas", grupo: "Organización" },
-  { href: "/panel/gestion/proveedores", titulo: "Proveedores", grupo: "Organización" },
-  { href: "/panel/gestion/confirmaciones", titulo: "Confirmaciones", grupo: "Organización" },
-  { href: "/panel/gestion/formulario", titulo: "Formulario", grupo: "Organización" },
-];
+const gestion = [
+  ["Presupuesto", "/panel/gestion/presupuesto"],
+  ["Tareas", "/panel/gestion/tiempos"],
+  ["Invitados", "/panel/gestion/invitados"],
+  ["Mesas", "/panel/gestion/mesas"],
+  ["Proveedores", "/panel/gestion/proveedores"],
+  ["Confirmaciones", "/panel/gestion/confirmaciones"],
+  ["Formulario", "/panel/gestion/formulario"],
+] as const;
 
 export default function PanelPage() {
   const [boda, setBoda] = useState<BodaPerfil | null>(null);
@@ -74,43 +70,52 @@ export default function PanelPage() {
     <div className="space-y-8">
       <PageTitle eyebrow={fechaLarga(boda)} title={`Hola, ${nombrePareja(boda)}`} />
 
-      <div data-tour="panel-resumen" className="grid gap-4 sm:grid-cols-3">
-        <Stat
-          label="Cuenta atrás"
-          value={dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy o pasó!" : `${dias} días`}
-          sub={boda.lugar || (dias == null ? "añade la fecha en tu web" : "")}
-        />
-        <PendienteStat
-          label="Invitados (aprox.)"
-          value={boda.invitadosAprox}
-          href="/panel/gestion/invitados"
-        />
+      <div data-tour="panel-resumen" className="grid gap-4 lg:grid-cols-[.72fr_1.28fr]">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
+          <Stat label="Cuenta atrás" value={dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy o pasó!" : `${dias} días`} sub={boda.lugar || (dias == null ? "Añadid la fecha" : "")} />
+          <PendienteStat label="Invitados" value={boda.invitadosAprox} href="/panel/gestion/invitados" />
+        </div>
         <Link href="/panel/gestion/presupuesto" className="group">
-          <Card className="h-full transition group-hover:border-accent group-hover:shadow-sm">
-            <p className="text-xs uppercase tracking-[0.15em] text-muted">Presupuesto</p>
-            <p className="mt-2 font-display text-3xl">{presupuestoTotal ? eur(presupuestoTotal) : "Pendiente"}</p>
-            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3">
-              <div><p className="text-[.65rem] uppercase tracking-wider text-muted">Gastado</p><p className="mt-1 text-sm font-medium">{eur(gastado)}</p></div>
-              <div><p className="text-[.65rem] uppercase tracking-wider text-muted">Sin asignar</p><p className="mt-1 text-sm font-medium text-accent">{eur(sinAsignar)}</p></div>
+          <div className="h-full rounded-2xl border border-[#d9c9ad] bg-[#eee4d3] p-5 transition group-hover:border-accent sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-xs uppercase tracking-[.18em] text-[#7b694e]">Presupuesto de la boda</p><p className="mt-3 font-display text-4xl sm:text-5xl">{presupuestoTotal ? eur(presupuestoTotal) : "Por definir"}</p></div>
+              <span className="hidden rounded-full border border-[#b9a889] px-3 py-1.5 text-xs text-[#6e5d43] sm:block">Ver presupuesto →</span>
             </div>
-          </Card>
+            <div className="mt-8 grid grid-cols-3 gap-3 border-t border-[#cfc0a7] pt-5">
+              <DatoPresupuesto label="Asignado" value={asignado} />
+              <DatoPresupuesto label="Gastado" value={gastado} />
+              <DatoPresupuesto label="Sin asignar" value={sinAsignar} accent />
+            </div>
+          </div>
         </Link>
       </div>
 
       <div data-tour="panel-servicios">
-        <div className="flex items-end justify-between gap-4">
-          <div><p className="text-xs uppercase tracking-[.18em] text-accent">Todo vuestro panel</p><h2 className="mt-1 font-display text-2xl">Accesos directos</h2></div>
-          <Link href="/panel/gestion" className="hidden text-sm text-accent hover:underline sm:block">Ver gestión completa →</Link>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {accesos.map((s, index) => (
-            <Link key={s.titulo} href={s.href} className="group relative min-h-28 overflow-hidden rounded-xl border border-line bg-surface p-4 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
-              <p className="text-[.62rem] uppercase tracking-[.16em] text-muted">{s.grupo}</p>
-              <h3 className="mt-3 pr-7 font-display text-lg leading-tight">{s.titulo}</h3>
-              <span className="absolute bottom-3 right-3 grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-sm text-accent transition group-hover:bg-accent group-hover:text-white">→</span>
-              <span className="absolute right-3 top-3 font-display text-xs text-[#c7b99f]">{String(index + 1).padStart(2, "0")}</span>
-            </Link>
-          ))}
+        <p className="text-xs uppercase tracking-[.18em] text-accent">Vuestras herramientas</p>
+        <h2 className="mt-1 font-display text-2xl">Todo en su sitio</h2>
+        <div className="mt-5 grid gap-4 lg:grid-cols-12">
+          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:col-span-7">
+            <p className="text-xs uppercase tracking-[.16em] text-muted">Diseño y comunicación</p>
+            <h3 className="mt-3 max-w-md font-display text-2xl">Todo lo que compartiréis con vuestros invitados</h3>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-muted">Preparad la web, avisad de la fecha y cread la invitación con el mismo estilo.</p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-3">
+              <EnlaceHerramienta href="/panel/webs">Web de boda</EnlaceHerramienta>
+              <EnlaceHerramienta href="/panel/save-the-date">Save the date</EnlaceHerramienta>
+              <EnlaceHerramienta href="/panel/invitacion">Invitación</EnlaceHerramienta>
+            </div>
+          </section>
+          <section className="flex flex-col rounded-2xl border border-[#d9c9ad] bg-[#f3ebde] p-5 sm:p-6 lg:col-span-5">
+            <p className="text-xs uppercase tracking-[.16em] text-[#7b694e]">Lista de regalos</p>
+            <h3 className="mt-3 font-display text-2xl">Regalos y aportaciones, reunidos</h3>
+            <p className="mt-2 flex-1 text-sm leading-6 text-muted">Cread vuestra lista y consultad quién ha participado.</p>
+            <Link href="/panel/regalos" className="mt-6 inline-flex w-fit rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-white">Abrir lista de regalos →</Link>
+          </section>
+          <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:col-span-12">
+            <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Organización</p><h3 className="mt-2 font-display text-2xl">La parte práctica de la boda</h3></div><Link href="/panel/gestion" className="text-sm text-accent">Ver resumen de gestión →</Link></div>
+            <div className="mt-5 grid grid-cols-2 border-l border-t border-line sm:grid-cols-4">
+              {gestion.map(([titulo, href]) => <Link key={titulo} href={href} className="group flex min-h-16 items-center justify-between gap-2 border-b border-r border-line px-3 py-3 text-sm transition hover:bg-accent-soft/60 sm:px-4"><span>{titulo}</span><span className="text-accent transition group-hover:translate-x-0.5">→</span></Link>)}
+            </div>
+          </section>
         </div>
       </div>
 
@@ -137,6 +142,14 @@ export default function PanelPage() {
 
 function ResumenEstado({ label, value, color }: { label: string; value: number; color: string }) {
   return <div className="border-l border-line p-4 first:border-l-0 md:border-l-0 md:border-t md:first:border-t-0 sm:p-5"><span className={`block h-2 w-2 rounded-full ${color}`} /><p className="mt-3 font-display text-2xl">{value}</p><p className="mt-1 text-xs text-muted">{label}</p></div>;
+}
+
+function DatoPresupuesto({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+  return <div><p className="text-[.62rem] uppercase tracking-wider text-[#786d5f]">{label}</p><p className={`mt-1 font-display text-lg sm:text-xl ${accent ? "text-accent" : ""}`}>{eur(value)}</p></div>;
+}
+
+function EnlaceHerramienta({ href, children }: { href: string; children: React.ReactNode }) {
+  return <Link href={href} className="flex items-center justify-between rounded-lg border border-line px-3.5 py-3 text-sm font-medium transition hover:border-accent hover:bg-accent-soft/50"><span>{children}</span><span className="text-accent">→</span></Link>;
 }
 
 function PendienteStat({
