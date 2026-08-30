@@ -1,22 +1,22 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
   title: "webodas · Toda vuestra boda en un solo sitio",
   description:
-    "Crea la web de tu boda, comparte la lista de regalos sin comisiones, prepara las invitaciones y organiza el gran día. Todo en un mismo panel, en español.",
+    "La web de boda, la lista de regalos, las invitaciones y la organización del día, en un mismo panel. Prueba gratis de 7 días.",
 };
 
 const pasos = [
-  ["Creáis la cuenta", "Con un email entráis a vuestro panel. Gratis."],
-  ["Montáis la web", "Elegís una plantilla y la dejáis a vuestro gusto."],
-  ["Abrís la lista de regalos", "Por transferencia, Bizum o tarjeta. Sin comisiones."],
-  ["Organizáis el resto", "Presupuesto, tareas, invitados y mesas, todo junto."],
+  ["Creáis la cuenta", "7 días de prueba gratis, sin tarjeta."],
+  ["Montáis la web", "Elegís una plantilla y la adaptáis a vuestra boda."],
+  ["Abrís la lista de regalos", "Transferencia, Bizum o tarjeta."],
+  ["Organizáis el resto", "Presupuesto, tareas, invitados y mesas."],
 ];
 
 export default function Landing() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* barra */}
       <header className="sticky top-0 z-30 border-b border-line/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <span className="font-display text-xl tracking-tight">webodas</span>
@@ -47,10 +47,10 @@ export default function Landing() {
           className="pointer-events-none absolute -right-40 -top-40 h-[36rem] w-[36rem] rounded-full opacity-60 blur-3xl"
           style={{ background: "radial-gradient(circle, #f0e4d0 0%, rgba(240,228,208,0) 70%)" }}
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-[1fr_1.05fr] lg:py-24">
           <div>
             <p className="lp-rise lp-rise-1 text-xs uppercase tracking-[0.28em] text-accent">
-              Para novios que quieren disfrutar el proceso
+              Organización de bodas
             </p>
             <h1 className="lp-rise lp-rise-2 mt-5 font-display text-[2.9rem] leading-[1.06] tracking-tight sm:text-6xl">
               Toda vuestra boda,
@@ -58,8 +58,8 @@ export default function Landing() {
               <span className="italic text-accent">en un solo sitio.</span>
             </h1>
             <p className="lp-rise lp-rise-3 mt-6 max-w-md text-lg leading-relaxed text-muted">
-              La web, la lista de regalos, las invitaciones y la organización del día. Sin cinco
-              herramientas sueltas, sin hojas de cálculo y sin comisiones sobre los regalos.
+              La web de boda, la lista de regalos, las invitaciones y la organización del día. Todo
+              en el mismo panel.
             </p>
             <div className="lp-rise lp-rise-4 mt-8 flex flex-wrap items-center gap-4">
               <Link
@@ -72,22 +72,29 @@ export default function Landing() {
                 href="#producto"
                 className="group inline-flex items-center gap-2 text-sm font-medium text-foreground"
               >
-                Ver cómo funciona
+                Ver qué incluye
                 <span className="transition-transform group-hover:translate-x-0.5">→</span>
               </a>
             </div>
             <p className="lp-rise lp-rise-4 mt-6 text-xs text-muted">
-              Gratis para empezar · Web, regalos e invitaciones · Sin tarjeta
+              7 días de prueba gratis · sin tarjeta
             </p>
           </div>
 
-          {/* visual: la invitación + una pieza del panel */}
-          <div className="lp-rise lp-rise-3 relative mx-auto w-full max-w-md lg:mx-0">
-            <div style={{ transform: "rotate(-2deg)" }}>
-              <InvitacionMock />
-            </div>
+          <div className="lp-rise lp-rise-3 relative mx-auto w-full max-w-xl lg:mx-0">
+            <Marco>
+              <Image
+                src="/landing/web.png"
+                alt="Web de boda creada con webodas"
+                width={1263}
+                height={1400}
+                priority
+                className="w-full"
+                style={{ aspectRatio: "1263 / 900", objectFit: "cover", objectPosition: "top" }}
+              />
+            </Marco>
             <div
-              className="absolute -bottom-10 -left-8 hidden w-60 rounded-xl border border-line bg-white p-4 shadow-[0_20px_45px_-20px_rgba(33,29,26,0.3)] sm:block"
+              className="absolute -bottom-9 -left-6 hidden w-56 rounded-xl border border-line bg-white p-4 shadow-[0_20px_45px_-20px_rgba(33,29,26,0.3)] sm:block"
               style={{ transform: "rotate(3deg)" }}
             >
               <p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted">6 meses antes</p>
@@ -115,13 +122,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* franja de confianza */}
+      {/* franja */}
       <section className="border-y border-line bg-surface">
         <div className="mx-auto grid max-w-5xl gap-6 px-5 py-8 text-center sm:grid-cols-3">
           {[
-            ["4 en 1", "web · regalos · invitaciones · gestión"],
-            ["0 % comisión", "en la lista de regalos"],
-            ["En español", "y con soporte cercano"],
+            ["7 días gratis", "para probarlo, sin tarjeta"],
+            ["En español", "hecho para bodas de aquí"],
+            ["Un panel", "web, regalos, invitaciones y gestión"],
           ].map(([n, d]) => (
             <div key={n}>
               <p className="font-display text-2xl">{n}</p>
@@ -131,58 +138,49 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* producto: filas alternas */}
+      {/* producto */}
       <section id="producto" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 lg:py-28">
         <div className="max-w-xl">
           <p className="text-xs uppercase tracking-[0.24em] text-accent">Qué incluye</p>
           <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
-            Todo lo que se hace por separado, junto y hablándose entre sí.
+            Cuatro herramientas, un mismo panel.
           </h2>
         </div>
 
         <div className="mt-16 space-y-20 lg:space-y-28">
           <Fila
-            eyebrow="Vuestra web"
-            titulo="Una web de boda que da gusto enseñar"
-            texto="Editor visual de arrastrar y soltar, plantillas con estética cuidada y un enlace con vuestros nombres. Portada, historia, agenda del día, cómo llegar, galería y confirmación de asistencia."
-            puntos={["Sin saber nada de diseño", "Se ve perfecta también en el móvil"]}
-          >
-            <WebMock />
-          </Fila>
-
+            eyebrow="Web de boda"
+            titulo="Vuestra web, con vuestro enlace"
+            texto="Editor visual con plantillas. Portada, historia, agenda del día, cómo llegar, galería y confirmación de asistencia. Se edita desde el ordenador y se ve bien en el móvil."
+            puntos={["Sin saber de diseño", "Enlace con vuestros nombres"]}
+            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1400"]]}
+          />
           <Fila
             invertida
             eyebrow="Lista de regalos"
-            titulo="El dinero llega íntegro a vuestra cuenta"
-            texto="Compartís la lista y los invitados aportan online por transferencia, Bizum o tarjeta. webodas no se queda ninguna comisión, a diferencia de las listas de los bancos."
-            puntos={["Regalos concretos o fondo común", "Seguimiento de quién ha aportado"]}
-          >
-            <RegaloMock />
-          </Fila>
-
+            titulo="Regalos por transferencia, Bizum o tarjeta"
+            texto="Compartís la lista y los invitados aportan online. webodas no cobra comisión; con pago por tarjeta se aplica solo la tarifa de la pasarela de pago."
+            puntos={["Regalos concretos o fondo común", "Veis quién ha aportado"]}
+            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 620"]]}
+          />
           <Fila
-            eyebrow="Invitaciones"
-            titulo="La invitación clásica, y el save the date"
-            texto="La participación de toda la vida, con su tipografía y su formato tradicionales. Se rellena en dos minutos y se descarga en PDF, lista para llevar a imprenta."
-            puntos={["Save the date para avisar pronto", "PDF al tamaño real, sin fondo"]}
-          >
-            <div
-              className="mx-auto max-w-md rounded-xl p-6 shadow-[0_28px_60px_-30px_rgba(33,29,26,0.35)] sm:p-9"
-              style={{ background: "linear-gradient(160deg,#ece4d5,#e0d5c1)" }}
-            >
-              <InvitacionMock />
-            </div>
-          </Fila>
-
+            eyebrow="Invitación y save the date"
+            titulo="La participación de siempre, y el save the date"
+            texto="La invitación clásica, con su tipografía y su formato. Se rellena y se descarga en PDF al tamaño real, lista para imprenta. El save the date se comparte por un enlace."
+            puntos={["PDF listo para imprenta", "Save the date para avisar pronto"]}
+            imgs={[
+              ["/landing/invitacion.png", "Invitación de boda", "1400 / 900"],
+              ["/landing/savethedate.png", "Save the date", "905 / 900"],
+            ]}
+          />
           <Fila
             invertida
-            eyebrow="Gestión del día"
+            eyebrow="Organización"
             titulo="Presupuesto, tareas, invitados y mesas"
-            texto="Una lista de tareas ya preparada y ordenada por meses, el presupuesto por partidas, la lista de invitados con sus confirmaciones y el plano de mesas. Todo conectado: si contratas un proveedor, el presupuesto se actualiza solo."
-            puntos={["Exportable a Excel", "Plano de mesas imprimible"]}
-          >
-            <GestionMock />
-          </Fila>
+            texto="Lista de tareas ordenada por meses, presupuesto por partidas, lista de invitados con sus confirmaciones y plano de mesas. Al contratar un proveedor, el presupuesto se actualiza."
+            puntos={["Exportable a Excel", "Plano de mesas para imprimir"]}
+            imgs={[["/landing/gestion.png", "Panel de organización de la boda", "809 / 950"]]}
+          />
         </div>
       </section>
 
@@ -211,18 +209,17 @@ export default function Landing() {
           className="relative overflow-hidden rounded-2xl border border-line px-6 py-16 text-center sm:px-16"
           style={{ background: "linear-gradient(180deg, #f5ede0 0%, #f7f2ea 100%)" }}
         >
-          <p className="font-display text-sm italic tracking-wide text-accent">S. R. C.</p>
-          <h2 className="mx-auto mt-3 max-w-2xl font-display text-4xl leading-tight sm:text-5xl">
-            Empezad hoy la web de vuestra boda
+          <h2 className="mx-auto max-w-2xl font-display text-4xl leading-tight sm:text-5xl">
+            Empezad la web de vuestra boda
           </h2>
           <p className="mx-auto mt-4 max-w-md text-muted">
-            Se tarda menos de lo que parece y no cuesta nada probarlo.
+            Prueba gratis de 7 días. No hace falta tarjeta.
           </p>
           <Link
             href="/inicio?crear=1"
             className="mt-8 inline-block rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-white transition hover:opacity-90"
           >
-            Crear nuestra web
+            Empezar gratis
           </Link>
         </div>
       </section>
@@ -247,7 +244,20 @@ export default function Landing() {
   );
 }
 
-/* ---------- piezas ---------- */
+function Marco({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white shadow-[0_30px_70px_-28px_rgba(33,29,26,0.45)] ring-1 ring-black/[0.03]">
+      <div className="flex items-center gap-1.5 border-b border-line bg-[#f6f2ec] px-3.5 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-line" />
+        <span className="h-2 w-2 rounded-full bg-line" />
+        <span className="h-2 w-2 rounded-full bg-line" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+type Img = [src: string, alt: string, ratio: string];
 
 function Fila({
   eyebrow,
@@ -255,14 +265,14 @@ function Fila({
   texto,
   puntos,
   invertida,
-  children,
+  imgs,
 }: {
   eyebrow: string;
   titulo: string;
   texto: string;
   puntos: string[];
   invertida?: boolean;
-  children: React.ReactNode;
+  imgs: Img[];
 }) {
   return (
     <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
@@ -271,142 +281,27 @@ function Fila({
         <h3 className="mt-3 font-display text-3xl leading-tight sm:text-[2.1rem]">{titulo}</h3>
         <p className="mt-4 max-w-md leading-relaxed text-muted">{texto}</p>
         <ul className="mt-5 space-y-2">
-          {puntos.map((p) => (
-            <li key={p} className="flex items-start gap-2.5 text-sm">
+          {puntos.map((pt) => (
+            <li key={pt} className="flex items-start gap-2.5 text-sm">
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rotate-45 bg-accent" />
-              {p}
+              {pt}
             </li>
           ))}
         </ul>
       </div>
-      <div className={invertida ? "lg:order-1" : ""}>{children}</div>
-    </div>
-  );
-}
-
-function Browserita() {
-  return (
-    <div className="flex items-center gap-1.5 border-b border-line bg-[#f6f2ec] px-3 py-2">
-      <span className="h-2 w-2 rounded-full bg-line" />
-      <span className="h-2 w-2 rounded-full bg-line" />
-      <span className="h-2 w-2 rounded-full bg-line" />
-    </div>
-  );
-}
-
-// Maqueta de la invitación clásica.
-function InvitacionMock() {
-  return (
-    <div
-      className="rounded-md border border-line px-8 py-12 text-center shadow-[0_18px_45px_-20px_rgba(33,29,26,0.35)]"
-      style={{ background: "#fdfcf8", color: "#5b6a4c" }}
-    >
-      <p className="text-[0.62rem] uppercase tracking-[0.24em]">Participan el enlace de sus hijos</p>
-      <p
-        className="my-4 text-4xl sm:text-5xl"
-        style={{ fontFamily: "var(--font-parisienne), cursive", lineHeight: 1.1 }}
-      >
-        Marta &amp; Javier
-      </p>
-      <p className="mx-auto max-w-[15rem] font-display text-sm italic leading-relaxed">
-        tienen el gusto de invitaros a la ceremonia que se celebrará el sábado 18 de octubre en
-        Madrid
-      </p>
-      <p className="mt-6 font-display text-sm tracking-[0.15em]">S. R. C.</p>
-      <p className="font-display text-sm">Madrid, 2026</p>
-    </div>
-  );
-}
-
-// Maqueta del panel de tareas / presupuesto.
-function GestionMock() {
-  const filas = [
-    ["Reservar la iglesia", "hecho"],
-    ["Mirar y reservar la finca", "hecho"],
-    ["Contratar el catering", "proceso"],
-    ["Elegir las invitaciones", "sin"],
-    ["Cerrar la lista de invitados", "sin"],
-  ] as const;
-  const tono = (e: string) =>
-    e === "hecho" ? "bg-accent" : e === "proceso" ? "bg-[#c9a24a]" : "bg-line";
-  return (
-    <div className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_28px_60px_-30px_rgba(33,29,26,0.32)]">
-      <Browserita />
-      <div className="p-5">
-        <div className="flex items-baseline justify-between">
-          <p className="font-display text-lg">Tareas de la boda</p>
-          <span className="text-xs text-muted">2 de 85</span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-line">
-          <div className="h-full w-[14%] rounded-full bg-accent" />
-        </div>
-        <ul className="mt-4 divide-y divide-line/70 text-sm">
-          {filas.map(([t, e]) => (
-            <li key={t} className="flex items-center gap-3 py-2.5">
-              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tono(e)}`} />
-              <span className={e === "hecho" ? "text-muted line-through" : ""}>{t}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4 text-center">
-          {[
-            ["18.400 €", "presupuesto"],
-            ["112", "invitados"],
-            ["11", "mesas"],
-          ].map(([n, l]) => (
-            <div key={l}>
-              <p className="font-display text-lg">{n}</p>
-              <p className="text-[0.65rem] uppercase tracking-wide text-muted">{l}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Maqueta de una web de boda (sin captura: se dibuja).
-function WebMock() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_28px_60px_-30px_rgba(33,29,26,0.32)]">
-      <Browserita />
-      <div className="flex items-center justify-between border-b border-line/70 px-5 py-3 text-[0.6rem] uppercase tracking-[0.2em] text-muted">
-        <span className="font-display text-sm normal-case tracking-tight text-foreground">
-          Marta &amp; Javier
-        </span>
-        <span className="hidden gap-3 sm:flex">
-          <span>Historia</span>
-          <span>Agenda</span>
-          <span>Regalos</span>
-        </span>
-      </div>
-      <div className="flex flex-col items-center gap-2 bg-[#fbf9f4] px-6 py-14 text-center">
-        <span className="text-[0.6rem] uppercase tracking-[0.35em] text-accent">Nos casamos</span>
-        <span className="font-display text-4xl text-foreground">Marta &amp; Javier</span>
-        <span className="text-xs tracking-[0.2em] text-muted">18 · 10 · 2026 — Madrid</span>
-        <span className="mt-4 rounded-full border border-foreground px-4 py-1.5 text-[0.7rem] font-medium">
-          Confirmar asistencia
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// Maqueta de una aportación a la lista de regalos.
-function RegaloMock() {
-  return (
-    <div className="mx-auto max-w-sm rounded-xl border border-line bg-white p-6 shadow-[0_28px_60px_-30px_rgba(33,29,26,0.32)]">
-      <div className="aspect-[4/3] w-full rounded-lg bg-[#efe9df]" />
-      <p className="mt-4 font-display text-xl">Nuestra luna de miel</p>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line">
-        <div className="h-full w-2/3 rounded-full bg-accent" />
-      </div>
-      <p className="mt-2 text-xs text-muted">1.340 € de 2.000 € · 11 aportaciones</p>
-      <div className="mt-5 flex items-center gap-2">
-        <span className="flex-1 rounded-full bg-foreground px-4 py-2 text-center text-xs font-medium text-white">
-          Aportar
-        </span>
-        <span className="rounded-full border border-line px-3 py-2 text-xs text-muted">Bizum</span>
+      <div className={`${invertida ? "lg:order-1" : ""} ${imgs.length > 1 ? "space-y-5" : ""}`}>
+        {imgs.map(([src, alt, ratio]) => (
+          <Marco key={src}>
+            <Image
+              src={src}
+              alt={alt}
+              width={1400}
+              height={1000}
+              className="w-full"
+              style={{ aspectRatio: ratio, objectFit: "cover", objectPosition: "top" }}
+            />
+          </Marco>
+        ))}
       </div>
     </div>
   );

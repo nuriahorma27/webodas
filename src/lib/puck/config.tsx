@@ -1992,9 +1992,13 @@ export const plantillaEditorial = {
         coupleNames: "Ana & Leo",
         date: "12 de septiembre de 2026",
         subtitle: "¡Nos casamos!",
-        image: "",
+        image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1500&q=70",
+        imageMode: "background",
+        imageSize: "full",
+        imageOffset: { x: 0, y: 0 },
+        overlay: 28,
         align: "center",
-        textColor: "",
+        textColor: "#ffffff",
       },
     },
     {
@@ -2002,8 +2006,8 @@ export const plantillaEditorial = {
       props: {
         id: "story",
         colorBg: "",
-        image: "",
-        imageMode: "none",
+        image: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1500&q=70",
+        imageMode: "right",
         imageSize: "m",
         imageOffset: { x: 0, y: 0 },
         texts: [
@@ -2028,7 +2032,7 @@ export const plantillaEditorial = {
         columns: "3",
         items: [
           {
-            image: "",
+            image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1500&q=70",
             eyebrow: "VIERNES",
             itemTitle: "Cena de bienvenida",
             text: "Para quienes lleguéis la víspera, cena informal en el pueblo.",
@@ -2036,7 +2040,7 @@ export const plantillaEditorial = {
             linkUrl: "https://maps.google.com",
           },
           {
-            image: "",
+            image: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1500&q=70",
             eyebrow: "SÁBADO",
             itemTitle: "La boda",
             text: "Ceremonia y celebración en la Finca Los Olivos.",
@@ -2044,7 +2048,7 @@ export const plantillaEditorial = {
             linkUrl: "https://maps.google.com",
           },
           {
-            image: "",
+            image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1500&q=70",
             eyebrow: "DOMINGO",
             itemTitle: "Brunch de despedida",
             text: "Nos despedimos con un brunch tranquilo antes de la vuelta.",
@@ -2055,6 +2059,21 @@ export const plantillaEditorial = {
       },
     },
     { type: "Countdown", props: { id: "cd-1", title: "Cuenta atrás", targetDate: "2026-09-12" } },
+    {
+      type: "Gallery",
+      props: {
+        id: "gal-1",
+        images: [
+          { src: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1500&q=70" },
+          { src: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1500&q=70" },
+          { src: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1500&q=70" },
+          { src: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1500&q=70" },
+        ],
+        columnas: "auto",
+        colorText: "",
+        colorBg: "",
+      },
+    },
     {
       type: "Schedule",
       props: {
