@@ -121,7 +121,6 @@ export default function PanelPage() {
             </div>
           </section>
           <section className="relative overflow-hidden rounded-[.75rem_2rem_2rem_2rem] border border-[#ccd1c1] bg-[#e4e8dc] p-5 sm:p-6">
-            <span className="pointer-events-none absolute -right-3 -top-9 font-display text-[8rem] text-[#55624e]/[.08]">♡</span>
             <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-sm text-muted">aportado hasta ahora</p></div><Link href="/panel/regalos" className="text-xs text-accent">Ver detalle →</Link></div>
             <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
               <MiniDato label="Regalos" value={listaRegalos?.gifts.length ?? 0} />
