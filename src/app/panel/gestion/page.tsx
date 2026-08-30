@@ -100,7 +100,7 @@ export default function ResumenPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card data-tour="gestion-formulario">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg">Formulario de confirmación</h2>
             <Link
@@ -225,7 +225,7 @@ function CopiaSeguridad() {
   };
 
   return (
-    <Card className="space-y-2">
+    <Card className="space-y-2" data-tour="gestion-copia">
       <h2 className="font-display text-lg">Copia de seguridad</h2>
       <p className="text-sm text-muted">
         Tus datos se guardan en tu cuenta automáticamente. Aun así, puedes descargar una copia o

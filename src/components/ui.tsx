@@ -25,12 +25,17 @@ export function PageTitle({
 export function Card({
   className = "",
   children,
+  "data-tour": dataTour,
 }: {
   className?: string;
   children: React.ReactNode;
+  "data-tour"?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${className}`}>
+    <div
+      data-tour={dataTour}
+      className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${className}`}
+    >
       {children}
     </div>
   );

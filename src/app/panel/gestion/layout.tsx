@@ -15,7 +15,9 @@ export default function GestionLayout({ children }: { children: React.ReactNode 
   return (
     <div className="space-y-6">
       <PageTitle eyebrow="Servicio" title="Gestión de la boda" />
-      <TabsNav tabs={tabs} />
+      <div data-tour="gestion-nav">
+        <TabsNav tabs={tabs} />
+      </div>
       <div>{children}</div>
     </div>
   );

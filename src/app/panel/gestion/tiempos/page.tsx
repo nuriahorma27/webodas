@@ -154,7 +154,9 @@ function Row({
     >
       <div className="px-4 py-2.5">
         <div className="flex items-start gap-3">
-          <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
+          <span data-tour="tareas-estado">
+            <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
+          </span>
           <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
             <p
               className={
@@ -398,7 +400,7 @@ export default function TareasPage() {
     const done = ts.filter((t) => estadoDe(t.id) === "hecho").length;
     const abierto = grupoAbierto[add.groupKey] ?? defaultOpen;
     return (
-      <Card key={titulo} className="p-0">
+      <Card key={titulo} className="p-0" data-tour="tareas-grupo">
         <button
           type="button"
           onClick={() =>
@@ -483,7 +485,7 @@ export default function TareasPage() {
               {hechas} de {visibles.length} terminadas · toca una tarea para ver su ficha
             </p>
           </div>
-          <div className="flex gap-1 text-sm">
+          <div data-tour="tareas-vista" className="flex gap-1 text-sm">
             {(
               [
                 ["tiempo", "Por tiempo"],
@@ -503,7 +505,7 @@ export default function TareasPage() {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-sm">
+        <div data-tour="tareas-responsable" className="mt-3 flex flex-wrap items-center gap-1.5 text-sm">
           <span className="text-xs text-muted">Responsable:</span>
           <button
             onClick={() => setFiltroResp("")}

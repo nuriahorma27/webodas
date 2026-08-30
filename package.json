@@ -12,6 +12,7 @@
     "@measured/puck": "^0.20.2",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "driver.js": "^1.8.0",
     "exceljs": "^4.4.0",
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.1",

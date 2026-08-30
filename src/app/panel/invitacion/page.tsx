@@ -116,7 +116,7 @@ export default function InvitacionPage() {
 
       <div className="hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_460px]">
         <div className="space-y-4">
-          <Card className="space-y-3">
+          <Card className="space-y-3" data-tour="inv-padres">
             <h2 className="font-display text-lg">Los padres</h2>
             <p className="text-xs text-muted">
               Como en las de toda la vida: los padres de la novia arriba a la izquierda, los del
@@ -150,7 +150,7 @@ export default function InvitacionPage() {
             </div>
           </Card>
 
-          <Card className="space-y-3">
+          <Card className="space-y-3" data-tour="inv-texto">
             <h2 className="font-display text-lg">El texto central</h2>
             <Texto
               k="participan"
@@ -187,7 +187,7 @@ export default function InvitacionPage() {
             </div>
           </Card>
 
-          <Card className="space-y-3">
+          <Card className="space-y-3" data-tour="inv-estilo">
             <h2 className="font-display text-lg">Estilo</h2>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 text-sm">
@@ -230,7 +230,7 @@ export default function InvitacionPage() {
             </div>
           </Card>
 
-          <Card className="space-y-3">
+          <Card className="space-y-3" data-tour="inv-descargar">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={descargar}

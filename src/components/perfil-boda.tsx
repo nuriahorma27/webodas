@@ -28,6 +28,7 @@ export function PerfilBoda() {
   return (
     <>
       <button
+        data-tour="perfil"
         onClick={() => setOpen(true)}
         title="Editar datos de la boda"
         className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft font-display text-sm text-accent"

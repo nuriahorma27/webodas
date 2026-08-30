@@ -67,11 +67,11 @@ export default function PresupuestoPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div data-tour="ppto-total" className="grid gap-4 sm:grid-cols-2">
         <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
       </div>
 
-      <div className="flex items-center justify-end gap-4">
+      <div data-tour="ppto-editar" className="flex items-center justify-end gap-4">
         <button
           onClick={() => setEditando((v) => !v)}
           className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
@@ -130,7 +130,7 @@ export default function PresupuestoPage() {
         />
       </div>
 
-      <div className="space-y-4">
+      <div data-tour="ppto-categorias" className="space-y-4">
         {categorias.map((cat, ci) => {
           const filas = partidas.filter((p) => p.categoria === cat);
           const ct = totales(filas);

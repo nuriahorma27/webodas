@@ -161,7 +161,7 @@ export default function FormularioPage() {
         />
       </Card>
 
-      <Card className="space-y-3">
+      <Card className="space-y-3" data-tour="form-preguntas">
         <h3 className="font-display text-lg">Preguntas del formulario</h3>
         <p className="text-sm text-muted">
           Este es el formulario completo, en el orden en que lo verán tus invitados. Marca los
@@ -229,7 +229,7 @@ export default function FormularioPage() {
         </button>
       </Card>
 
-      <Card>
+      <Card data-tour="form-preview">
         <h3 className="font-display text-lg">Vista previa</h3>
         <p className="mt-0.5 text-sm text-muted">
           Abre el formulario tal y como lo verán tus invitados en la web.

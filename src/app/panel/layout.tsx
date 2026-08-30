@@ -5,6 +5,7 @@ import { PerfilBoda } from "@/components/perfil-boda";
 import { PanelNav } from "@/components/panel-nav";
 import { Migas } from "@/components/migas";
 import { CloudSync } from "@/components/cloud-sync";
+import { AyudaTour } from "@/components/ayuda-tour";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         <Migas />
         {children}
       </main>
+      <AyudaTour />
     </div>
   );
 }

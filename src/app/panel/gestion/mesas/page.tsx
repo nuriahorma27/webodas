@@ -70,7 +70,7 @@ export default function MesasPage() {
   return (
     <div className="space-y-6">
       {/* 1 · Tipos de mesa disponibles */}
-      <Card className="space-y-3">
+      <Card className="space-y-3" data-tour="mesas-tipos">
         <div>
           <h2 className="font-display text-lg">1 · Tipos de mesa</h2>
           <p className="text-sm text-muted">
@@ -143,7 +143,7 @@ export default function MesasPage() {
       </Card>
 
       {/* 3 · Mesas */}
-      <Card className="space-y-4">
+      <Card className="space-y-4" data-tour="mesas-anadir">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-display text-lg">3 · Mesas</h2>
@@ -156,6 +156,7 @@ export default function MesasPage() {
           <div className="flex items-center gap-2">
           {cfg.mesas.length > 0 && (
             <button
+              data-tour="mesas-imprimir"
               onClick={() => imprimirMesas(cfg, nombreDe)}
               className="rounded-md border border-line px-3 py-1.5 text-sm text-muted hover:text-accent"
             >

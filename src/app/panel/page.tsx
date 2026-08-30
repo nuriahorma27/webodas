@@ -24,7 +24,7 @@ import {
 import { eur } from "@/lib/mock";
 
 const servicios = [
-  { href: "/panel/webs", titulo: "Web de boda", desc: "El editor visual de vuestra página.", accion: "Abrir editor" },
+  { href: "/panel/webs", titulo: "Web e invitaciones", desc: "Vuestra web, el save the date y la invitación.", accion: "Abrir" },
   { href: "/panel/regalos", titulo: "Lista de regalos", desc: "Regalos y aportaciones online.", accion: "Ver lista" },
   { href: "/panel/gestion", titulo: "Gestión de la boda", desc: "Presupuesto, tareas, invitados, mesas.", accion: "Abrir panel" },
 ];
@@ -87,7 +87,7 @@ export default function PanelPage() {
     <div className="space-y-8">
       <PageTitle eyebrow={fechaLarga(boda)} title={`Hola, ${nombrePareja(boda)}`} />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div data-tour="panel-resumen" className="grid gap-4 sm:grid-cols-3">
         <Stat
           label="Cuenta atrás"
           value={dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy o pasó!" : `${dias} días`}
@@ -106,7 +106,7 @@ export default function PanelPage() {
         />
       </div>
 
-      <div>
+      <div data-tour="panel-servicios">
         <h2 className="font-display text-xl">Tus servicios</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {servicios.map((s) => (
@@ -121,7 +121,7 @@ export default function PanelPage() {
         </div>
       </div>
 
-      <Card>
+      <Card data-tour="panel-tareas">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl">Lo que toca ya</h2>
           <Link href="/panel/gestion/tiempos" className="text-sm text-accent">

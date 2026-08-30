@@ -132,36 +132,67 @@ function InvitadoCard({
   verFija: (k: string) => boolean;
   onBorrar: () => void;
 }) {
+  const [abierto, setAbierto] = useState(false);
   const Campo = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex items-center justify-between gap-2 border-t border-line/70 py-1.5">
       <span className="shrink-0 text-xs text-muted">{label}</span>
       <div className="min-w-0 flex-1 text-right">{children}</div>
     </div>
   );
+  const vieneTono =
+    i.viene === "Sí"
+      ? "bg-emerald-50 text-emerald-700"
+      : i.viene === "No"
+        ? "bg-[#7b2233]/10 text-[#7b2233]"
+        : "bg-amber-50 text-amber-700";
   return (
     <Card className="space-y-1 p-3">
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <CeldaTexto
-            value={i.nombre}
-            onSave={(v) => updateInvitado(i.id, { nombre: v })}
-            align="font-medium !min-w-0"
-          />
-          <CeldaTexto
-            value={i.apellido}
-            onSave={(v) => updateInvitado(i.id, { apellido: v })}
-            align="!min-w-0 text-muted"
-          />
-        </div>
-        <button
-          onClick={onBorrar}
-          className="shrink-0 rounded p-1.5 text-muted hover:bg-red-50 hover:text-red-600"
-          aria-label="Eliminar invitado"
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="flex w-full items-center gap-2 text-left"
+      >
+        <span
+          className="shrink-0 text-muted transition-transform"
+          style={{ transform: abierto ? "rotate(90deg)" : "none" }}
+          aria-hidden
         >
-          🗑
-        </button>
-      </div>
-      {verFija("viene") && (
+          ▸
+        </span>
+        <span className="min-w-0 flex-1 truncate">
+          <span className="font-medium">{i.nombre || "(sin nombre)"}</span>{" "}
+          <span className="text-muted">{i.apellido}</span>
+        </span>
+        {i.grupo && <span className="shrink-0 text-xs text-muted">{i.grupo}</span>}
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${vieneTono}`}>
+          {i.viene === "Sí" ? "Viene" : i.viene === "No" ? "No viene" : "Pendiente"}
+        </span>
+      </button>
+
+      {!abierto ? null : (
+        <>
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="grid flex-1 grid-cols-2 gap-x-3">
+              <CeldaTexto
+                value={i.nombre}
+                onSave={(v) => updateInvitado(i.id, { nombre: v })}
+                align="font-medium !min-w-0"
+              />
+              <CeldaTexto
+                value={i.apellido}
+                onSave={(v) => updateInvitado(i.id, { apellido: v })}
+                align="!min-w-0 text-muted"
+              />
+            </div>
+            <button
+              onClick={onBorrar}
+              className="shrink-0 rounded p-1.5 text-muted hover:bg-red-50 hover:text-red-600"
+              aria-label="Eliminar invitado"
+            >
+              🗑
+            </button>
+          </div>
+          {verFija("viene") && (
         <Campo label="¿Viene?">
           <CeldaSelect
             value={i.viene}
@@ -233,7 +264,9 @@ function InvitadoCard({
             />
           )}
         </Campo>
-      ))}
+          ))}
+        </>
+      )}
     </Card>
   );
 }
@@ -341,7 +374,7 @@ export default function InvitadosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div data-tour="invitados-tabs" className="grid gap-2 sm:grid-cols-2">
         <button
           onClick={() => setVista("gestion")}
           className={`rounded-xl border px-4 py-3 text-left transition ${
@@ -411,6 +444,7 @@ export default function InvitadosPage() {
           />
         </div>
         <button
+          data-tour="invitados-ajustes"
           onClick={() => setAjustes((v) => !v)}
           className="rounded-full border border-dashed border-line px-3 py-1 text-xs text-muted hover:text-accent"
         >
@@ -450,6 +484,7 @@ export default function InvitadosPage() {
           />
         ))}
         <button
+          data-tour="invitados-anadir"
           onClick={() => addInvitado()}
           className="w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-accent"
         >

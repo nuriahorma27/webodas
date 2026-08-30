@@ -136,7 +136,10 @@ export default function WebsPage() {
           <p className="mt-1 text-sm text-muted">
             Elige una plantilla para empezar (podrás cambiar todo) o parte de cero.
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            data-tour="webs-plantillas"
+            className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
             {Object.entries(TEMPLATES).map(([key, t]) => (
               <Link key={key} href={`/editor/demo?t=${key}`} className="group">
                 <Card className="h-full p-0 transition group-hover:border-accent">
@@ -153,7 +156,7 @@ export default function WebsPage() {
       )}
 
       {/* SAVE THE DATE */}
-      <div className="space-y-3">
+      <div data-tour="webs-std" className="space-y-3">
         <h2 className="font-display text-xl">Save the date</h2>
         <Card className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -183,7 +186,7 @@ export default function WebsPage() {
       </div>
 
       {/* INVITACIÓN */}
-      <div className="space-y-3">
+      <div data-tour="webs-inv" className="space-y-3">
         <h2 className="font-display text-xl">Invitación de boda</h2>
         <Card className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

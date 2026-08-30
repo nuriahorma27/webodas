@@ -105,7 +105,7 @@ export default function RegalosPage() {
     return (
       <div className="space-y-6">
         <PageTitle eyebrow="Lista de regalos · Paso 1 de 3" title="¿Cómo queréis recibir las aportaciones?" />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div data-tour="regalos-cobro" className="grid gap-4 md:grid-cols-2">
           <button
             onClick={() => {
               setCobro({ metodo: "manual" });
