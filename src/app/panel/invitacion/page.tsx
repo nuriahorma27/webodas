@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageTitle, Card } from "@/components/ui";
 import { InvitacionView } from "@/components/invitacion-view";
-import { loadBoda, nombrePareja } from "@/lib/boda";
 import {
   loadInvitacion,
   setInvitacion,
@@ -14,8 +13,8 @@ import {
   type FuenteInv,
 } from "@/lib/invitacion";
 
-const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+// Tamaño real de la invitación (el del PDF de referencia), en mm.
+const PDF_MM = { w: 317.8, h: 230.8 };
 
 const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
@@ -24,6 +23,7 @@ export default function InvitacionPage() {
   const [inv, setInv] = useState<Invitacion | null>(null);
   const [descargando, setDescargando] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sync = () => setInv(loadInvitacion());
@@ -68,70 +68,34 @@ export default function InvitacionPage() {
     </label>
   );
 
-  const descargar = () => {
-    if (descargando) return;
+  const descargar = async () => {
+    if (!exportRef.current || descargando) return;
     setDescargando(true);
     try {
-      const boda = loadBoda();
-      const f = FUENTES_INV[inv.fuente] ?? FUENTES_INV.imprenta;
-      const k = f.escala;
-      const nombres =
-        inv.nombres.trim() || nombrePareja(boda).replace("Vuestra boda", "Vuestros nombres");
-      const y = new Date(boda.fecha).getFullYear();
-      const anio = Number.isFinite(y) ? y : new Date().getFullYear();
-      const ciudadAno = inv.ciudadAno.trim() || `${boda.lugar?.trim() || "Madrid"}, ${anio}`;
+      const [{ toPng }, jspdf] = await Promise.all([
+        import("html-to-image"),
+        import("jspdf"),
+      ]);
+      // Esperar a que las tipografías estén cargadas para que el PNG salga bien.
+      if (document.fonts?.ready) await document.fonts.ready;
 
-      const html = `<!doctype html><html><head><meta charset="utf-8">
-<title>Invitación de boda</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Parisienne&display=swap">
-<style>
-  @page { size: 317.8mm 230.8mm; margin: 0; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  .hoja { width: 317.8mm; height: 230.8mm; padding: 26mm 26mm; display: flex; flex-direction: column;
-    justify-content: space-between; text-align: center; color: ${inv.colorText};
-    font-family: ${f.family}; font-size: ${11 * k}pt; line-height: 1.6; }
-  .fila { display: flex; justify-content: space-between; gap: 20mm; }
-  .fila p { margin: 0; }
-  .izq { text-align: left; } .der { text-align: right; }
-  .padres { font-size: ${11.5 * k}pt; line-height: 1.4; }
-  .centro { display: flex; flex-direction: column; align-items: center; margin: auto 0; }
-  .centro p { margin: 0; }
-  .nombres { font-size: ${29 * k}pt; line-height: 1.2; margin: 6mm 0 7mm; }
-  .meta { margin-top: 12mm; }
-</style></head><body>
-  <div class="hoja">
-    <div class="fila padres">
-      <p class="izq">${esc(inv.padresNovia)}</p>
-      <p class="der">${esc(inv.padresNovio)}</p>
-    </div>
-    <div class="centro">
-      ${inv.participan ? `<p>${esc(inv.participan)}</p>` : ""}
-      <p class="nombres">${esc(nombres)}</p>
-      ${inv.cuerpo ? `<p>${esc(inv.cuerpo)}</p>` : ""}
-      ${
-        inv.src || ciudadAno
-          ? `<div class="meta">${inv.src ? `<p>${esc(inv.src)}</p>` : ""}${
-              ciudadAno ? `<p>${esc(ciudadAno)}</p>` : ""
-            }</div>`
-          : ""
-      }
-    </div>
-    <div class="fila" style="font-size:${11 * k}pt;line-height:1.4">
-      <p class="izq">${esc(inv.direccionNovia)}</p>
-      <p class="der">${esc(inv.direccionNovio)}</p>
-    </div>
-  </div>
-  <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
-</body></html>`;
+      const nodo = exportRef.current;
+      const png = await toPng(nodo, {
+        cacheBust: true,
+        pixelRatio: 4,
+        width: nodo.offsetWidth,
+        height: nodo.offsetHeight,
+      });
 
-      const w = window.open("", "_blank");
-      if (!w) {
-        alert("Permite las ventanas emergentes para poder descargar el PDF.");
-        return;
-      }
-      w.document.write(html);
-      w.document.close();
+      const pdf = new jspdf.jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: [PDF_MM.w, PDF_MM.h],
+      });
+      pdf.addImage(png, "PNG", 0, 0, PDF_MM.w, PDF_MM.h);
+      pdf.save("invitacion-boda.pdf");
+    } catch {
+      alert("No se ha podido generar el PDF. Vuelve a intentarlo.");
     } finally {
       setDescargando(false);
     }
@@ -279,9 +243,9 @@ export default function InvitacionPage() {
               </Link>
             </div>
             <p className="text-xs text-muted">
-              Se abre el diálogo de impresión: elige <strong>“Guardar como PDF”</strong>. El PDF sale{" "}
-              <strong>sin fondo</strong>, en A5 apaisado, listo para llevar a imprenta sobre el papel
-              que elijas.
+              Descarga un PDF <strong>sin fondo</strong>, apaisado y al{" "}
+              <strong>tamaño exacto de la invitación</strong> (31,8 × 23,1 cm), listo para llevar a
+              imprenta sobre el papel que elijas.
             </p>
           </Card>
         </div>
@@ -291,6 +255,16 @@ export default function InvitacionPage() {
           <div ref={previewRef}>
             <InvitacionView inv={inv} />
           </div>
+        </div>
+      </div>
+
+      {/* Copia oculta sin fondo, a tamaño fijo, para generar el PDF */}
+      <div
+        aria-hidden
+        style={{ position: "fixed", left: "-10000px", top: 0, width: 920, pointerEvents: "none" }}
+      >
+        <div ref={exportRef} style={{ width: 920 }}>
+          <InvitacionView inv={inv} sinFondo />
         </div>
       </div>
     </div>
