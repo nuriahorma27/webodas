@@ -8,6 +8,7 @@ const VUELTA: Record<string, { href: string; label: string }> = {
   "/panel/webs": { href: "/panel", label: "Panel" },
   "/panel/regalos": { href: "/panel", label: "Panel" },
   "/panel/save-the-date": { href: "/panel/webs", label: "Webs" },
+  "/panel/invitacion": { href: "/panel/webs", label: "Webs" },
   "/panel/gestion": { href: "/panel", label: "Panel" },
 };
 

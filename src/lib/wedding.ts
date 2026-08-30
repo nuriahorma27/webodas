@@ -62,6 +62,7 @@ const BUNDLE_KEYS = [
   "webodas:site:demo",
   "webodas:regalos",
   "webodas:savethedate",
+  "webodas:invitacion",
   "webodas:formulario",
   "webodas:aportaciones",
 ];

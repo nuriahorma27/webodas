@@ -7,6 +7,7 @@ import { CompartirEnlace } from "@/components/compartir-enlace";
 import { EditarEnlace } from "@/components/editar-enlace";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { loadStd, stdConfigurada } from "@/lib/savethedate";
+import { loadInvitacion, invitacionConfigurada } from "@/lib/invitacion";
 import { getWedding } from "@/lib/wedding";
 import { TEMPLATES } from "@/lib/puck/config";
 
@@ -45,6 +46,8 @@ export default function WebsPage() {
   const [hasWeb, setHasWeb] = useState<boolean | null>(null);
   const [hasStd, setHasStd] = useState(false);
   const [stdPublicada, setStdPublicada] = useState(false);
+  const [hasInv, setHasInv] = useState(false);
+  const [invPublicada, setInvPublicada] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const boda = loadBoda();
 
@@ -61,10 +64,17 @@ export default function WebsPage() {
       const s = loadStd();
       setHasStd(stdConfigurada(s));
       setStdPublicada(s.publicada);
+      const iv = loadInvitacion();
+      setHasInv(invitacionConfigurada(iv));
+      setInvPublicada(iv.publicada);
     };
     sync();
     window.addEventListener("webodas:savethedate", sync);
-    return () => window.removeEventListener("webodas:savethedate", sync);
+    window.addEventListener("webodas:invitacion", sync);
+    return () => {
+      window.removeEventListener("webodas:savethedate", sync);
+      window.removeEventListener("webodas:invitacion", sync);
+    };
   }, []);
 
   const empezarDeNuevo = () => {
@@ -171,6 +181,37 @@ export default function WebsPage() {
           </div>
           {stdPublicada && slug && (
             <CompartirEnlace path={`/${slug}/save-the-date`} label="Enlace para tus invitados" />
+          )}
+        </Card>
+      </div>
+
+      {/* INVITACIÓN */}
+      <div className="space-y-3">
+        <h2 className="font-display text-xl">Invitación de boda</h2>
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              La invitación clásica: familias, ceremonia y celebración. Para compartir o descargar
+              e imprimir.
+            </p>
+            <div className="flex shrink-0 items-center gap-4">
+              {hasInv && slug && (
+                <a
+                  href={`/${slug}/invitacion`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-muted underline"
+                >
+                  Ver
+                </a>
+              )}
+              <Link href="/panel/invitacion" className="text-sm font-medium text-accent">
+                {hasInv ? "Seguir editando →" : "Crear invitación →"}
+              </Link>
+            </div>
+          </div>
+          {invPublicada && slug && (
+            <CompartirEnlace path={`/${slug}/invitacion`} label="Enlace para tus invitados" />
           )}
         </Card>
       </div>
