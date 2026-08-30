@@ -86,7 +86,7 @@ export default function WebsPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle eyebrow="Servicio" title="Webs para tus invitados" />
+      <PageTitle title="Webs para tus invitados" />
 
       {/* WEB DE BODA */}
       {hasWeb === null ? null : hasWeb ? (

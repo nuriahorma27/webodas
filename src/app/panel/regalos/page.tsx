@@ -217,7 +217,7 @@ export default function RegalosPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle eyebrow="Servicio" title="Lista de regalos">
+      <PageTitle title="Lista de regalos">
         <Button href="/lista/ana-y-leo" variant="ghost">
           Ver como invitado
         </Button>

@@ -104,7 +104,7 @@ export default function InvitacionPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle eyebrow="Servicio" title="Invitación de boda" />
+      <PageTitle title="Invitación de boda" />
 
       <div className="rounded-xl border border-line bg-surface p-6 text-center lg:hidden">
         <p className="font-display text-xl">Prepárala desde el ordenador</p>

@@ -84,7 +84,7 @@ export default function SaveTheDatePage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle eyebrow="Servicio" title="Save the date" />
+      <PageTitle title="Save the date" />
 
       {/* En móvil no se edita: hace falta pantalla grande para colocar la imagen. */}
       <div className="rounded-xl border border-line bg-surface p-6 text-center lg:hidden">
