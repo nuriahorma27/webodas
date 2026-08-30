@@ -2,29 +2,31 @@
 
 import { ACABADOS, FUENTES, type Invitacion } from "@/lib/invitacion";
 import { SaveTheDateFrame } from "@/components/save-the-date-frame";
-import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
+import { loadBoda, nombrePareja } from "@/lib/boda";
 
-// La invitación clásica: familias, texto formal, novios, ceremonia y convite.
+// La invitación clásica: padres en las esquinas, participación en el centro.
+// Formato apaisado, como las de imprenta de toda la vida.
 export function InvitacionView({ inv }: { inv: Invitacion }) {
   const boda = loadBoda();
   const nombres =
     inv.nombres.trim() || nombrePareja(boda).replace("Vuestra boda", "Vuestros nombres");
-  const fecha = inv.fecha.trim() || fechaLarga(boda);
-  const family = FUENTES[inv.fuente]?.family ?? FUENTES.serif.family;
-  const sans = "var(--font-geist-sans), system-ui, sans-serif";
-
-  const Linea = ({ children }: { children: React.ReactNode }) =>
-    children ? <p className="mt-1 text-sm leading-relaxed">{children}</p> : null;
+  const serif = FUENTES[inv.fuente]?.family ?? FUENTES.serif.family;
+  const script = FUENTES.script.family;
 
   return (
     <>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Great+Vibes&display=swap"
+      />
+      <div className="mx-auto w-full" style={{ maxWidth: 760, containerType: "inline-size" }}>
       <div
-        className="relative mx-auto w-full max-w-md overflow-hidden rounded-lg px-8 py-12 text-center shadow-md"
+        className="relative flex w-full flex-col rounded-sm shadow-md"
         style={{
+          minHeight: "62cqw",
           backgroundColor: inv.colorBg,
           color: inv.colorText,
-          fontFamily: family,
+          fontFamily: serif,
           ...ACABADOS[inv.acabado]?.style,
         }}
       >
@@ -36,68 +38,58 @@ export function InvitacionView({ inv }: { inv: Invitacion }) {
           />
         </div>
 
-        <div className="relative">
-          {inv.encabezado && (
+        {/* marcas de imprenta en las esquinas */}
+        {["left-2 top-2", "right-2 top-2", "left-2 bottom-2", "right-2 bottom-2"].map((pos) => (
+          <span
+            key={pos}
+            className={`pointer-events-none absolute ${pos} h-3 w-3 border-current opacity-30`}
+            style={{
+              borderTopWidth: pos.includes("top") ? 1 : 0,
+              borderBottomWidth: pos.includes("bottom") ? 1 : 0,
+              borderLeftWidth: pos.includes("left") ? 1 : 0,
+              borderRightWidth: pos.includes("right") ? 1 : 0,
+            }}
+          />
+        ))}
+
+        <div
+          className="relative flex flex-1 flex-col justify-between gap-[3%] px-[7%] py-[6%] text-center"
+          style={{ fontSize: "2.35cqw", lineHeight: 1.65 }}
+        >
+          {/* padres */}
+          <div className="flex items-start justify-between gap-[6%]" style={{ lineHeight: 1.4 }}>
+            <p className="whitespace-pre-line text-left">{inv.padresNovia}</p>
+            <p className="whitespace-pre-line text-right">{inv.padresNovio}</p>
+          </div>
+
+          {/* centro */}
+          <div className="flex flex-1 flex-col items-center justify-center">
+            {inv.participan && <p className="italic">{inv.participan}</p>}
             <p
-              className="text-[11px] uppercase tracking-[0.3em]"
-              style={{ opacity: 0.7, fontFamily: sans }}
+              className="my-[2%]"
+              style={{ fontFamily: script, fontSize: "6cqw", lineHeight: 1.1 }}
             >
-              {inv.encabezado}
+              {nombres}
             </p>
-          )}
+            {inv.cuerpo && <p className="whitespace-pre-line">{inv.cuerpo}</p>}
+            {(inv.src || inv.ciudadAno) && (
+              <div className="mt-[5%]">
+                {inv.src && <p>{inv.src}</p>}
+                {inv.ciudadAno && <p>{inv.ciudadAno}</p>}
+              </div>
+            )}
+          </div>
 
-          {(inv.familiaNovia || inv.familiaNovio) && (
-            <div className="mt-4 grid gap-4 text-sm leading-relaxed sm:grid-cols-2">
-              <div className="whitespace-pre-line">{inv.familiaNovia}</div>
-              <div className="whitespace-pre-line">{inv.familiaNovio}</div>
-            </div>
-          )}
-
-          {inv.textoInvitacion && (
-            <p className="mx-auto mt-5 max-w-xs text-sm leading-relaxed">{inv.textoInvitacion}</p>
-          )}
-
-          <p className="mt-4 font-display text-3xl leading-tight">{nombres}</p>
-
-          {(fecha || inv.hora) && (
-            <p className="mt-4 text-base">
-              {fecha}
-              {fecha && inv.hora ? " · " : ""}
-              {inv.hora}
-            </p>
-          )}
-
-          {inv.ceremoniaLugar && (
-            <div className="mt-4">
-              <p className="text-[11px] uppercase tracking-[0.2em]" style={{ opacity: 0.6, fontFamily: sans }}>
-                Ceremonia
-              </p>
-              <Linea>{inv.ceremoniaLugar}</Linea>
-              <Linea>{inv.ceremoniaDireccion}</Linea>
-            </div>
-          )}
-
-          {inv.celebracionLugar && (
-            <div className="mt-4">
-              <p className="text-[11px] uppercase tracking-[0.2em]" style={{ opacity: 0.6, fontFamily: sans }}>
-                Celebración
-              </p>
-              <Linea>{inv.celebracionLugar}</Linea>
-              <Linea>{inv.celebracionDireccion}</Linea>
-            </div>
-          )}
-
-          {inv.confirmacion && (
-            <p className="mt-5 text-xs" style={{ opacity: 0.8 }}>
-              {inv.confirmacion}
-            </p>
-          )}
-          {inv.nota && (
-            <p className="mt-2 text-xs italic" style={{ opacity: 0.75 }}>
-              {inv.nota}
-            </p>
-          )}
+          {/* direcciones */}
+          <div
+            className="flex items-end justify-between gap-[6%]"
+            style={{ fontSize: "2.1cqw", lineHeight: 1.4 }}
+          >
+            <p className="whitespace-pre-line text-left">{inv.direccionNovia}</p>
+            <p className="whitespace-pre-line text-right">{inv.direccionNovio}</p>
+          </div>
         </div>
+      </div>
       </div>
     </>
   );

@@ -1,11 +1,7 @@
 // Invitación de boda "clásica de toda la vida" (prototipo: en el navegador).
-// Reutiliza acabados, tipografías y marcos del Save the date.
+// Formato tradicional: padres en las esquinas, participación en el centro.
 
-import type {
-  AcabadoStd,
-  FuenteStd,
-  MarcoStd,
-} from "@/lib/savethedate";
+import type { AcabadoStd, FuenteStd, MarcoStd } from "@/lib/savethedate";
 import { ACABADOS, FUENTES, MARCOS } from "@/lib/savethedate";
 
 export { ACABADOS, FUENTES, MARCOS };
@@ -13,23 +9,19 @@ export type { AcabadoStd, FuenteStd, MarcoStd };
 
 export type Invitacion = {
   publicada: boolean;
-  encabezado: string; // línea opcional de arriba
-  familiaNovia: string; // "D. … y Dña. …" (multilínea)
-  familiaNovio: string;
-  textoInvitacion: string; // "tienen el gusto de invitaros a la boda de sus hijos"
-  nombres: string; // vacío → nombre de la pareja del perfil
-  fecha: string; // vacío → fecha del perfil (texto libre)
-  hora: string;
-  ceremoniaLugar: string;
-  ceremoniaDireccion: string;
-  celebracionLugar: string;
-  celebracionDireccion: string;
-  confirmacion: string; // "Se ruega confirmación antes del … · teléfono"
-  nota: string; // "Etiqueta rigurosa", "Se ruega puntualidad"…
+  padresNovia: string; // "Juan Hormaechea Escós\nPilar Pérez del Yerro Núñez"
+  direccionNovia: string; // "Calle de Mateo Inurria 35, 2B,\n28036, Madrid"
+  padresNovio: string;
+  direccionNovio: string;
+  participan: string; // "Participan el enlace de sus hijos"
+  nombres: string; // "Nuria y Javier"  (vacío → nombre de la pareja del perfil)
+  cuerpo: string; // párrafo de ceremonia y celebración (multilínea)
+  src: string; // "S. R. C."
+  ciudadAno: string; // "Madrid, 2025"
   colorBg: string;
   colorText: string;
   acabado: AcabadoStd;
-  fuente: FuenteStd;
+  fuente: FuenteStd; // tipografía del cuerpo
   marco: MarcoStd;
   colorMarco: string;
   colorFrutos: string;
@@ -37,29 +29,32 @@ export type Invitacion = {
 
 const KEY = "webodas:invitacion";
 
+const CUERPO_EJEMPLO =
+  "y tienen el gusto de invitarles a la ceremonia religiosa que se celebrará (D. m.)\n" +
+  "el sábado 18 de octubre a las doce y media del mediodía, en la Iglesia de San Bernabé Apóstol (El Escorial)\n" +
+  "y a la celebración que tendrá lugar a continuación, en la Finca «Palacio de la Margarita».";
+
 const DEFAULT: Invitacion = {
   publicada: false,
-  encabezado: "",
-  familiaNovia: "",
-  familiaNovio: "",
-  textoInvitacion: "tienen el gusto de invitaros a la boda de sus hijos",
+  padresNovia: "",
+  direccionNovia: "",
+  padresNovio: "",
+  direccionNovio: "",
+  participan: "Participan el enlace de sus hijos",
   nombres: "",
-  fecha: "",
-  hora: "",
-  ceremoniaLugar: "",
-  ceremoniaDireccion: "",
-  celebracionLugar: "",
-  celebracionDireccion: "",
-  confirmacion: "",
-  nota: "",
-  colorBg: "#faf7f0",
-  colorText: "#3a342b",
-  acabado: "papel",
+  cuerpo: "",
+  src: "S. R. C.",
+  ciudadAno: "",
+  colorBg: "#fdfcf8",
+  colorText: "#5b6a4c",
+  acabado: "liso",
   fuente: "serif",
   marco: "ninguno",
   colorMarco: "#6f7650",
   colorFrutos: "#c79a46",
 };
+
+export const INVITACION_CUERPO_EJEMPLO = CUERPO_EJEMPLO;
 
 let override: Invitacion | null = null;
 export function setInvitacionOverride(i: Invitacion | null) {
@@ -97,8 +92,5 @@ export function setInvitacion(patch: Partial<Invitacion>) {
 }
 
 export function invitacionConfigurada(i: Invitacion): boolean {
-  return (
-    i.publicada ||
-    Boolean(i.familiaNovia || i.familiaNovio || i.ceremoniaLugar || i.celebracionLugar || i.nota)
-  );
+  return i.publicada || Boolean(i.padresNovia || i.padresNovio || i.cuerpo || i.nombres);
 }
