@@ -45,7 +45,6 @@ function Inicio() {
     const data = new FormData(e.currentTarget);
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
-    const nombre = String(data.get("full_name") ?? "").trim();
 
     if (modo === "recuperar") {
       if (!email) {
@@ -94,7 +93,6 @@ function Inicio() {
           supabase.auth.signUp({
             email,
             password,
-            options: { data: { full_name: nombre } },
           }),
         );
         setPending(false);
@@ -170,7 +168,6 @@ function Inicio() {
           </p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5">
-            {modo === "crear" && <Field label="Nombre" name="full_name" type="text" autoComplete="name" />}
             <Field label="Email" name="email" type="email" autoComplete="email" required />
             {modo !== "recuperar" && (
               <Field
