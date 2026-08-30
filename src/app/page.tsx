@@ -365,13 +365,13 @@ function RegalosRusticos() {
 
 function GestionRealPreview() {
   return (
-    <div className="relative min-w-0 max-w-full overflow-hidden sm:grid sm:grid-cols-[1.08fr_.92fr] sm:items-start sm:gap-3">
+    <div className="relative min-w-0 max-w-full sm:grid sm:grid-cols-[1.08fr_.92fr] sm:items-start sm:gap-3">
       <div className="min-w-0 w-[84%] overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)] sm:w-auto">
         <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: "809 / 1150" }}>
           <Image src="/landing/gestion.png" alt="Pantalla real de presupuesto y tareas" fill sizes="360px" className="object-cover object-top" />
         </div>
       </div>
-      <div className="absolute bottom-4 right-0 z-10 min-w-0 w-[62%] max-w-full overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_24px_50px_-22px_rgba(33,29,26,.55)] sm:static sm:mt-10 sm:w-auto">
+      <div className="absolute bottom-5 right-2 z-10 min-w-0 w-[68%] max-w-[calc(100%_-_0.5rem)] overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_24px_50px_-22px_rgba(33,29,26,.55)] sm:static sm:mt-10 sm:w-auto sm:max-w-none">
         <p className="font-display text-lg">Mesas</p>
         <p className="mt-0.5 text-[.55rem] text-muted">1 mesa · 5/10 plazas ocupadas · 46 sin mesa</p>
         <div className="mt-3 rounded-lg border border-[#dfd5c4] p-2.5">
