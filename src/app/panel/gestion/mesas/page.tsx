@@ -407,7 +407,7 @@ function EstadoPunto({ inv }: { inv?: Invitado }) {
     <span
       title={viene ? "Viene" : "Pendiente"}
       className={`grid h-4 w-4 shrink-0 place-items-center rounded-full text-[9px] font-bold text-white ${
-        viene ? "bg-emerald-600" : "bg-amber-500"
+        viene ? "bg-emerald-600" : "bg-[#a9864d]"
       }`}
     >
       {viene ? "✓" : "P"}

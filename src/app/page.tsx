@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { ReactNode } from "react";
 
 export const metadata = {
   title: "webodas · Toda vuestra boda en un solo sitio",
@@ -21,12 +22,6 @@ export default function Landing() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <span className="font-display text-xl tracking-tight">webodas</span>
           <nav className="flex items-center gap-5 text-sm">
-            <a href="#producto" className="hidden text-muted transition hover:text-foreground sm:inline">
-              Qué incluye
-            </a>
-            <a href="#como" className="hidden text-muted transition hover:text-foreground sm:inline">
-              Cómo funciona
-            </a>
             <Link href="/inicio" className="text-muted transition hover:text-foreground">
               Entrar
             </Link>
@@ -76,43 +71,18 @@ export default function Landing() {
                 <span className="transition-transform group-hover:translate-x-0.5">→</span>
               </a>
             </div>
-            <p className="lp-rise lp-rise-4 mt-6 text-xs text-muted">
-              7 días de prueba gratis
-            </p>
+            <div className="lp-rise lp-rise-4 mt-7 inline-flex items-center gap-3 rounded-2xl border border-[#d8c79e] bg-[#f5eddc] px-4 py-3 shadow-sm">
+              <span className="font-display text-3xl leading-none text-[#526b51]">7</span>
+              <span className="h-8 w-px bg-[#d8c79e]" />
+              <span className="text-left">
+                <strong className="block text-sm font-medium text-[#34483a]">días de prueba gratis</strong>
+                <span className="mt-0.5 block text-[.68rem] text-muted">Probad la web, los regalos y la organización</span>
+              </span>
+            </div>
           </div>
 
           <div className="lp-rise lp-rise-3 relative mx-auto w-full max-w-xl lg:mx-0">
-            <Cuadro
-              src="/landing/web.png"
-              alt="Web de boda creada con webodas"
-              ratio="1263 / 780"
-              priority
-            />
-            <div
-              className="absolute -bottom-9 -left-6 hidden w-56 rounded-xl border border-line bg-white p-4 shadow-[0_20px_45px_-20px_rgba(33,29,26,0.3)] sm:block"
-              style={{ transform: "rotate(3deg)" }}
-            >
-              <p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted">6 meses antes</p>
-              <ul className="mt-2 space-y-2 text-xs">
-                {[
-                  ["Reservar la finca", true],
-                  ["Elegir el menú", true],
-                  ["Contratar fotógrafo", false],
-                  ["Enviar invitaciones", false],
-                ].map(([t, ok]) => (
-                  <li key={t as string} className="flex items-center gap-2">
-                    <span
-                      className={`grid h-3.5 w-3.5 place-items-center rounded-full border text-[0.5rem] ${
-                        ok ? "border-accent bg-accent text-white" : "border-line"
-                      }`}
-                    >
-                      {ok ? "✓" : ""}
-                    </span>
-                    <span className={ok ? "text-muted line-through" : ""}>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <HeroOrganizacion />
           </div>
         </div>
       </section>
@@ -148,7 +118,8 @@ export default function Landing() {
             titulo="Vuestra web, con vuestro enlace"
             texto="Editor visual con plantillas. Portada, cuenta atrás, agenda del día, cómo llegar, galería y confirmación de asistencia. Se edita desde el ordenador y se ve bien en el móvil."
             puntos={["Sin saber de diseño", "Enlace con vuestros nombres"]}
-            imgs={[["/landing/web.png", "Web de boda de ejemplo", "1263 / 1000"]]}
+            imgs={[]}
+            visual={<EditorWebMockup />}
           />
           <Fila
             invertida
@@ -156,7 +127,8 @@ export default function Landing() {
             titulo="Regalos por transferencia, Bizum o tarjeta"
             texto="Compartís la lista y los invitados aportan online. webodas no cobra comisión; con pago por tarjeta se aplica solo la tarifa de la pasarela de pago."
             puntos={["Regalos concretos o fondo común", "Veis quién ha aportado"]}
-            imgs={[["/landing/regalos.png", "Lista de regalos en la web de boda", "1400 / 720"]]}
+            imgs={[]}
+            visual={<RegalosRusticos />}
           />
           <Fila
             eyebrow="Invitación y save the date"
@@ -164,8 +136,8 @@ export default function Landing() {
             texto="La invitación clásica, con su tipografía y su formato. Se rellena y se descarga en PDF al tamaño real, lista para imprenta. El save the date se comparte por un enlace."
             puntos={["PDF listo para imprenta", "Save the date para avisar pronto"]}
             imgs={[
-              ["/landing/invitacion.png", "Invitación de boda", "1400 / 950"],
-              ["/landing/savethedate.png", "Save the date", "858 / 1160"],
+              ["/landing/invitacion-nueva.png", "Invitación de boda clásica", "1400 / 999"],
+              ["/landing/savethedate-nuevo.jpeg", "Save the date en acuarela", "1054 / 1492"],
             ]}
           />
           <Fila
@@ -174,7 +146,8 @@ export default function Landing() {
             titulo="Presupuesto, tareas, invitados y mesas"
             texto="Lista de tareas ordenada por meses, presupuesto por partidas, lista de invitados con sus confirmaciones y plano de mesas. Al contratar un proveedor, el presupuesto se actualiza."
             puntos={["Exportable a Excel", "Plano de mesas para imprimir"]}
-            imgs={[["/landing/gestion.png", "Panel de organización de la boda", "809 / 900"]]}
+            imgs={[]}
+            visual={<GestionRealPreview />}
           />
         </div>
       </section>
@@ -276,6 +249,7 @@ function Fila({
   puntos,
   invertida,
   imgs,
+  visual,
 }: {
   eyebrow: string;
   titulo: string;
@@ -283,6 +257,7 @@ function Fila({
   puntos: string[];
   invertida?: boolean;
   imgs: Img[];
+  visual?: ReactNode;
 }) {
   return (
     <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
@@ -304,9 +279,122 @@ function Fila({
           imgs.length > 1 ? "grid grid-cols-[1.35fr_1fr] items-start gap-4" : ""
         }`}
       >
-        {imgs.map(([src, alt, ratio]) => (
+        {visual ?? imgs.map(([src, alt, ratio]) => (
           <Cuadro key={src} src={src} alt={alt} ratio={ratio} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroOrganizacion() {
+  return (
+    <div className="relative rounded-[1.75rem] border border-[#ddd1bc] bg-[#f4eee3] p-4 shadow-[0_35px_80px_-35px_rgba(47,39,27,.45)] sm:p-6">
+      <div className="rounded-2xl border border-[#ded5c7] bg-[#fffdfa] p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[.62rem] uppercase tracking-[.22em] text-muted">Presupuesto total</p>
+            <p className="mt-2 font-display text-4xl">80.000 €</p>
+          </div>
+          <span className="rounded-full bg-[#e9dfcd] px-3 py-1 text-[.65rem] text-[#765c31]">Todo bajo control</span>
+        </div>
+        <div className="mt-6 grid grid-cols-3 gap-2 border-t border-line pt-4">
+          {[["Estimado", "39.700 €"], ["Pagado", "12.450 €"], ["Pendiente", "27.250 €"]].map(([k,v]) => (
+            <div key={k}><p className="text-[.55rem] uppercase tracking-wider text-muted">{k}</p><p className="mt-1 font-display text-lg sm:text-xl">{v}</p></div>
+          ))}
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#eee7dc]"><div className="h-full w-[31%] rounded-full bg-[#99783e]" /></div>
+        <div className="mt-5 overflow-hidden rounded-lg border border-[#e7dfd2]">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-3 bg-[#f6f1e8] px-3 py-2 text-[.5rem] uppercase tracking-[.14em] text-muted">
+            <span>Partida</span><span>Estimado</span><span>Pagado</span>
+          </div>
+          {[
+            ["Finca y celebración", "14.500 €", "6.000 €", 42],
+            ["Fotografía y vídeo", "3.200 €", "1.600 €", 50],
+            ["Flores y decoración", "2.400 €", "600 €", 25],
+          ].map(([nombre, estimado, pagado, avance]) => (
+            <div key={nombre as string} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-[#eee7dc] px-3 py-2 text-[.62rem] first:border-t-0">
+              <div><p className="text-foreground">{nombre}</p><div className="mt-1 h-1 w-20 overflow-hidden rounded bg-[#eee7dc]"><div className="h-full rounded bg-[#6a805f]" style={{ width: `${avance}%` }} /></div></div>
+              <span className="text-muted">{estimado}</span><span className="font-medium text-[#4e6650]">{pagado}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="relative -mt-1 ml-auto w-[82%] rotate-[1.5deg] rounded-xl border border-[#ddd2c2] bg-white p-4 shadow-[0_18px_35px_-24px_rgba(33,29,26,.55)] sm:w-[72%]">
+        <p className="text-[.6rem] uppercase tracking-[.2em] text-muted">Tareas de esta semana</p>
+        <ul className="mt-2 space-y-2 text-xs">
+          {["Cerrar el menú", "Confirmar la finca", "Enviar el save the date", "Revisar presupuesto"].map((t) => (
+            <li key={t} className="flex items-center gap-2 text-muted line-through"><span className="grid h-4 w-4 place-items-center rounded-full bg-[#50694e] text-[.55rem] text-white">✓</span>{t}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function EditorWebMockup() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-[#cfcdbf] bg-[#f8f8f3] shadow-[0_28px_65px_-30px_rgba(33,50,35,.42)]">
+      <div className="flex h-10 items-center justify-between border-b border-[#dcded4] bg-white px-3 text-[.58rem] text-[#687168]"><span>← Salir　 <b className="font-display text-sm text-[#26372c]">webodas</b></span><span>↶　 Restablecer　 <b className="rounded border border-[#637966] px-2 py-1 text-[#415a47]">Ver web</b>　 <b className="rounded bg-[#314a39] px-2 py-1 text-white">Publicar</b></span></div>
+      <div className="grid grid-cols-[21%_1fr_23%]">
+        <div className="border-r border-[#dcded4] bg-white p-2.5 text-[.5rem] text-[#536056]">
+          <b className="text-[.58rem] text-[#25342a]">Secciones de la web</b>
+          <div className="mt-3 space-y-1.5">{["Ajustes de la página","Portada","Listado de ítems","Galería","Cómo llegar","Formulario de confirmación"].map((x,i)=><p key={x} className={i===0?"rounded bg-[#314a39] px-2 py-2 text-white":"rounded px-2 py-1.5 hover:bg-[#eef1eb]"}>{x}</p>)}</div>
+        </div>
+        <div className="min-h-72 overflow-hidden bg-white p-3">
+          <div className="grid h-52 grid-cols-[.92fr_1.08fr] overflow-hidden border border-[#ecece5] bg-[#fbfbf7]">
+            <div className="flex flex-col justify-center px-5 text-[#46604c]"><p className="text-[.47rem] uppercase tracking-[.35em]">Nos casamos</p><p className="mt-4 font-display text-[1.8rem] leading-[.95]">Marta &<br/>Javier</p><p className="mt-4 font-display text-[.7rem] tracking-[.18em]">6 de junio de 2026</p></div>
+            <div className="relative"><Image src="/landing/editor-acuarela.png" alt="Portada en acuarela dentro del editor" fill sizes="360px" className="object-cover" /></div>
+          </div>
+          <p className="py-5 text-center font-display text-xl text-[#405746]">El día</p>
+        </div>
+        <div className="border-l border-[#dcded4] bg-white p-2.5 text-[.5rem] text-[#637066]"><b className="text-[.58rem] text-[#26372c]">Ajustes de la página</b><p className="mt-4 font-medium text-[#35483a]">Color principal</p><div className="mt-2 flex flex-wrap gap-1">{["#f8f7f1","#314a39","#526b51","#8fa187","#d8c9a5"].map(c=><span key={c} className="h-5 w-5 rounded border border-[#cfd4ca]" style={{background:c}} />)}</div><p className="mt-4 font-medium text-[#35483a]">Color de fondo</p><div className="mt-2 h-7 rounded border border-[#d6dbd1] bg-[#f3f5ef]" /><p className="mt-4 font-medium text-[#35483a]">Barra de navegación</p><div className="mt-2 grid grid-cols-2 overflow-hidden rounded border border-[#d6dbd1]"><span className="bg-[#e9eee7] py-1 text-center">No</span><span className="py-1 text-center">Sí</span></div></div>
+      </div>
+    </div>
+  );
+}
+
+function RegalosRusticos() {
+  const regalos = [
+    ["/landing/regalos-rusticos/viaje-novios.png", "Viaje de novios", "2.500 €"],
+    ["/landing/regalos-rusticos/mueble-cocina.png", "Mueble de cocina", "1.200 €"],
+    ["/landing/regalos-rusticos/sofa.png", "Sofá", "1.800 €"],
+  ];
+  return <div className="grid grid-cols-3 gap-2 sm:gap-3">{regalos.map(([src,nombre,precio])=><div key={src} className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white shadow-sm"><div className="relative aspect-[4/3]"><Image src={src} alt={nombre} fill sizes="180px" className="object-cover" /></div><div className="p-2.5"><p className="font-display text-sm sm:text-lg">{nombre}</p><p className="mt-1 text-[.6rem] text-muted">Objetivo · {precio}</p><div className="mt-2 h-1 rounded bg-[#eee8dd]"><div className="h-full w-[55%] rounded bg-[#98783f]" /></div></div></div>)}</div>;
+}
+
+function GestionRealPreview() {
+  return (
+    <div className="grid grid-cols-[1.12fr_.88fr] items-start gap-3">
+      <div className="overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-2 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)]">
+        <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: "809 / 1150" }}>
+          <Image src="/landing/gestion.png" alt="Pantalla real de presupuesto y tareas" fill sizes="360px" className="object-cover object-top" />
+        </div>
+      </div>
+      <div className="mt-10 overflow-hidden rounded-xl border border-[#d8ceba] bg-white p-3 shadow-[0_28px_65px_-30px_rgba(33,29,26,.4)]">
+        <p className="font-display text-lg">Mesas</p>
+        <p className="mt-0.5 text-[.55rem] text-muted">1 mesa · 5/10 plazas ocupadas · 46 sin mesa</p>
+        <div className="mt-3 rounded-lg border border-[#dfd5c4] p-2.5">
+          <div className="flex items-center justify-between">
+            <span className="rounded bg-[#211f1c] px-2 py-1 text-[.48rem] font-semibold text-white">MESA 1</span>
+            <span className="rounded-full border border-[#9b793b] px-2 py-1 text-[.46rem] text-[#80632f]">★ Presidencial</span>
+          </div>
+          <p className="mt-2 rounded border border-[#e3dacb] px-2 py-1 text-[.55rem]">Mesa familia</p>
+          <p className="mt-1.5 text-[.46rem] text-muted">Redonda · 10 plazas · 5 sentados</p>
+          <div className="relative mx-auto mt-3 h-32 w-32">
+            <div className="absolute inset-[22%] rounded-full border border-[#c9b58e] bg-[#f8f5ee]" />
+            {["1","2","3","4","5","6","7","8","9","10"].map((seat, index) => {
+              const angle = (index * 36 - 90) * Math.PI / 180;
+              const left = 50 + Math.cos(angle) * 43;
+              const top = 50 + Math.sin(angle) * 43;
+              return <span key={seat} className={`absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[.42rem] ${index < 5 ? "border-[#a88952] bg-white text-[#27241f]" : "border-dashed border-[#ddd2bf] bg-white text-[#9b9488]"}`} style={{left:`${left}%`,top:`${top}%`}}>{seat}</span>;
+            })}
+          </div>
+          <div className="mt-3 space-y-1.5">
+            {["Javier Urrecho Díaz","Laura Méndez Gil","Rosario Pascual","Carmen Contreras"].map((guest, index) => <div key={guest} className="flex items-center gap-1.5 text-[.46rem]"><span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[.38rem] text-white ${index === 1 ? "bg-emerald-600" : "bg-[#a9864d]"}`}>{index === 1 ? "✓" : "P"}</span><span className="truncate">{guest}</span></div>)}
+          </div>
+          <div className="mt-3 rounded border border-dashed border-[#d8ceba] py-1.5 text-center text-[.46rem] text-[#8a6d3b]">+ Sentar invitado</div>
+        </div>
       </div>
     </div>
   );

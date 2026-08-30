@@ -121,48 +121,55 @@ function Inicio() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#1c1a17] p-12 text-[#fbf9f6] lg:flex">
-        <Link href="/" className="font-display text-2xl">
+    <div className="grid min-h-screen bg-[#f7f3eb] lg:grid-cols-[1.08fr_.92fr]">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#ded2bf] p-12 text-[#302a24] lg:flex xl:p-16">
+        <div className="pointer-events-none absolute inset-0 bg-[url('/textures/papel-algodon.png')] bg-cover opacity-[.22] mix-blend-multiply" />
+        <div className="pointer-events-none absolute inset-y-10 right-8 w-px bg-[#8a7658]/25" />
+        <Link href="/" className="relative z-10 font-display text-2xl">
           webodas
         </Link>
-        <div>
-          <h1 className="font-display text-5xl leading-tight">
-            Toda tu boda,
-            <br />
-            en un solo sitio.
+        <div className="relative z-10 max-w-2xl pr-12">
+          <div className="flex items-center gap-4 text-[#846d49]">
+            <span className="h-px w-12 bg-current" />
+            <p className="font-display text-lg italic">Todo para vuestro gran día</p>
+          </div>
+          <h1 className="mt-7 font-display text-5xl leading-[1.08] xl:text-[4.2rem]">
+            Vuestra boda,<br />a vuestra manera.
           </h1>
-          <p className="mt-4 max-w-sm text-sm text-white/70">
-            Crea tu página web, comparte la lista de regalos y organiza cada detalle del gran día.
+          <p className="mt-7 max-w-lg font-display text-xl leading-8 text-[#51483e]/85">
+            Un lugar donde crear vuestra web y las invitaciones, compartir los regalos y preparar cada detalle de la boda con calma.
           </p>
         </div>
-        <Link href="/" className="text-xs text-white/40 hover:text-white/70">
+        <Link href="/" className="relative z-10 text-xs text-[#6e6254] transition hover:text-[#302a24]">
           ← Volver a la portada
         </Link>
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#8a6d3b]/30 blur-3xl" />
       </div>
 
-      <div className="flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
-          <Link href="/" className="font-display text-2xl lg:hidden">
-            webodas
-          </Link>
-          <h2 className="mt-2 font-display text-3xl">
+      <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-14">
+        <div className="w-full max-w-md">
+          <div className="mb-12 flex items-center justify-between lg:hidden">
+            <Link href="/" className="font-display text-2xl text-[#3b3028]">webodas</Link>
+            <Link href="/" className="text-xs text-[#6f7169]">Volver</Link>
+          </div>
+          <p className="text-xs uppercase tracking-[.24em] text-[#8a713d]">
+            {modo === "entrar" ? "Bienvenidos de nuevo" : modo === "crear" ? "Empezad hoy" : "Acceso a vuestra cuenta"}
+          </p>
+          <h2 className="mt-3 font-display text-4xl leading-tight text-[#3b3028] sm:text-5xl">
             {modo === "entrar"
-              ? "Entra en tu panel"
+              ? "Volved a vuestra boda"
               : modo === "crear"
-                ? "Crea tu cuenta"
+                ? "Organizadlo todo juntos"
                 : "Recuperar contraseña"}
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-3 max-w-sm text-sm leading-6 text-[#6f7169]">
             {modo === "entrar"
-              ? "Introduce tus datos para continuar."
+              ? "Acceded a vuestra web, regalos y toda la organización."
               : modo === "crear"
-                ? "Empieza a organizar tu boda hoy."
-                : "Te enviaremos un enlace a tu correo para crear una nueva."}
+                ? "Web, invitaciones, regalos y gestión en un mismo lugar."
+                : "Os enviaremos un enlace para crear una contraseña nueva."}
           </p>
 
-          <form onSubmit={onSubmit} className="mt-7 space-y-4">
+          <form onSubmit={onSubmit} className="mt-8 space-y-5">
             {modo === "crear" && <Field label="Nombre" name="full_name" type="text" autoComplete="name" />}
             <Field label="Email" name="email" type="email" autoComplete="email" required />
             {modo !== "recuperar" && (
@@ -179,7 +186,7 @@ function Inicio() {
               <button
                 type="button"
                 onClick={() => cambiarModo("recuperar")}
-                className="text-sm text-muted underline hover:text-foreground"
+                className="text-sm text-[#6f7169] underline decoration-[#b9aa8c] underline-offset-4 hover:text-[#3b3028]"
               >
                 ¿Has olvidado la contraseña?
               </button>
@@ -191,37 +198,37 @@ function Inicio() {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+              className="w-full rounded-xl bg-[#3b3028] px-4 py-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#2b231e] disabled:opacity-60"
             >
               {pending
                 ? "Un momento…"
                 : modo === "entrar"
-                  ? "Entrar"
+                  ? "Entrar en nuestro panel"
                   : modo === "crear"
-                    ? "Crear cuenta"
+                    ? "Empezar gratis"
                     : "Enviar enlace"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-muted">
+          <p className="mt-7 text-sm text-[#6f7169]">
             {modo === "recuperar" ? (
               <>
                 ¿Ya te acuerdas?{" "}
                 <button
                   onClick={() => cambiarModo("entrar")}
-                  className="font-medium text-foreground underline"
+                  className="font-medium text-[#3b3028] underline underline-offset-4"
                 >
                   Volver a entrar
                 </button>
               </>
             ) : (
               <>
-                {modo === "entrar" ? "¿Aún no tienes cuenta? " : "¿Ya tienes cuenta? "}
+                {modo === "entrar" ? "¿Aún no tenéis cuenta? " : "¿Ya tenéis cuenta? "}
                 <button
                   onClick={() => cambiarModo(modo === "entrar" ? "crear" : "entrar")}
-                  className="font-medium text-foreground underline"
+                  className="font-medium text-[#3b3028] underline underline-offset-4"
                 >
-                  {modo === "entrar" ? "Regístrate" : "Entra"}
+                  {modo === "entrar" ? "Empezad gratis" : "Entrad"}
                 </button>
               </>
             )}
@@ -249,10 +256,10 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium text-[#30362f]">{label}</span>
       <input
         {...props}
-        className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        className="mt-2 w-full rounded-xl border border-[#d8ceba] bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-[#9a7d50] focus:ring-2 focus:ring-[#9a7d50]/10"
       />
     </label>
   );
