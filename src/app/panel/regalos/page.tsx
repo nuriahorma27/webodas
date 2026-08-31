@@ -59,7 +59,7 @@ export default function RegalosPage() {
         ...l,
         cobro: { metodo: "stripe", ...l.cobro, stripeConnected: true, stripeAccountId: p.get("acct")! },
       });
-      window.history.replaceState({}, "", "/panel/regalos");
+      window.history.replaceState({}, "", "/panel/gestion/regalos");
       setLista(loadLista());
     } else if (p.get("stripe") === "sinclave") {
       alert("Stripe no está configurado: falta STRIPE_SECRET_KEY en el servidor.");

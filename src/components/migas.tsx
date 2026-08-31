@@ -18,7 +18,7 @@ export function Migas() {
 
   let destino = VUELTA[pathname];
   if (!destino && pathname.startsWith("/panel/gestion/")) {
-    destino = { href: "/panel/gestion", label: "Gestión" };
+    destino = { href: "/panel", label: "Panel" };
   }
   if (!destino) destino = { href: "/panel", label: "Panel" };
 

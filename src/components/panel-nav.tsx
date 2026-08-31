@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client";
 const nav = [
   { href: "/panel", label: "Inicio" },
   { href: "/panel/webs", label: "Web e invitaciones" },
-  { href: "/panel/regalos", label: "Lista de regalos" },
   { href: "/panel/gestion", label: "Gestión" },
 ];
 

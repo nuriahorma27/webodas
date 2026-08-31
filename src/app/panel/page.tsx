@@ -122,7 +122,7 @@ export default function PanelPage() {
             </div>
           </section>
           <section className="relative overflow-hidden rounded-[.75rem_2rem_2rem_2rem] border border-[#ccd1c1] bg-[#e4e8dc] p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-base text-[#625b53]">aportado hasta ahora</p></div><Link href="/panel/regalos" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-base text-[#625b53]">aportado hasta ahora</p></div><Link href="/panel/gestion/regalos" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
             <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
               <MiniDato label="Regalos" value={listaRegalos?.gifts.length ?? 0} />
               <MiniDato label="Aportaciones" value={aportaciones.length} />
