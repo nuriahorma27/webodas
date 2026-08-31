@@ -114,7 +114,7 @@ export default function PanelPage() {
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <section className="relative overflow-hidden rounded-[2rem_.75rem_2rem_2rem] border border-[#dfcfc0] bg-[#eee4da] p-5 sm:p-6">
             <span className="pointer-events-none absolute -right-5 -top-10 font-display text-[9rem] text-[#8e6955]/[.07]">○</span>
-            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Invitados</p><p className="mt-3 font-display text-4xl">{invitados.length}</p><p className="mt-1 text-sm text-muted">personas en la lista</p></div><Link href="/panel/gestion/invitados" className="text-xs text-accent">Ver detalle →</Link></div>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Invitados</p><p className="mt-3 font-display text-4xl">{invitados.length}</p><p className="mt-1 text-base text-[#625b53]">personas en la lista</p></div><Link href="/panel/gestion/invitados" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
             <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
               <MiniDato label="Confirmados" value={invitadosSi} />
               <MiniDato label="Pendientes" value={invitadosPendientes} />
@@ -122,7 +122,7 @@ export default function PanelPage() {
             </div>
           </section>
           <section className="relative overflow-hidden rounded-[.75rem_2rem_2rem_2rem] border border-[#ccd1c1] bg-[#e4e8dc] p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-muted">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-sm text-muted">aportado hasta ahora</p></div><Link href="/panel/regalos" className="text-xs text-accent">Ver detalle →</Link></div>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-base text-[#625b53]">aportado hasta ahora</p></div><Link href="/panel/regalos" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
             <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
               <MiniDato label="Regalos" value={listaRegalos?.gifts.length ?? 0} />
               <MiniDato label="Aportaciones" value={aportaciones.length} />
@@ -158,15 +158,15 @@ function ResumenEstado({ label, value, color }: { label: string; value: number; 
 }
 
 function DatoPresupuesto({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
-  return <div><p className="text-[.62rem] uppercase tracking-wider text-[#786d5f]">{label}</p><p className={`mt-1 font-display text-lg sm:text-xl ${accent ? "text-accent" : ""}`}>{eur(value)}</p></div>;
+  return <div><p className="text-[.68rem] font-medium uppercase tracking-wider text-[#51483e] sm:text-xs">{label}</p><p className={`mt-1.5 font-display text-2xl sm:text-[1.65rem] ${accent ? "text-[#6f542b]" : "text-[#29241f]"}`}>{eur(value)}</p></div>;
 }
 
 function MiniDato({ label, value }: { label: string; value: number }) {
-  return <div className="min-w-0 pr-2"><p className="font-display text-xl">{value}</p><p className="mt-1 truncate text-[.65rem] text-muted sm:text-xs">{label}</p></div>;
+  return <div className="min-w-0 pr-2"><p className="font-display text-2xl text-[#29241f] sm:text-3xl">{value}</p><p className="mt-1 text-xs font-medium leading-tight text-[#59534b] sm:text-sm">{label}</p></div>;
 }
 
 function FechaPrincipal({ fecha, dias }: { fecha: string; dias: number | null }) {
-  return <div className="rounded-[1.6rem_1.6rem_.65rem_1.6rem] border border-black/[.06] bg-[#eadfce] p-4 sm:p-5"><p className="text-[.62rem] uppercase tracking-[.16em] text-[#766c60]">Cuenta atrás</p><p className="mt-2 font-display text-2xl sm:text-3xl">{dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`}</p><label className="mt-3 block"><span className="block text-[.65rem] text-muted">Fecha de la boda</span><input type="date" value={fecha} onChange={(e) => saveBoda({ fecha: e.target.value })} className="mt-1 w-full rounded-lg border border-[#cdbda4] bg-white/55 px-2.5 py-2 text-xs outline-none focus:border-accent sm:text-sm" /></label></div>;
+  return <div className="rounded-[1.6rem_1.6rem_.65rem_1.6rem] border border-black/[.06] bg-[#eadfce] p-4 sm:p-5"><p className="text-[.62rem] uppercase tracking-[.16em] text-[#766c60]">Cuenta atrás</p><p className="mt-2 font-display text-2xl sm:text-3xl">{dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`}</p><label className="mt-3 block"><span className="block text-[.68rem] font-medium text-[#625b52]">Fecha de la boda</span><input type="date" value={fecha} onChange={(e) => saveBoda({ fecha: e.target.value })} className="mt-1 w-auto max-w-full border-0 border-b border-[#b9a98e] bg-transparent p-0 pb-1 font-display text-lg text-[#29241f] outline-none focus:border-accent" /></label></div>;
 }
 
 function DatoPrincipal({ label, value, sub, className }: { label: string; value: string; sub: string; className: string }) {
