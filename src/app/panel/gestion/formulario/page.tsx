@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card } from "@/components/ui";
+import { Card, Toggle } from "@/components/ui";
 import { RsvpForm } from "@/components/rsvp-form";
 import {
   loadFormulario,
@@ -56,20 +56,12 @@ export default function FormularioPage() {
   // Contenido de una fila de dato estándar (sin el envoltorio de orden).
   const contenidoEstandar = (k: ClaveEstandar) => (
     <div className="text-sm">
-      <label className="flex items-start gap-2.5">
-        <input
-          type="checkbox"
-          checked={est[k]}
-          onChange={(e) => toggleEstandar(k, e.target.checked)}
-          className="mt-0.5"
-        />
-        <span>
-          {TEXTO_ESTANDAR[k]}
-          {NOTA_ESTANDAR[k] && (
-            <span className="block text-xs text-muted">{NOTA_ESTANDAR[k]}</span>
-          )}
-        </span>
-      </label>
+      <Toggle
+        checked={est[k]}
+        onChange={(checked) => toggleEstandar(k, checked)}
+        label={TEXTO_ESTANDAR[k]}
+        description={NOTA_ESTANDAR[k]}
+      />
       {k === "bus" && est.bus && (
         <div className="ml-6 mt-2 grid gap-3 sm:grid-cols-2">
           {(
@@ -111,8 +103,6 @@ export default function FormularioPage() {
 
   const esClave = (k: string): k is ClaveEstandar =>
     (CLAVES_ESTANDAR as readonly string[]).includes(k);
-
-  let numQ = 0;
 
   return (
     <div className="space-y-6">
@@ -164,23 +154,23 @@ export default function FormularioPage() {
       <Card className="space-y-3" data-tour="form-preguntas">
         <h3 className="font-display text-lg">Preguntas del formulario</h3>
         <p className="text-sm text-muted">
-          Este es el formulario completo, en el orden en que lo verán tus invitados. Marca los
-          datos que quieres pedir, añade tus preguntas y ordénalo todo con ↑ ↓.
+          Activa los datos que quieres pedir, añade tus preguntas y cambia el orden cuando lo
+          necesites.
         </p>
 
         <div className="rounded-lg border border-line divide-y divide-line">
-          <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted">
+          <div className="flex items-center gap-3 bg-[#f5f1ea] px-3 py-2.5 text-sm">
             <span className="w-8 shrink-0" />
-            <input type="checkbox" checked disabled />
-            <span>
-              Nombre <span className="text-xs">(siempre el primero)</span>
-            </span>
+            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#66735e] text-[.65rem] text-white">1</span>
+            <span>Nombre <span className="text-xs text-muted">· obligatorio y siempre el primero</span></span>
           </div>
 
           {cfg.orden.map((k, i) => {
             const q = esClave(k) ? null : cfg.preguntas.find((p) => p.id === k);
             if (!esClave(k) && !q) return null;
-            if (q) numQ += 1;
+            const numeroPregunta = cfg.orden
+              .slice(0, i + 1)
+              .filter((id) => !esClave(id) && cfg.preguntas.some((pregunta) => pregunta.id === id)).length;
             const anteriores = cfg.preguntas.filter(
               (p) => cfg.orden.indexOf(p.id) < i && cfg.orden.indexOf(p.id) >= 0,
             );
@@ -210,7 +200,7 @@ export default function FormularioPage() {
                   ) : (
                     <PreguntaEditor
                       q={q as PreguntaForm}
-                      numero={numQ}
+                      numero={numeroPregunta}
                       anteriores={anteriores}
                       pack={cfg.estandar.acompanante}
                     />
@@ -327,20 +317,14 @@ function PreguntaEditor({
         </label>
       )}
 
-      <label className="mt-3 flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
+      <div className="mt-4 rounded-lg bg-[#f5f1ea] p-3">
+        <Toggle
           checked={Boolean(q.acomp)}
-          onChange={(e) => updatePregunta(q.id, { acomp: e.target.checked })}
-          className="mt-0.5"
+          onChange={(checked) => updatePregunta(q.id, { acomp: checked })}
+          label="Preguntar también al acompañante"
+          description="Si lo trae, la pregunta aparecerá una segunda vez para esa persona."
         />
-        <span>
-          Preguntarla también, por separado, para el acompañante
-          <span className="block text-xs text-muted">
-            Si el invitado trae acompañante, aparece una segunda vez con «(acompañante)».
-          </span>
-        </span>
-      </label>
+      </div>
 
       <div className="mt-3">
         {!tieneCond ? (

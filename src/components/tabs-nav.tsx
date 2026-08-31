@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-type Tab = { href: string; label: string };
+type Tab = { href: string; label: string; group?: string };
 
 // Navegación entre secciones.
 // - Móvil: un desplegable propio (estética webodas), no el <select> del sistema.
@@ -19,23 +19,30 @@ export function TabsNav({ tabs }: { tabs: Tab[] }) {
         <SelectorSeccion tabs={tabs} actual={actual} />
       </div>
 
-      <div className="hidden flex-wrap gap-x-1 border-b border-line sm:flex">
-        {tabs.map((t) => {
+      <div className="hidden gap-7 overflow-x-auto rounded-2xl border border-[#ddd4c7] bg-[#f3ede3] px-4 py-3 sm:flex">
+        {Array.from(new Set(tabs.map((t) => t.group ?? "Secciones"))).map((group) => (
+          <div key={group} className="shrink-0">
+            <p className="mb-1.5 px-2 text-[.62rem] font-semibold uppercase tracking-[.18em] text-[#81786d]">{group}</p>
+            <div className="flex gap-1">
+        {tabs.filter((t) => (t.group ?? "Secciones") === group).map((t) => {
           const active = pathname === t.href;
           return (
             <Link
               key={t.href}
               href={t.href}
-              className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm transition ${
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition ${
                 active
-                  ? "border-accent text-foreground"
-                  : "border-transparent text-muted hover:text-foreground"
+                  ? "bg-[#3d3933] text-white shadow-sm"
+                  : "text-muted hover:bg-white/70 hover:text-foreground"
               }`}
             >
               {t.label}
             </Link>
           );
         })}
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

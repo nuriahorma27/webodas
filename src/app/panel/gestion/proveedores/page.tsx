@@ -40,15 +40,15 @@ export default function ProveedoresPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <Stat label="Proveedores" value={String(lista.length)} />
         <Stat label="Contratados" value={String(contratados)} />
         <Stat label="Importe contratado" value={eur(total)} />
       </div>
 
-      <p className="text-xs text-muted">
-        Los que marcas como <span className="text-green-700">contratados</span> en una tarea aparecen
-        aquí solos. Puedes añadir otros a mano.
+      <p className="rounded-xl border border-[#ddd4c7] bg-[#f3ede3] px-4 py-3 text-sm leading-relaxed text-muted">
+        Los proveedores contratados desde una tarea aparecen aquí automáticamente. También podéis
+        añadir cualquier otro y guardar sus datos de contacto.
       </p>
 
       <Card className="p-4 sm:p-5">

@@ -35,7 +35,7 @@ export default function ConfirmacionesPage() {
           <h2 className="font-display text-lg">Respuestas del formulario</h2>
           <span className="text-xs text-muted">Se actualizan solas al recibir una nueva</span>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="border-y border-line text-left text-xs uppercase tracking-wider text-muted">
               <tr>
@@ -73,6 +73,29 @@ export default function ConfirmacionesPage() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="divide-y divide-line md:hidden">
+          {rows.map((r) => (
+            <article key={r.id} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium">{r.nombre}</p>
+                  <p className="truncate text-xs text-muted">{r.email || "Sin correo"}</p>
+                </div>
+                <Badge tone={r.asiste === "Sí" ? "green" : "red"}>{r.asiste === "Sí" ? "Asiste" : "No asiste"}</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-[#f5f1ea] p-3 text-sm">
+                <div><p className="text-[.65rem] uppercase tracking-wider text-muted">Respuesta</p><p className="mt-1">{r.fecha}</p></div>
+                <div><p className="text-[.65rem] uppercase tracking-wider text-muted">Acompañantes</p><p className="mt-1">{r.acompanantes}</p></div>
+              </div>
+              {extraCols.length > 0 && (
+                <dl className="space-y-1.5 text-sm">
+                  {extraCols.map((c) => <div key={c} className="flex justify-between gap-4"><dt className="text-muted">{c}</dt><dd className="text-right">{r.respuestas[c] ?? "—"}</dd></div>)}
+                </dl>
+              )}
+            </article>
+          ))}
+          {rows.length === 0 && <p className="p-6 text-center text-sm text-muted">Aún no hay respuestas.</p>}
         </div>
       </Card>
 

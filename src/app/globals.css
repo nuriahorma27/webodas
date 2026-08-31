@@ -32,6 +32,38 @@ body {
   font-family: var(--font-cormorant), Georgia, serif;
 }
 
+/* Gestión: una misma gramática visual en todas las herramientas. */
+.gestion-heading {
+  border-left: 3px solid #a58b5b;
+  padding-left: 1rem;
+}
+.gestion-content [data-ui="card"] {
+  border-color: #ddd4c7;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 28px rgba(65, 54, 40, 0.035);
+}
+.gestion-content input:not([type="checkbox"]):not([type="radio"]),
+.gestion-content select,
+.gestion-content textarea {
+  min-height: 2.5rem;
+  border-color: #d9d0c3;
+  background-color: #fdfbf8;
+}
+.gestion-content button,
+.gestion-content a {
+  text-underline-offset: 3px;
+}
+.gestion-content input[type="checkbox"]:not(.sr-only) {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #66735e;
+}
+@media (max-width: 640px) {
+  .gestion-content [data-ui="card"] {
+    border-radius: 1.15rem;
+  }
+}
+
 /* ---------- Landing pública ---------- */
 html {
   scroll-behavior: smooth;

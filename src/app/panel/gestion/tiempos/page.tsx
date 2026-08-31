@@ -149,21 +149,21 @@ function Row({
     <li
       ref={ref}
       className={`scroll-mt-4 text-sm ${
-        estado === "hecho" ? "bg-emerald-50" : estado === "proceso" ? "bg-amber-50" : ""
+        estado === "hecho" ? "bg-[#eef1eb]" : estado === "proceso" ? "bg-[#f6f0e3]" : ""
       }`}
     >
       <div className="px-4 py-2.5">
-        <div className="flex items-start gap-3">
-          <span data-tour="tareas-estado">
+        <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap">
+          <span data-tour="tareas-estado" className="order-2 sm:order-1">
             <EstadoControl value={estado} onChange={(v) => setEstado(t.id, v)} />
           </span>
-          <button onClick={onToggleOpen} className="min-w-0 flex-1 text-left">
+          <button onClick={onToggleOpen} className="order-1 min-w-0 flex-1 text-left sm:order-2">
             <p
               className={
                 estado === "hecho"
-                  ? "font-medium text-emerald-900"
+                  ? "font-medium text-[#4f6049]"
                   : estado === "proceso"
-                    ? "font-medium text-amber-900"
+                    ? "font-medium text-[#745f32]"
                     : ""
               }
             >
@@ -184,7 +184,7 @@ function Row({
           <button
             onClick={onToggleEdit}
             title="Editar tarea"
-            className={`shrink-0 rounded px-1.5 text-base leading-none ${
+            className={`order-3 shrink-0 rounded px-1.5 text-base leading-none ${
               editar ? "text-accent" : "text-muted hover:text-foreground"
             }`}
           >

@@ -4,9 +4,15 @@ import { ESTADOS, type Estado } from "@/lib/tareas";
 
 // Colores pastel para cada estado.
 export const ESTADO_DOT: Record<Estado, string> = {
-  sin: "bg-slate-200",
-  proceso: "bg-amber-200",
-  hecho: "bg-emerald-300",
+  sin: "bg-[#d7d2ca]",
+  proceso: "bg-[#c7aa68]",
+  hecho: "bg-[#66735e]",
+};
+
+const ESTADO_PILL: Record<Estado, string> = {
+  sin: "border-[#d8d2c9] bg-[#f4f1ec] text-[#6d675f]",
+  proceso: "border-[#d7c49b] bg-[#f4ecd9] text-[#745f32]",
+  hecho: "border-[#b8c1af] bg-[#e8ede4] text-[#4f6049]",
 };
 
 export function EstadoControl({
@@ -16,24 +22,20 @@ export function EstadoControl({
   value: Estado;
   onChange: (e: Estado) => void;
 }) {
+  const index = ESTADOS.findIndex((estado) => estado.value === value);
+  const actual = ESTADOS[index] ?? ESTADOS[0];
+  const siguiente = ESTADOS[(index + 1) % ESTADOS.length];
   return (
-    <div className="flex shrink-0 gap-1">
-      {ESTADOS.map((e) => {
-        const active = value === e.value;
-        return (
-          <button
-            key={e.value}
-            title={e.label}
-            onClick={() => onChange(e.value)}
-            className={`grid h-6 w-6 place-items-center rounded-full border transition ${
-              active ? "border-neutral-800" : "border-transparent hover:border-neutral-300"
-            }`}
-          >
-            <span className={`h-3 w-3 rounded-full ${ESTADO_DOT[e.value]}`} />
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      title={`Cambiar a ${siguiente.label.toLowerCase()}`}
+      aria-label={`Estado: ${actual.label}. Cambiar a ${siguiente.label}`}
+      onClick={() => onChange(siguiente.value)}
+      className={`inline-flex min-w-[6.4rem] shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:brightness-[.98] ${ESTADO_PILL[value]}`}
+    >
+      <span className={`h-2 w-2 shrink-0 rounded-full ${ESTADO_DOT[value]}`} />
+      {actual.label}
+    </button>
   );
 }
 

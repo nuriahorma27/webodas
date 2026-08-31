@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PageTitle, Card, Stat, Progress, Button } from "@/components/ui";
+import { useEffect, useRef, useState } from "react";
+import { Card, Stat, Progress, Button } from "@/components/ui";
 import { ImagePicker } from "@/components/image-picker";
 import { RichEditor } from "@/components/rich-editor";
 import { ColorField } from "@/components/color-field";
@@ -33,11 +33,15 @@ export default function RegalosPage() {
   const [lista, setLista] = useState<ListaRegalos | null>(null);
   const [aportaciones, setAportaciones] = useState<Aportacion[]>([]);
   const [wizard, setWizard] = useState<"metodo" | "cuenta" | null>("metodo");
-  const [wizardInit, setWizardInit] = useState(false);
+  const wizardInicializado = useRef(false);
 
   useEffect(() => {
     const sync = () => {
       setLista(loadLista());
+      if (!wizardInicializado.current) {
+        setWizard(configurado(loadLista().cobro) ? null : "metodo");
+        wizardInicializado.current = true;
+      }
       const locales = loadAportaciones();
       setAportaciones(locales);
       // + las que han hecho los invitados por la web (servidor)
@@ -60,20 +64,12 @@ export default function RegalosPage() {
         cobro: { metodo: "stripe", ...l.cobro, stripeConnected: true, stripeAccountId: p.get("acct")! },
       });
       window.history.replaceState({}, "", "/panel/gestion/regalos");
-      setLista(loadLista());
     } else if (p.get("stripe") === "sinclave") {
       alert("Stripe no está configurado: falta STRIPE_SECRET_KEY en el servidor.");
     } else if (p.get("stripe") === "error") {
       alert("Stripe: " + (p.get("msg") || "error"));
     }
   }, []);
-
-  useEffect(() => {
-    if (lista && !wizardInit) {
-      setWizard(configurado(lista.cobro) ? null : "metodo");
-      setWizardInit(true);
-    }
-  }, [lista, wizardInit]);
 
   if (!lista) return null;
 
@@ -104,7 +100,7 @@ export default function RegalosPage() {
   if (wizard === "metodo") {
     return (
       <div className="space-y-6">
-        <PageTitle eyebrow="Lista de regalos · Paso 1 de 3" title="¿Cómo queréis recibir las aportaciones?" />
+        <WorkflowHeading step="Paso 1 de 3" title="¿Cómo queréis recibir las aportaciones?" description="Elegid la opción que os resulte más cómoda. Podréis cambiarla después." />
         <div data-tour="regalos-cobro" className="grid gap-4 md:grid-cols-2">
           <button
             onClick={() => {
@@ -141,11 +137,11 @@ export default function RegalosPage() {
   if (wizard === "cuenta") {
     return (
       <div className="space-y-6">
-        <PageTitle eyebrow="Lista de regalos · Paso 2 de 3" title="Datos para recibir el dinero">
+        <WorkflowHeading step="Paso 2 de 3" title="Datos para recibir el dinero">
           <button onClick={() => setWizard("metodo")} className="text-sm text-muted underline">
             ← Cambiar método
           </button>
-        </PageTitle>
+        </WorkflowHeading>
 
         {metodo === "manual" ? (
           <Card className="space-y-3">
@@ -182,6 +178,8 @@ export default function RegalosPage() {
               <p className="text-sm text-green-700">✓ Cuenta de Stripe conectada.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
+                {/* La ruta inicia un flujo externo de Stripe y necesita una navegación completa. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                 <a
                   href="/api/stripe/connect"
                   className="inline-flex rounded-md bg-[#635bff] px-4 py-2 text-sm font-medium text-white"
@@ -217,17 +215,12 @@ export default function RegalosPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle title="Lista de regalos">
-        <Button href="/lista/ana-y-leo" variant="ghost">
-          Ver como invitado
-        </Button>
-      </PageTitle>
-
-      <div className="flex items-center gap-2 text-sm text-muted">
-        Cobro: <strong className="text-foreground">{metodo === "stripe" ? "Stripe" : "Transferencia / Bizum"}</strong>
-        <button onClick={() => setWizard("metodo")} className="underline">
-          Cambiar
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#ddd4c7] bg-[#f3ede3] px-4 py-3">
+        <div className="text-sm text-muted">
+          Método de cobro: <strong className="text-foreground">{metodo === "stripe" ? "Stripe" : "Transferencia / Bizum"}</strong>
+          <button onClick={() => setWizard("metodo")} className="ml-2 font-medium text-accent underline">Cambiar</button>
+        </div>
+        <Button href="/lista/ana-y-leo" variant="ghost">Vista de invitados</Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -378,6 +371,21 @@ export default function RegalosPage() {
             </Card>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function WorkflowHeading({ step, title, description, children }: { step: string; title: string; description?: string; children?: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-[#ddd4c7] bg-[#f3ede3] p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[.68rem] font-semibold uppercase tracking-[.18em] text-accent">{step}</p>
+          <h2 className="mt-1 font-display text-2xl sm:text-3xl">{title}</h2>
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        </div>
+        {children}
       </div>
     </div>
   );

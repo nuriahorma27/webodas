@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/ui";
+import { Card, Toggle } from "@/components/ui";
 import { loadBoda, nombrePareja, fechaLarga } from "@/lib/boda";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
 import {
@@ -83,16 +83,13 @@ export default function MesasPage() {
             return (
               <div
                 key={t.id}
-                className={`rounded-lg border p-3 ${on ? "border-accent bg-accent-soft/20" : "border-line"}`}
+                className={`rounded-xl border p-3.5 transition ${on ? "border-[#a9b19f] bg-[#edf0e8]" : "border-line bg-white/60"}`}
               >
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(on)}
-                    onChange={(e) => setTipoMesa(t.id, { activo: e.target.checked })}
-                  />
-                  {t.label}
-                </label>
+                <Toggle
+                  checked={Boolean(on)}
+                  onChange={(checked) => setTipoMesa(t.id, { activo: checked })}
+                  label={`Mesa ${t.label.toLowerCase()}`}
+                />
                 {on && (
                   <label className="mt-2 flex items-center gap-2 text-xs text-muted">
                     Máx. personas
@@ -534,14 +531,14 @@ function MesaCard({
             </span>
           </p>
           {mesa.tipo === "rectangular" && (
-            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
-              <input
-                type="checkbox"
+            <div className="mt-3 rounded-lg bg-[#f5f1ea] p-2.5">
+              <Toggle
                 checked={Boolean(mesa.cabecera)}
-                onChange={(e) => onCabecera(e.target.checked)}
+                onChange={onCabecera}
+                label="Sillas en las cabeceras"
+                description="Añade una silla en cada extremo de la mesa."
               />
-              Con cabecera (una silla en cada punta)
-            </label>
+            </div>
           )}
         </div>
         <button

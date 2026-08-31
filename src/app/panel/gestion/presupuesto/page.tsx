@@ -67,11 +67,11 @@ export default function PresupuestoPage() {
 
   return (
     <div className="space-y-6">
-      <div data-tour="ppto-total" className="grid gap-4 sm:grid-cols-2">
+      <div data-tour="ppto-total" className="grid gap-4 lg:grid-cols-2">
         <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
       </div>
 
-      <div data-tour="ppto-editar" className="flex items-center justify-end gap-4">
+      <div data-tour="ppto-editar" className="flex flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
         <button
           onClick={() => setEditando((v) => !v)}
           className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
@@ -98,7 +98,7 @@ export default function PresupuestoPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <Stat
           label="Estimado"
           value={eur(tot.estimado)}

@@ -34,10 +34,42 @@ export function Card({
   return (
     <div
       data-tour={dataTour}
+      data-ui="card"
       className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${className}`}
     >
       {children}
     </div>
+  );
+}
+
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  description,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={`flex items-start justify-between gap-4 ${disabled ? "opacity-60" : "cursor-pointer"}`}>
+      <span className="min-w-0 text-sm">
+        <span className="block font-medium text-foreground">{label}</span>
+        {description && <span className="mt-0.5 block text-xs leading-relaxed text-muted">{description}</span>}
+      </span>
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-[#d9d2c7] transition peer-checked:bg-[#66735e] peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5" />
+    </label>
   );
 }
 
