@@ -683,10 +683,10 @@ function MesaDibujo({
         <div
           className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
           style={{
-            left: "22%",
-            top: "22%",
-            width: "56%",
-            height: "56%",
+            left: rect ? "14%" : "22%",
+            top: rect ? "26%" : "22%",
+            width: rect ? "72%" : "56%",
+            height: rect ? "48%" : "56%",
             borderRadius: mesa.tipo === "redonda" ? "9999px" : rect ? "12px" : "8px",
           }}
         />
