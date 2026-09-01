@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Data } from "@measured/puck";
 import { Render } from "@measured/puck";
 import { SaveTheDateView } from "@/components/save-the-date-view";
@@ -22,13 +22,35 @@ import {
   categoriasOrdenadas,
   type Partida,
 } from "@/lib/presupuesto";
-import { TAREAS, FASES, loadEstados } from "@/lib/tareas";
+import { loadTareas, FASES, loadEstados, type Tarea } from "@/lib/tareas";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
-import { loadLista, loadAportaciones } from "@/lib/regalos";
+import { loadLista, loadAportaciones, type Aportacion } from "@/lib/regalos";
 import { loadMesas } from "@/lib/mesas";
 import { eur } from "@/lib/mock";
 
 const nombreInv = (i: Invitado) => `${i.nombre} ${i.apellido}`.trim() || "(sin nombre)";
+
+function chunk<T>(arr: T[], n: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out.length ? out : [[]];
+}
+
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+
+const BLOQUE_LABEL: Record<string, string> = {
+  Hero: "Portada",
+  Schedule: "Agenda del día",
+  Countdown: "Cuenta atrás",
+  Gallery: "Galería",
+  Location: "Cómo llegar",
+  RSVP: "Confirmación",
+  MediaText: "Texto con foto",
+  List: "Listado",
+  RichText: "Texto",
+};
+
+type PageDef = { titulo?: string; roman?: string; cont?: boolean; body: ReactNode };
 
 export default function RecuerdoPage() {
   const [boda, setBoda] = useState<BodaPerfil | null>(null);
@@ -36,9 +58,10 @@ export default function RecuerdoPage() {
   const [inv, setInv] = useState<Invitacion | null>(null);
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [estados, setEstados] = useState<Record<string, string>>({});
+  const [tareas, setTareas] = useState<Tarea[]>([]);
   const [invitados, setInvitados] = useState<Invitado[]>([]);
   const [site, setSite] = useState<Data | null>(null);
-  const [regalos, setRegalos] = useState({ aportaciones: 0, recaudado: 0 });
+  const [aportaciones, setAportaciones] = useState<Aportacion[]>([]);
   const [mesas, setMesas] = useState<ReturnType<typeof loadMesas> | null>(null);
   const [descargando, setDescargando] = useState(false);
   const paginasRef = useRef<HTMLDivElement>(null);
@@ -50,20 +73,16 @@ export default function RecuerdoPage() {
       setInv(loadInvitacion());
       setPartidas(loadPartidas());
       setEstados(loadEstados());
+      setTareas(loadTareas());
       setInvitados(loadInvitados());
       setMesas(loadMesas());
+      setAportaciones(loadAportaciones());
       try {
         const raw = localStorage.getItem("webodas:site:demo");
         setSite(raw ? (JSON.parse(raw) as Data) : (plantillaEditorial as Data));
       } catch {
         setSite(plantillaEditorial as Data);
       }
-      const aps = loadAportaciones().filter((a) => a.estado === "confirmada");
-      const gifts = loadLista().gifts;
-      setRegalos({
-        aportaciones: aps.length,
-        recaudado: gifts.reduce((s, g) => s + (g.aportado || 0), 0),
-      });
     };
     sync();
     const ev = [
@@ -87,12 +106,42 @@ export default function RecuerdoPage() {
   const tot = totales(partidas);
   const dias = diasRestantes(boda);
   const puedeDescargar = dias != null && dias <= 7;
+  const gifts = loadLista().gifts;
 
-  const hechasDe = (fase: string) =>
-    TAREAS.filter((t) => t.fase === fase && estados[t.id] === "hecho");
-  const totalHechas = TAREAS.filter(
-    (t) => t.fase !== "El día de la boda" && estados[t.id] === "hecho",
-  ).length;
+  /* ---- datos por sección ---- */
+
+  const rellena = (p: Partida) =>
+    (p.concepto && p.concepto.trim().length > 0) || estimadoDe(p) > 0 || (p.pagado || 0) > 0;
+
+  type PptoRow =
+    | { k: "cat"; cat: string }
+    | { k: "p"; p: Partida }
+    | { k: "sub"; e: number; g: number };
+  const pptoRows: PptoRow[] = [];
+  categoriasOrdenadas(partidas).forEach((cat) => {
+    const filas = partidas.filter((p) => p.categoria === cat && rellena(p));
+    if (filas.length === 0) return;
+    pptoRows.push({ k: "cat", cat });
+    filas.forEach((p) => pptoRows.push({ k: "p", p }));
+    const ct = totales(filas);
+    pptoRows.push({ k: "sub", e: ct.estimado, g: ct.pagado });
+  });
+
+  const tareasPorFase = FASES.map((f) => ({
+    fase: f,
+    items: tareas.filter((t) => t.fase === f),
+  })).filter((x) => x.items.length > 0);
+  type TareaRow = { k: "fase"; fase: string; n: number; hechas: number } | { k: "t"; t: Tarea };
+  const tareaRows: TareaRow[] = [];
+  tareasPorFase.forEach(({ fase, items }) => {
+    tareaRows.push({
+      k: "fase",
+      fase,
+      n: items.length,
+      hechas: items.filter((t) => estados[t.id] === "hecho").length,
+    });
+    items.forEach((t) => tareaRows.push({ k: "t", t }));
+  });
 
   const gruposInv = Array.from(
     invitados.reduce((m, i) => {
@@ -101,7 +150,423 @@ export default function RecuerdoPage() {
       return m;
     }, new Map<string, Invitado[]>()),
   );
+  type InvRow = { k: "g"; g: string; n: number } | { k: "i"; i: Invitado };
+  const invRows: InvRow[] = [];
+  gruposInv.forEach(([g, gente]) => {
+    invRows.push({ k: "g", g, n: gente.length });
+    gente.forEach((i) => invRows.push({ k: "i", i }));
+  });
+
   const invById = new Map(invitados.map((i) => [i.id, i]));
+  const aportOrden = [...aportaciones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  const aportPaginas = chunk(aportOrden, 22);
+
+  /* ---- montaje de páginas ---- */
+
+  const pages: PageDef[] = [];
+  let romanIdx = 0;
+  const nextRoman = () => ROMAN[romanIdx++] ?? "";
+
+  // Portada
+  pages.push({
+    body: (
+      <div className="flex h-full flex-col items-center justify-center px-16 text-center">
+        <Logo />
+        <p className="mt-14 text-[13px] uppercase tracking-[0.42em] text-(--doc-2) doc-sans">
+          El libro de
+        </p>
+        <p
+          className="mt-6 text-[62px] leading-[1.05] text-(--doc-ink)"
+          style={{ fontFamily: "var(--font-parisienne), cursive" }}
+        >
+          {nombres}
+        </p>
+        <Divisor />
+        <p className="font-display text-2xl text-(--doc-1)">{fechaLarga(boda)}</p>
+        {boda.lugar && (
+          <p className="mt-2 text-[13px] uppercase tracking-[0.28em] text-(--doc-2) doc-sans">
+            {boda.lugar}
+          </p>
+        )}
+      </div>
+    ),
+  });
+
+  // Vuestra web — collage de las secciones
+  {
+    const bloques = site?.content ?? [];
+    const rom = nextRoman();
+    if (bloques.length === 0) {
+      pages.push({
+        titulo: "Vuestra web de boda",
+        roman: rom,
+        body: <VacioNota texto="Aún no habéis montado la web. Aparecerá aquí cuando la tengáis." />,
+      });
+    } else {
+      chunk(bloques, 4).forEach((grupo, i) => {
+        pages.push({
+          titulo: "Vuestra web de boda",
+          roman: rom,
+          cont: i > 0,
+          body: (
+            <div className="grid flex-1 grid-cols-2 gap-5 px-14 pb-14 pt-6">
+              {grupo.map((bloque, j) => (
+                <div
+                  key={j}
+                  className="relative h-[62mm] overflow-hidden rounded-md border border-[#d3c8b1] bg-white shadow-sm"
+                >
+                  <div
+                    style={{
+                      width: "210mm",
+                      transform: "scale(0.36)",
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <Render config={puckConfig} data={{ ...site!, content: [bloque] }} />
+                  </div>
+                  <span className="absolute bottom-1 left-1.5 rounded bg-white/85 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-(--doc-2) doc-sans">
+                    {BLOQUE_LABEL[(bloque as { type: string }).type] ?? "Sección"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ),
+        });
+      });
+    }
+  }
+
+  // Save the date — con marco blanco
+  pages.push({
+    titulo: "El primer aviso",
+    roman: nextRoman(),
+    body: (
+      <div className="flex flex-1 items-center justify-center px-16 pb-16">
+        <div className="w-[64%] rounded-md border border-[#e0d6c1] bg-white p-6 shadow-sm">
+          <SaveTheDateView std={std} />
+        </div>
+      </div>
+    ),
+  });
+
+  // Invitación
+  pages.push({
+    titulo: "La invitación",
+    roman: nextRoman(),
+    body: (
+      <div className="flex flex-1 items-center justify-center px-12 pb-16">
+        {invitacionConfigurada(inv) ? (
+          <div className="w-full max-w-[152mm] rounded-md border border-[#e0d6c1] bg-white p-4 shadow-sm">
+            <div className="overflow-hidden rounded">
+              <InvitacionView inv={inv} />
+            </div>
+          </div>
+        ) : (
+          <VacioNota texto="Aún no habéis creado la invitación. Aparecerá aquí cuando la tengáis." />
+        )}
+      </div>
+    ),
+  });
+
+  // En números
+  pages.push({
+    titulo: "La boda en números",
+    roman: nextRoman(),
+    body: (
+      <div className="grid flex-1 grid-cols-2 gap-x-14 gap-y-11 px-20 pb-20 pt-4">
+        <Cifra n={invitados.filter((i) => i.viene === "Sí").length} etiqueta="invitados confirmados" />
+        <Cifra
+          n={`${invitados.filter((i) => i.tipo === "Adulto" && i.viene !== "No").length} + ${invitados.filter((i) => i.tipo === "Niño" && i.viene !== "No").length}`}
+          etiqueta="adultos y niños"
+        />
+        <Cifra n={gruposInv.filter(([g]) => g !== "Sin grupo").length} etiqueta="grupos de invitados" />
+        <Cifra n={mesas.mesas.length} etiqueta={mesas.mesas.length === 1 ? "mesa" : "mesas"} />
+        <Cifra
+          n={tareas.filter((t) => estados[t.id] === "hecho").length}
+          etiqueta="tareas resueltas"
+        />
+        <Cifra
+          n={aportaciones.filter((a) => a.estado === "confirmada").length}
+          etiqueta="regalos recibidos"
+        />
+        <Cifra
+          n={eur(gifts.reduce((s, g) => s + (g.aportado || 0), 0))}
+          etiqueta="recaudado en regalos"
+        />
+        <Cifra n={eur(tot.pagado)} etiqueta="invertido en la boda" />
+      </div>
+    ),
+  });
+
+  // Presupuesto — solo lo relleno, paginado
+  {
+    const rom = nextRoman();
+    const grupos = chunk(pptoRows, 26);
+    grupos.forEach((rows, i) => {
+      pages.push({
+        titulo: "El presupuesto",
+        roman: rom,
+        cont: i > 0,
+        body: (
+          <div className="flex-1 px-16 pb-12 pt-3 text-(--doc-1)">
+            <div className="mb-4 flex items-baseline justify-between border-b-2 border-(--doc-ink) pb-2 text-[10px] uppercase tracking-[0.22em] text-(--doc-2) doc-sans">
+              <span>Partida</span>
+              <div className="flex gap-14">
+                <span className="w-24 text-right">Estimado</span>
+                <span className="w-24 text-right">Pagado</span>
+              </div>
+            </div>
+            {rows.map((r, k) =>
+              r.k === "cat" ? (
+                <p key={k} className="mt-3 font-display text-base text-(--doc-ink)">
+                  {r.cat}
+                </p>
+              ) : r.k === "p" ? (
+                <div
+                  key={k}
+                  className="flex items-baseline justify-between border-b border-[#e2d8c2] py-1 text-[13px]"
+                >
+                  <span>{r.p.concepto || "—"}</span>
+                  <div className="flex gap-14 tabular-nums">
+                    <span className="w-24 text-right">
+                      {estimadoDe(r.p) ? eur(estimadoDe(r.p)) : "—"}
+                    </span>
+                    <span className="w-24 text-right font-medium text-(--doc-ink)">
+                      {r.p.pagado ? eur(r.p.pagado) : "—"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  key={k}
+                  className="mb-1 flex items-baseline justify-between py-1 text-[11px] text-(--doc-2)"
+                >
+                  <span>Subtotal</span>
+                  <div className="flex gap-14 tabular-nums">
+                    <span className="w-24 text-right">{eur(r.e)}</span>
+                    <span className="w-24 text-right">{eur(r.g)}</span>
+                  </div>
+                </div>
+              ),
+            )}
+            {i === grupos.length - 1 && (
+              <div className="mt-6 flex items-baseline justify-between border-t-2 border-(--doc-ink) pt-3">
+                <span className="font-display text-lg text-(--doc-ink)">Total</span>
+                <div className="flex gap-14 tabular-nums">
+                  <span className="w-24 text-right font-display text-lg text-(--doc-ink)">
+                    {eur(tot.estimado)}
+                  </span>
+                  <span className="w-24 text-right font-display text-lg text-(--doc-ink)">
+                    {eur(tot.pagado)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        ),
+      });
+    });
+  }
+
+  // Tareas — todas las que no se han quitado, paginado
+  {
+    const rom = nextRoman();
+    chunk(tareaRows, 34).forEach((rows, i) => {
+      pages.push({
+        titulo: "Los preparativos",
+        roman: rom,
+        cont: i > 0,
+        body: (
+          <div className="flex-1 px-16 pb-12 pt-3 text-(--doc-1)">
+            {rows.map((r, k) =>
+              r.k === "fase" ? (
+                <div
+                  key={k}
+                  className="mb-1 mt-3 flex items-baseline justify-between border-b border-[#e2d8c2] pb-1"
+                >
+                  <p className="font-display text-base text-(--doc-ink)">{r.fase}</p>
+                  <span className="text-[11px] text-(--doc-2) doc-sans">
+                    {r.hechas} de {r.n}
+                  </span>
+                </div>
+              ) : (
+                <div key={k} className="flex gap-2 py-0.5 text-[12px]">
+                  <span
+                    className={
+                      estados[r.t.id] === "hecho" ? "text-[#7f7040]" : "text-(--doc-2) opacity-50"
+                    }
+                  >
+                    {estados[r.t.id] === "hecho" ? "✓" : "○"}
+                  </span>
+                  <span>
+                    {r.t.titulo}
+                    {r.t.responsable ? (
+                      <span className="text-(--doc-2)"> — {r.t.responsable}</span>
+                    ) : null}
+                  </span>
+                </div>
+              ),
+            )}
+          </div>
+        ),
+      });
+    });
+  }
+
+  // Invitados — todos, paginado
+  {
+    const rom = nextRoman();
+    if (invRows.length === 0) {
+      pages.push({
+        titulo: "Los invitados",
+        roman: rom,
+        body: <VacioNota texto="Aún no hay invitados en la lista." />,
+      });
+    } else {
+      chunk(invRows, 48).forEach((rows, i) => {
+        pages.push({
+          titulo: "Los invitados",
+          roman: rom,
+          cont: i > 0,
+          body: (
+            <div className="flex-1 px-16 pb-12 pt-3 text-(--doc-1)">
+              {rows.map((r, k) =>
+                r.k === "g" ? (
+                  <p
+                    key={k}
+                    className="mb-1 mt-3 border-b border-[#e2d8c2] pb-1 text-[11px] uppercase tracking-[0.16em] text-(--doc-2) doc-sans"
+                  >
+                    {r.g} · {r.n}
+                  </p>
+                ) : (
+                  <p key={k} className="inline-block w-1/3 py-0.5 pr-3 align-top text-[12px]">
+                    {nombreInv(r.i)}
+                    {r.i.viene === "No" && <span className="text-(--doc-2)"> (no vino)</span>}
+                  </p>
+                ),
+              )}
+            </div>
+          ),
+        });
+      });
+    }
+  }
+
+  // Regalos — quién dio qué, paginado
+  {
+    const rom = nextRoman();
+    if (aportOrden.length === 0) {
+      pages.push({
+        titulo: "Los regalos",
+        roman: rom,
+        body: <VacioNota texto="Todavía no hay regalos registrados." />,
+      });
+    } else {
+      aportPaginas.forEach((rows, i) => {
+        pages.push({
+          titulo: "Los regalos",
+          roman: rom,
+          cont: i > 0,
+          body: (
+            <div className="flex-1 px-16 pb-12 pt-3 text-(--doc-1)">
+              <div className="mb-3 flex items-baseline justify-between border-b-2 border-(--doc-ink) pb-2 text-[10px] uppercase tracking-[0.22em] text-(--doc-2) doc-sans">
+                <span>De parte de</span>
+                <span>Regalo</span>
+                <span className="w-20 text-right">Aportación</span>
+              </div>
+              {rows.map((a) => (
+                <div key={a.id} className="border-b border-[#e2d8c2] py-1.5 text-[12px]">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-medium text-(--doc-ink)">{a.nombre || "—"}</span>
+                    <span className="min-w-0 flex-1 truncate text-center text-(--doc-2)">
+                      {a.giftNombre}
+                    </span>
+                    <span className="w-20 text-right tabular-nums">{eur(a.importe)}</span>
+                  </div>
+                  {a.mensaje && (
+                    <p className="mt-0.5 text-[11px] italic text-(--doc-2)">«{a.mensaje}»</p>
+                  )}
+                </div>
+              ))}
+              {i === aportPaginas.length - 1 && (
+                <div className="mt-4 flex items-baseline justify-between border-t-2 border-(--doc-ink) pt-3">
+                  <span className="font-display text-lg text-(--doc-ink)">Total recibido</span>
+                  <span className="font-display text-lg text-(--doc-ink) tabular-nums">
+                    {eur(aportOrden.reduce((s, a) => s + a.importe, 0))}
+                  </span>
+                </div>
+              )}
+            </div>
+          ),
+        });
+      });
+    }
+  }
+
+  // Mesas — paginado
+  {
+    const rom = nextRoman();
+    if (mesas.mesas.length === 0) {
+      pages.push({
+        titulo: "Las mesas",
+        roman: rom,
+        body: <VacioNota texto="Aún no hay mesas organizadas." />,
+      });
+    } else {
+      chunk(mesas.mesas, 6).forEach((grupo, i) => {
+        pages.push({
+          titulo: "Las mesas",
+          roman: rom,
+          cont: i > 0,
+          body: (
+            <div className="flex-1 columns-2 gap-12 px-16 pb-12 pt-3 text-(--doc-1)">
+              {grupo.map((m) => (
+                <div key={m.id} className="mb-5 break-inside-avoid">
+                  <p className="font-display text-base text-(--doc-ink)">
+                    Mesa {m.numero}
+                    {m.nombre ? ` · ${m.nombre}` : ""}
+                    {m.presidencial && <span className="text-[#9a8b5f]"> ★</span>}
+                  </p>
+                  <ol className="mt-1 text-[12px] [&>li]:mb-0.5">
+                    {m.invitados.map((id, idx) => (
+                      <li key={id + idx}>
+                        {idx + 1}. {invById.has(id) ? nombreInv(invById.get(id)!) : "—"}
+                      </li>
+                    ))}
+                    {m.invitados.length === 0 && (
+                      <li className="italic text-(--doc-2)">Sin invitados</li>
+                    )}
+                  </ol>
+                </div>
+              ))}
+            </div>
+          ),
+        });
+      });
+    }
+  }
+
+  // Cierre
+  pages.push({
+    body: (
+      <div className="flex h-full flex-col items-center justify-center px-20 text-center">
+        <p className="font-display text-3xl leading-relaxed text-(--doc-1)">Y así empezó todo.</p>
+        <Divisor />
+        <p className="text-[13px] uppercase tracking-[0.28em] text-(--doc-2) doc-sans">
+          Gracias por acompañarnos
+        </p>
+        <p
+          className="mt-10 text-[38px] text-(--doc-ink)"
+          style={{ fontFamily: "var(--font-parisienne), cursive" }}
+        >
+          {nombres}
+        </p>
+        <div className="mt-16">
+          <Logo />
+        </div>
+      </div>
+    ),
+  });
 
   const descargar = async () => {
     const cont = paginasRef.current;
@@ -113,15 +578,14 @@ export default function RecuerdoPage() {
         import("jspdf"),
       ]);
       if (document.fonts?.ready) await document.fonts.ready;
-      const paginas = Array.from(cont.querySelectorAll<HTMLElement>("[data-pagina]"));
+      const nodos = Array.from(cont.querySelectorAll<HTMLElement>("[data-pagina]"));
       const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-      for (let i = 0; i < paginas.length; i++) {
-        const nodo = paginas[i];
-        const png = await toPng(nodo, {
+      for (let i = 0; i < nodos.length; i++) {
+        const png = await toPng(nodos[i], {
           cacheBust: true,
-          pixelRatio: 2.5,
-          width: nodo.offsetWidth,
-          height: nodo.offsetHeight,
+          pixelRatio: 2.4,
+          width: nodos[i].offsetWidth,
+          height: nodos[i].offsetHeight,
         });
         if (i > 0) pdf.addPage();
         pdf.addImage(png, "PNG", 0, 0, 210, 297, undefined, "MEDIUM");
@@ -145,8 +609,8 @@ export default function RecuerdoPage() {
       <header className="gestion-heading">
         <h1 className="font-display text-3xl leading-none sm:text-4xl">El libro de la boda</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Un documento de recuerdo con la portada de vuestra web, el save the date, la invitación, la
-          organización y las cifras de la boda.
+          Un documento de recuerdo: vuestra web, el save the date, la invitación, los preparativos,
+          los invitados, los regalos y el presupuesto.
         </p>
       </header>
 
@@ -173,252 +637,14 @@ export default function RecuerdoPage() {
       )}
 
       {/* Vista previa: las mismas páginas que irán al PDF. */}
-      <div className="overflow-x-auto rounded-2xl border border-line bg-[#e7ded0] p-4 sm:p-8">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-[#e2d9c9] p-4 sm:p-8">
         <div ref={paginasRef} className="mx-auto flex w-[210mm] flex-col gap-8">
-          {/* 1 · Portada */}
-          <Pagina n="" total="">
-            <div className="flex h-full flex-col items-center justify-center px-16 text-center text-[#3a352c]">
-              <Logo />
-              <p className="mt-14 text-[13px] uppercase tracking-[0.42em] text-[#8a7a55] doc-sans">
-                El libro de
-              </p>
-              <p
-                className="mt-6 text-[62px] leading-[1.05] text-[#4a4433]"
-                style={{ fontFamily: "var(--font-parisienne), cursive" }}
-              >
-                {nombres}
-              </p>
-              <Divisor />
-              <p className="font-display text-2xl text-[#5b5340]">{fechaLarga(boda)}</p>
-              {boda.lugar && (
-                <p className="mt-2 text-[13px] uppercase tracking-[0.28em] text-[#8a7a55] doc-sans">
-                  {boda.lugar}
-                </p>
-              )}
-            </div>
-          </Pagina>
-
-          {/* 2 · Vuestra web */}
-          <Pagina n="1" total="8">
-            <Encabezado numero="I" titulo="Vuestra web de boda" />
-            <div className="flex flex-1 items-start justify-center px-12 pb-14">
-              <div className="max-h-[190mm] w-full overflow-hidden rounded-md border border-[#d8ceba] bg-white shadow-sm">
-                {site && site.content && site.content.length > 0 ? (
-                  <Render config={puckConfig} data={{ ...site, content: site.content.slice(0, 1) }} />
-                ) : (
-                  <p className="p-10 text-center text-sm text-[#8a7a55]">
-                    Aún no habéis montado la web. Aparecerá aquí cuando la tengáis.
-                  </p>
-                )}
-              </div>
-            </div>
-          </Pagina>
-
-          {/* 3 · Save the date */}
-          <Pagina n="2" total="8">
-            <Encabezado numero="II" titulo="El primer aviso" />
-            <div className="flex flex-1 items-center justify-center px-16 pb-16">
-              <div className="w-[60%]">
-                <SaveTheDateView std={std} />
-              </div>
-            </div>
-          </Pagina>
-
-          {/* 4 · Invitación */}
-          <Pagina n="3" total="8">
-            <Encabezado numero="III" titulo="La invitación" />
-            <div className="flex flex-1 items-center justify-center px-12 pb-16">
-              {invitacionConfigurada(inv) ? (
-                <div className="w-full max-w-[150mm] overflow-hidden rounded-md border border-[#e3dac6] shadow-sm">
-                  <InvitacionView inv={inv} />
-                </div>
-              ) : (
-                <p className="text-sm text-[#8a7a55]">
-                  Aún no habéis creado la invitación. Aparecerá aquí cuando la tengáis.
-                </p>
-              )}
-            </div>
-          </Pagina>
-
-          {/* 5 · En números */}
-          <Pagina n="4" total="8">
-            <Encabezado numero="IV" titulo="La boda en números" />
-            <div className="grid flex-1 grid-cols-2 gap-x-14 gap-y-11 px-20 pb-20 pt-4">
-              <Cifra n={invitados.filter((i) => i.viene === "Sí").length} etiqueta="invitados confirmados" />
-              <Cifra
-                n={`${invitados.filter((i) => i.tipo === "Adulto" && i.viene !== "No").length} + ${invitados.filter((i) => i.tipo === "Niño" && i.viene !== "No").length}`}
-                etiqueta="adultos y niños"
-              />
-              <Cifra n={gruposInv.filter(([g]) => g !== "Sin grupo").length} etiqueta="grupos de invitados" />
-              <Cifra n={mesas.mesas.length} etiqueta={mesas.mesas.length === 1 ? "mesa" : "mesas"} />
-              <Cifra n={totalHechas} etiqueta="tareas resueltas" />
-              <Cifra n={regalos.aportaciones} etiqueta="regalos recibidos" />
-              <Cifra n={eur(regalos.recaudado)} etiqueta="recaudado en regalos" />
-              <Cifra n={eur(tot.pagado)} etiqueta="invertido en la boda" />
-            </div>
-          </Pagina>
-
-          {/* 6 · Presupuesto */}
-          <Pagina n="5" total="8">
-            <Encabezado numero="V" titulo="El presupuesto" />
-            <div className="flex-1 px-16 pb-12 pt-3 text-[#5b5340]">
-              <div className="mb-4 flex items-baseline justify-between border-b-2 border-[#3a352c] pb-2 text-[10px] uppercase tracking-[0.22em] text-[#8a7a55] doc-sans">
-                <span>Partida</span>
-                <div className="flex gap-14">
-                  <span className="w-24 text-right">Estimado</span>
-                  <span className="w-24 text-right">Pagado</span>
-                </div>
-              </div>
-              {categoriasOrdenadas(partidas).map((cat) => {
-                const filas = partidas.filter((p) => p.categoria === cat);
-                const ct = totales(filas);
-                return (
-                  <div key={cat} className="mb-3">
-                    <p className="font-display text-base text-[#4a4433]">{cat}</p>
-                    {filas.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-baseline justify-between border-b border-[#e6ddca] py-1 text-[13px]"
-                      >
-                        <span>{p.concepto || "—"}</span>
-                        <div className="flex gap-14 tabular-nums">
-                          <span className="w-24 text-right">{estimadoDe(p) ? eur(estimadoDe(p)) : "—"}</span>
-                          <span className="w-24 text-right font-medium text-[#4a4433]">
-                            {p.pagado ? eur(p.pagado) : "—"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="flex items-baseline justify-between py-1 text-[11px] text-[#8a7a55]">
-                      <span>Subtotal {cat}</span>
-                      <div className="flex gap-14 tabular-nums">
-                        <span className="w-24 text-right">{eur(ct.estimado)}</span>
-                        <span className="w-24 text-right">{eur(ct.pagado)}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              <div className="mt-6 flex items-baseline justify-between border-t-2 border-[#3a352c] pt-3">
-                <span className="font-display text-lg text-[#4a4433]">Total</span>
-                <div className="flex gap-14 tabular-nums">
-                  <span className="w-24 text-right font-display text-lg text-[#4a4433]">{eur(tot.estimado)}</span>
-                  <span className="w-24 text-right font-display text-lg text-[#4a4433]">{eur(tot.pagado)}</span>
-                </div>
-              </div>
-            </div>
-          </Pagina>
-
-          {/* 7 · Tareas */}
-          <Pagina n="6" total="8">
-            <Encabezado numero="VI" titulo="Los preparativos" />
-            <div className="flex-1 px-16 pb-12 pt-3 text-[#5b5340]">
-              {FASES.filter((f) => f !== "Sin fecha asignada" && f !== "El día de la boda").map((f) => {
-                const hechas = hechasDe(f);
-                const total = TAREAS.filter((t) => t.fase === f).length;
-                return (
-                  <div key={f} className="mb-4">
-                    <div className="flex items-baseline justify-between border-b border-[#e6ddca] pb-1">
-                      <p className="font-display text-base text-[#4a4433]">{f}</p>
-                      <span className="text-[11px] text-[#8a7a55] doc-sans">
-                        {hechas.length} de {total}
-                      </span>
-                    </div>
-                    {hechas.length > 0 ? (
-                      <ul className="mt-1 columns-2 gap-10 text-[12px] [&>li]:mb-0.5">
-                        {hechas.map((t) => (
-                          <li key={t.id} className="break-inside-avoid">
-                            <span className="mr-1.5 text-[#9a8b5f]">✓</span>
-                            {t.titulo}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-1 text-[11px] italic text-[#a99a72]">Sin tareas marcadas.</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Pagina>
-
-          {/* 8 · Invitados */}
-          <Pagina n="7" total="8">
-            <Encabezado numero="VII" titulo="Los invitados" />
-            <div className="flex-1 px-16 pb-12 pt-3 text-[#5b5340]">
-              {invitados.length === 0 ? (
-                <p className="text-sm italic text-[#a99a72]">Aún no hay invitados en la lista.</p>
-              ) : (
-                gruposInv.map(([g, gente]) => (
-                  <div key={g} className="mb-4">
-                    <p className="border-b border-[#e6ddca] pb-1 text-[11px] uppercase tracking-[0.16em] text-[#8a7a55] doc-sans">
-                      {g} · {gente.length}
-                    </p>
-                    <ul className="mt-1.5 columns-3 gap-8 text-[12px] [&>li]:mb-0.5">
-                      {gente.map((i) => (
-                        <li key={i.id} className="break-inside-avoid">
-                          {nombreInv(i)}
-                          {i.viene === "No" && <span className="text-[#a99a72]"> (no vino)</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))
-              )}
-            </div>
-          </Pagina>
-
-          {/* 9 · Mesas */}
-          <Pagina n="8" total="8">
-            <Encabezado numero="VIII" titulo="Las mesas" />
-            <div className="flex-1 px-16 pb-12 pt-3 text-[#5b5340]">
-              {mesas.mesas.length === 0 ? (
-                <p className="text-sm italic text-[#a99a72]">Aún no hay mesas organizadas.</p>
-              ) : (
-                <div className="columns-2 gap-12">
-                  {mesas.mesas.map((m) => (
-                    <div key={m.id} className="mb-5 break-inside-avoid">
-                      <p className="font-display text-base text-[#4a4433]">
-                        Mesa {m.numero}
-                        {m.nombre ? ` · ${m.nombre}` : ""}
-                        {m.presidencial && <span className="text-[#9a8b5f]"> ★</span>}
-                      </p>
-                      <ol className="mt-1 text-[12px] [&>li]:mb-0.5">
-                        {m.invitados.map((id, idx) => (
-                          <li key={id + idx}>
-                            {idx + 1}. {invById.has(id) ? nombreInv(invById.get(id)!) : "—"}
-                          </li>
-                        ))}
-                        {m.invitados.length === 0 && (
-                          <li className="italic text-[#a99a72]">Sin invitados</li>
-                        )}
-                      </ol>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Pagina>
-
-          {/* 10 · Cierre */}
-          <Pagina n="" total="">
-            <div className="flex h-full flex-col items-center justify-center px-20 text-center text-[#3a352c]">
-              <p className="font-display text-3xl leading-relaxed text-[#5b5340]">Y así empezó todo.</p>
-              <Divisor />
-              <p className="text-[13px] uppercase tracking-[0.28em] text-[#8a7a55] doc-sans">
-                Gracias por acompañarnos
-              </p>
-              <p
-                className="mt-10 text-[38px] text-[#4a4433]"
-                style={{ fontFamily: "var(--font-parisienne), cursive" }}
-              >
-                {nombres}
-              </p>
-              <div className="mt-16">
-                <Logo />
-              </div>
-            </div>
-          </Pagina>
+          {pages.map((p, i) => (
+            <Pagina key={i} idx={i + 1} total={pages.length}>
+              {p.titulo && <Encabezado roman={p.roman} titulo={p.titulo} cont={p.cont} />}
+              {p.body}
+            </Pagina>
+          ))}
         </div>
       </div>
     </div>
@@ -427,35 +653,40 @@ export default function RecuerdoPage() {
 
 /* ---------- piezas del documento ---------- */
 
-function Pagina({ children, n, total }: { children: React.ReactNode; n: string; total: string }) {
+function Pagina({ children, idx, total }: { children: ReactNode; idx: number; total: number }) {
   return (
     <div
       data-pagina
-      className="relative mx-auto flex h-[297mm] w-[210mm] flex-col overflow-hidden bg-[#f5efe0] shadow-[0_18px_50px_-24px_rgba(60,50,30,0.4)]"
-      style={{ fontFamily: "var(--font-cormorant), Georgia, serif" }}
+      className="relative mx-auto flex h-[297mm] w-[210mm] flex-col overflow-hidden bg-[#f8f3e6] shadow-[0_18px_50px_-24px_rgba(60,50,30,0.4)]"
+      style={
+        {
+          fontFamily: "var(--font-cormorant), Georgia, serif",
+          "--doc-ink": "#2c271f",
+          "--doc-1": "#453d2e",
+          "--doc-2": "#7c6c48",
+        } as React.CSSProperties
+      }
     >
       {/* textura de papel + marco rústico de doble línea */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.5]"
+        className="pointer-events-none absolute inset-0 opacity-[0.28]"
         style={{
           backgroundImage: "url('/textures/papel-algodon.png')",
-          backgroundSize: "420px",
+          backgroundSize: "440px",
           mixBlendMode: "multiply",
         }}
       />
-      <div className="pointer-events-none absolute inset-[9mm] border border-[#b39c6d]" />
-      <div className="pointer-events-none absolute inset-[10.5mm] border border-[#cdbb8f]" />
+      <div className="pointer-events-none absolute inset-[9mm] border border-[#b09863]" />
+      <div className="pointer-events-none absolute inset-[10.5mm] border border-[#cbb98c]" />
 
-      <div className="relative flex flex-1 flex-col">{children}</div>
+      <div className="relative flex flex-1 flex-col text-(--doc-1)">{children}</div>
 
-      {(n || total) && (
-        <div className="relative z-10 flex items-center justify-between px-16 pb-9 text-[10px] uppercase tracking-[0.22em] text-[#a1906a]">
-          <span style={{ fontFamily: "var(--font-fraunces), Georgia, serif" }}>webodas</span>
-          <span className="doc-sans">
-            {n} / {total}
-          </span>
-        </div>
-      )}
+      <div className="relative z-10 flex items-center justify-between px-16 pb-9 text-[10px] uppercase tracking-[0.22em] text-[#a1906a]">
+        <span style={{ fontFamily: "var(--font-fraunces), Georgia, serif" }}>webodas</span>
+        <span className="doc-sans">
+          {idx} / {total}
+        </span>
+      </div>
     </div>
   );
 }
@@ -463,7 +694,7 @@ function Pagina({ children, n, total }: { children: React.ReactNode; n: string; 
 function Logo() {
   return (
     <span
-      className="text-[22px] tracking-[0.02em] text-[#4a4433]"
+      className="text-[22px] tracking-[0.02em] text-(--doc-ink)"
       style={{ fontFamily: "var(--font-fraunces), Georgia, serif" }}
     >
       webodas
@@ -481,16 +712,14 @@ function Divisor() {
   );
 }
 
-function Encabezado({ numero, titulo }: { numero: string; titulo: string }) {
+function Encabezado({ roman, titulo, cont }: { roman?: string; titulo: string; cont?: boolean }) {
   return (
     <div className="flex items-center gap-4 px-16 pt-16">
-      <span className="font-display text-2xl text-[#c0ab7f]">{numero}</span>
+      <span className="font-display text-2xl text-[#c0ab7f]">{roman}</span>
       <span className="h-px flex-1 bg-[#dcd0b4]" />
-      <span
-        className="text-[12px] uppercase tracking-[0.28em] text-[#8a7a55]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-      >
+      <span className="text-[12px] uppercase tracking-[0.28em] text-(--doc-2) doc-sans">
         {titulo}
+        {cont ? " (continúa)" : ""}
       </span>
     </div>
   );
@@ -499,13 +728,16 @@ function Encabezado({ numero, titulo }: { numero: string; titulo: string }) {
 function Cifra({ n, etiqueta }: { n: number | string; etiqueta: string }) {
   return (
     <div className="text-center">
-      <p className="font-display text-[54px] leading-none text-[#4a4433]">{n}</p>
-      <p
-        className="mt-2 text-[12px] uppercase tracking-[0.2em] text-[#8a7a55]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-      >
-        {etiqueta}
-      </p>
+      <p className="font-display text-[54px] leading-none text-(--doc-ink)">{n}</p>
+      <p className="mt-2 text-[12px] uppercase tracking-[0.2em] text-(--doc-2) doc-sans">{etiqueta}</p>
+    </div>
+  );
+}
+
+function VacioNota({ texto }: { texto: string }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-16 text-center">
+      <p className="max-w-xs text-sm italic text-(--doc-2)">{texto}</p>
     </div>
   );
 }
