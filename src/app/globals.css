@@ -44,6 +44,10 @@ body {
   letter-spacing: -0.02em;
 }
 
+.doc-sans {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
 /* Desplegables del panel: sin la flecha doble fea del sistema.
    Una sola flecha discreta y el mismo estilo en todos. */
 .panel-root select {

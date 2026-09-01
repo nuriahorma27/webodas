@@ -671,12 +671,12 @@ function MesaDibujo({
 
   // Todo en %: el dibujo escala al ancho disponible (móvil incluido).
   const rect = mesa.tipo === "rectangular";
-  const maxAncho = rect ? 340 : 240;
+  const maxAncho = rect ? 320 : 230;
   const ratio = rect ? "3 / 2" : "1 / 1";
-  const seatPct = n > 16 ? 9 : n > 10 ? 11 : 13;
+  const seatPct = n > 16 ? 8.5 : n > 10 ? 10 : 12;
 
   return (
-    <div className="mx-auto w-full" style={{ maxWidth: maxAncho }}>
+    <div className="mx-auto w-full py-1" style={{ maxWidth: maxAncho }}>
       <div className="relative w-full" style={{ aspectRatio: ratio }}>
         <div
           className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
@@ -727,7 +727,7 @@ function posicionesSillas(
   if (n === 0) return [];
   // Todo dentro de un margen seguro (~10-90%) para que las sillas no se corten.
   if (tipo === "redonda") {
-    const r = 40;
+    const r = 37;
     return Array.from({ length: n }, (_, i) => {
       const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
       return { x: 50 + r * Math.cos(ang), y: 50 + r * Math.sin(ang) };
@@ -738,10 +738,10 @@ function posicionesSillas(
     const lados = cabecera ? Math.max(0, n - 2) : n;
     const top = Math.ceil(lados / 2);
     const bottom = lados - top;
-    for (let i = 0; i < top; i++) out.push({ x: pct(i, top), y: 14 });
-    for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 86 });
-    if (cabecera && n >= 1) out.push({ x: 10, y: 50 });
-    if (cabecera && n >= 2) out.push({ x: 90, y: 50 });
+    for (let i = 0; i < top; i++) out.push({ x: pct(i, top), y: 18 });
+    for (let i = 0; i < bottom; i++) out.push({ x: pct(i, bottom), y: 82 });
+    if (cabecera && n >= 1) out.push({ x: 12, y: 50 });
+    if (cabecera && n >= 2) out.push({ x: 88, y: 50 });
     return out;
   }
   // cuadrada: repartir parejo entre los 4 lados, sin sillas en las esquinas.
@@ -749,14 +749,14 @@ function posicionesSillas(
   const rem = n % 4;
   const counts = [0, 1, 2, 3].map((k) => base + (k < rem ? 1 : 0)); // t, r, b, l
   const out: { x: number; y: number }[] = [];
-  const spread = (i: number, count: number) => (count === 1 ? 50 : 30 + (i * 40) / (count - 1));
+  const spread = (i: number, count: number) => (count === 1 ? 50 : 33 + (i * 34) / (count - 1));
   counts.forEach((count, side) => {
     for (let i = 0; i < count; i++) {
       const t = spread(i, count);
-      if (side === 0) out.push({ x: t, y: 12 });
-      else if (side === 1) out.push({ x: 88, y: t });
-      else if (side === 2) out.push({ x: t, y: 88 });
-      else out.push({ x: 12, y: t });
+      if (side === 0) out.push({ x: t, y: 15 });
+      else if (side === 1) out.push({ x: 85, y: t });
+      else if (side === 2) out.push({ x: t, y: 85 });
+      else out.push({ x: 15, y: t });
     }
   });
   return out;
@@ -764,5 +764,5 @@ function posicionesSillas(
 
 function pct(i: number, total: number) {
   if (total === 1) return 50;
-  return 15 + (i * 70) / (total - 1);
+  return 18 + (i * 64) / (total - 1);
 }
