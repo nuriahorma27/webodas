@@ -19,6 +19,7 @@ import {
   moveCategoria,
   categoriasOrdenadas,
   totales,
+  partidasEstandarQuitadas,
   CATEGORIAS_ESTANDAR,
   type Partida,
 } from "@/lib/presupuesto";
@@ -27,7 +28,19 @@ export default function PresupuestoPage() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null);
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
   const [menuCat, setMenuCat] = useState(false);
+  const [menuPartida, setMenuPartida] = useState<string | null>(null);
   const [cerradas, setCerradas] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!menuPartida) return;
+    const cerrar = () => setMenuPartida(null);
+    // Cierra al hacer clic fuera (en el siguiente tick para no cerrarse al abrir).
+    const t = setTimeout(() => document.addEventListener("click", cerrar), 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("click", cerrar);
+    };
+  }, [menuPartida]);
 
   useEffect(() => {
     const sync = () => {
@@ -211,13 +224,52 @@ export default function PresupuestoPage() {
                     </table>
                   </div>
 
-                  <div className="px-4 py-2.5 sm:px-5">
-                    <button
-                      onClick={() => addPartida(cat)}
-                      className="text-sm font-medium text-accent"
-                    >
-                      + Añadir partida
-                    </button>
+                  <div className="relative px-4 py-2.5 sm:px-5">
+                    {(() => {
+                      const quitadas = partidasEstandarQuitadas(cat, partidas);
+                      const abierto = menuPartida === cat;
+                      return (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (quitadas.length === 0) addPartida(cat);
+                              else setMenuPartida(abierto ? null : cat);
+                            }}
+                            className="text-sm font-medium text-accent"
+                          >
+                            + Añadir partida
+                          </button>
+                          {abierto && (
+                            <div className="absolute left-4 z-20 mt-1 w-64 overflow-hidden rounded-lg border border-line bg-surface py-1 shadow-lg sm:left-5">
+                              <button
+                                onClick={() => {
+                                  addPartida(cat);
+                                  setMenuPartida(null);
+                                }}
+                                className="block w-full px-3.5 py-2 text-left text-sm hover:bg-accent-soft"
+                              >
+                                Nueva partida (en blanco)
+                              </button>
+                              <p className="px-3.5 pb-1 pt-2 text-[0.62rem] uppercase tracking-wider text-muted">
+                                Volver a añadir
+                              </p>
+                              {quitadas.map((c) => (
+                                <button
+                                  key={c}
+                                  onClick={() => {
+                                    addPartida(cat, c);
+                                    setMenuPartida(null);
+                                  }}
+                                  className="block w-full px-3.5 py-2 text-left text-sm hover:bg-accent-soft"
+                                >
+                                  {c}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </>
               )}

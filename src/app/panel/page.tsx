@@ -190,6 +190,21 @@ export default function PanelPage() {
           ]}
         />
       </div>
+
+      <Link href="/panel/recuerdo" className="group block">
+        <CardShell className="flex flex-wrap items-center justify-between gap-3 transition group-hover:border-[#c9bfa8]">
+          <div>
+            <Kicker>Recuerdo</Kicker>
+            <p className="font-fraunces mt-2 text-2xl sm:text-3xl">El libro de la boda</p>
+            <p className="mt-1 text-sm text-muted">
+              Portada, save the date, invitación, cifras y presupuesto en un PDF de recuerdo.
+            </p>
+          </div>
+          <span className="text-sm font-medium text-[#3f4d38] underline decoration-[#c3cbb6] underline-offset-4">
+            Ver y descargar →
+          </span>
+        </CardShell>
+      </Link>
     </div>
   );
 }

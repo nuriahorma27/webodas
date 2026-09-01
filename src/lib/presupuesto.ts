@@ -203,10 +203,18 @@ export function savePartidas(partidas: Partida[]) {
   }
 }
 
-export function addPartida(categoria: string): Partida {
-  const nueva = nuevaPartida(categoria, "");
+export function addPartida(categoria: string, concepto = ""): Partida {
+  const nueva = nuevaPartida(categoria, concepto);
   savePartidas([...loadPartidas(), nueva]);
   return nueva;
+}
+
+// Partidas estándar de una categoría que ya no están en la lista (se borraron).
+export function partidasEstandarQuitadas(categoria: string, partidas: Partida[]): string[] {
+  const presentes = new Set(
+    partidas.filter((p) => p.categoria === categoria).map((p) => p.concepto.trim()),
+  );
+  return (CATEGORIAS_ESTANDAR[categoria] ?? []).filter((c) => !presentes.has(c));
 }
 
 // Añade una categoría con sus partidas estándar (o una sola vacía si es libre).
