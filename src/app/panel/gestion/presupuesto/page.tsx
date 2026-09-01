@@ -14,6 +14,7 @@ import {
   estimadoDe,
   updatePartida,
   removePartida,
+  movePartida,
   removeCategoria,
   renameCategoria,
   moveCategoria,
@@ -210,8 +211,13 @@ export default function PresupuestoPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
-                        {filas.map((p) => (
-                          <Fila key={p.id} p={p} />
+                        {filas.map((p, idx) => (
+                          <Fila
+                            key={p.id}
+                            p={p}
+                            esPrimera={idx === 0}
+                            esUltima={idx === filas.length - 1}
+                          />
                         ))}
                         {filas.length === 0 && (
                           <tr>
@@ -320,7 +326,15 @@ export default function PresupuestoPage() {
   );
 }
 
-function Fila({ p }: { p: Partida }) {
+function Fila({
+  p,
+  esPrimera,
+  esUltima,
+}: {
+  p: Partida;
+  esPrimera?: boolean;
+  esUltima?: boolean;
+}) {
   const num = (v: string) => {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
@@ -333,7 +347,7 @@ function Fila({ p }: { p: Partida }) {
     "w-16 rounded border border-line bg-transparent px-1.5 py-0.5 text-right text-xs outline-none focus:border-accent";
 
   return (
-    <tr>
+    <tr className="group">
       <td className="px-3 py-2 sm:px-5">
         <input
           defaultValue={p.concepto}
@@ -388,10 +402,28 @@ function Fila({ p }: { p: Partida }) {
       <td className="hidden px-3 py-2 lg:table-cell">
         <Progress value={pct} />
       </td>
-      <td className="px-2 py-2 text-right sm:px-3">
+      <td className="whitespace-nowrap px-2 py-2 text-right sm:px-3">
+        <span className="mr-1 inline-flex flex-col align-middle leading-none text-muted opacity-0 transition group-hover:opacity-100">
+          <button
+            onClick={() => movePartida(p.id, -1)}
+            disabled={esPrimera}
+            className="text-[0.7rem] hover:text-foreground disabled:opacity-20"
+            title="Subir"
+          >
+            ▲
+          </button>
+          <button
+            onClick={() => movePartida(p.id, 1)}
+            disabled={esUltima}
+            className="text-[0.7rem] hover:text-foreground disabled:opacity-20"
+            title="Bajar"
+          >
+            ▼
+          </button>
+        </span>
         <button
           onClick={() => removePartida(p.id)}
-          className="text-muted hover:text-red-600"
+          className="align-middle text-muted transition hover:text-red-600"
           title="Eliminar partida"
         >
           ✕

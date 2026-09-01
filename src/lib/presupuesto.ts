@@ -209,6 +209,21 @@ export function addPartida(categoria: string, concepto = ""): Partida {
   return nueva;
 }
 
+// Cambia el orden de una partida dentro de su categoría.
+export function movePartida(id: string, dir: -1 | 1) {
+  const arr = loadPartidas();
+  const i = arr.findIndex((p) => p.id === id);
+  if (i === -1) return;
+  const cat = arr[i].categoria;
+  const mismos = arr.map((p, idx) => ({ p, idx })).filter((x) => x.p.categoria === cat);
+  const pos = mismos.findIndex((x) => x.p.id === id);
+  const destino = mismos[pos + dir];
+  if (!destino) return;
+  const j = destino.idx;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  savePartidas(arr);
+}
+
 // Partidas estándar de una categoría que ya no están en la lista (se borraron).
 export function partidasEstandarQuitadas(categoria: string, partidas: Partida[]): string[] {
   const presentes = new Set(
