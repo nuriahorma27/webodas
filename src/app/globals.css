@@ -44,6 +44,27 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Desplegables del panel: sin la flecha doble fea del sistema.
+   Una sola flecha discreta y el mismo estilo en todos. */
+.panel-root select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b6459' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M4 6l4 4 4-4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.72rem;
+  padding-right: 1.9rem;
+}
+.panel-root select::-ms-expand {
+  display: none;
+}
+/* La vista previa de la web de boda conserva su propio estilo. */
+.panel-root .wf-public select {
+  background-image: none;
+  padding-right: revert;
+}
+
 /* Gestión: una misma gramática visual en todas las herramientas. */
 .gestion-heading {
   border-left: 3px solid var(--accent);

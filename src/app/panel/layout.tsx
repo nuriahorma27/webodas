@@ -16,7 +16,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   if (!user) redirect("/inicio");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="panel-root min-h-screen bg-background">
       <CloudSync />
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">

@@ -129,12 +129,6 @@ function CeldaSelect({
           </option>
         )}
       </select>
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[0.55rem] text-muted opacity-0 transition group-hover/cell:opacity-70 peer-focus:opacity-100"
-      >
-        ▾
-      </span>
     </label>
   );
 }
@@ -157,25 +151,17 @@ const VIENE_PILL: Record<string, string> = {
 function CeldaViene({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const tono = VIENE_PILL[value] ?? VIENE_PILL.Pendiente;
   return (
-    <label className="group/v relative inline-flex">
-      <select
-        value={value}
-        onChange={(e) => onSave(e.target.value)}
-        className={`cursor-pointer appearance-none rounded-full py-1 pl-3 pr-6 text-xs font-medium outline-none ${tono}`}
-      >
-        {[...VIENE_OPCIONES].map((o) => (
-          <option key={o} value={o}>
-            {VIENE_ETIQUETA[o] ?? o}
-          </option>
-        ))}
-      </select>
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[0.5rem] opacity-50"
-      >
-        ▾
-      </span>
-    </label>
+    <select
+      value={value}
+      onChange={(e) => onSave(e.target.value)}
+      className={`cursor-pointer rounded-full py-1 pl-3 text-xs font-medium outline-none ${tono}`}
+    >
+      {[...VIENE_OPCIONES].map((o) => (
+        <option key={o} value={o}>
+          {VIENE_ETIQUETA[o] ?? o}
+        </option>
+      ))}
+    </select>
   );
 }
 
