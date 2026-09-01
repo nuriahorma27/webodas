@@ -672,12 +672,14 @@ function MesaDibujo({
   // Todo en %: el dibujo escala al ancho disponible (móvil incluido).
   const rect = mesa.tipo === "rectangular";
   const maxAncho = rect ? 320 : 230;
-  const ratio = rect ? "3 / 2" : "1 / 1";
+  // Altura reservada con el truco padding-bottom (fiable en todos los móviles).
+  const padPct = rect ? 66.66 : 100;
   const seatPct = n > 16 ? 8.5 : n > 10 ? 10 : 12;
 
   return (
     <div className="mx-auto w-full py-1" style={{ maxWidth: maxAncho }}>
-      <div className="relative w-full" style={{ aspectRatio: ratio }}>
+      <div className="relative w-full">
+        <div style={{ paddingBottom: `${padPct}%` }} />
         <div
           className="absolute bg-accent-soft/50 ring-1 ring-accent/30"
           style={{
