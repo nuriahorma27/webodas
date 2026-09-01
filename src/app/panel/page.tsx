@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, Progress } from "@/components/ui";
 import { OnboardingBoda } from "@/components/onboarding-boda";
 import {
   loadBoda,
@@ -13,11 +12,7 @@ import {
   nombrePareja,
   type BodaPerfil,
 } from "@/lib/boda";
-import {
-  TAREAS,
-  loadEstados,
-  type Estado,
-} from "@/lib/tareas";
+import { TAREAS, loadEstados, type Estado } from "@/lib/tareas";
 import { estimadoDe, loadPartidas, type Partida } from "@/lib/presupuesto";
 import { loadInvitados, type Invitado } from "@/lib/invitados";
 import { loadAportaciones, loadLista, type Aportacion, type ListaRegalos } from "@/lib/regalos";
@@ -41,18 +36,15 @@ export default function PanelPage() {
       setAportaciones(loadAportaciones());
     };
     sync();
-    window.addEventListener("webodas:boda", sync);
-    window.addEventListener("webodas:tareas", sync);
-    window.addEventListener("webodas:presupuesto", sync);
-    window.addEventListener("webodas:invitados", sync);
-    window.addEventListener("webodas:regalos", sync);
-    return () => {
-      window.removeEventListener("webodas:boda", sync);
-      window.removeEventListener("webodas:tareas", sync);
-      window.removeEventListener("webodas:presupuesto", sync);
-      window.removeEventListener("webodas:invitados", sync);
-      window.removeEventListener("webodas:regalos", sync);
-    };
+    const eventos = [
+      "webodas:boda",
+      "webodas:tareas",
+      "webodas:presupuesto",
+      "webodas:invitados",
+      "webodas:regalos",
+    ];
+    eventos.forEach((e) => window.addEventListener(e, sync));
+    return () => eventos.forEach((e) => window.removeEventListener(e, sync));
   }, []);
 
   if (!boda) return null;
@@ -64,111 +56,237 @@ export default function PanelPage() {
   const asignado = partidas.reduce((s, p) => s + estimadoDe(p), 0);
   const gastado = partidas.reduce((s, p) => s + (p.pagado || 0), 0);
   const sinAsignar = Math.max(0, presupuestoTotal - asignado);
-  const completadas = TAREAS.filter((t) => estadoDe(t.id) === "hecho").length;
-  const enProceso = TAREAS.filter((t) => estadoDe(t.id) === "proceso").length;
-  const pendientes = Math.max(0, TAREAS.length - completadas - enProceso);
-  const avance = TAREAS.length ? (completadas / TAREAS.length) * 100 : 0;
+  const avancePresupuesto = presupuestoTotal ? Math.min(100, (asignado / presupuestoTotal) * 100) : 0;
+
+  // Las tareas del día de la boda solo se asignan, no se marcan; no cuentan para el %.
+  const TAREAS_CONTABLES = TAREAS.filter((t) => t.fase !== "El día de la boda");
+  const completadas = TAREAS_CONTABLES.filter((t) => estadoDe(t.id) === "hecho").length;
+  const enProceso = TAREAS_CONTABLES.filter((t) => estadoDe(t.id) === "proceso").length;
+  const pendientes = Math.max(0, TAREAS_CONTABLES.length - completadas - enProceso);
+  const avanceTareas = TAREAS_CONTABLES.length ? (completadas / TAREAS_CONTABLES.length) * 100 : 0;
+
   const invitadosSi = invitados.filter((i) => i.viene === "Sí").length;
   const invitadosNo = invitados.filter((i) => i.viene === "No").length;
   const invitadosPendientes = invitados.filter((i) => i.viene === "Pendiente").length;
+  const previstos = invitadosSi + invitadosPendientes;
+
   const totalAportado = (listaRegalos?.gifts ?? []).reduce((s, g) => s + (g.aportado || 0), 0);
   const aportacionesPendientes = aportaciones.filter((a) => a.estado === "pendiente").length;
 
   return (
-    <div className="space-y-8">
-      <header className="relative overflow-hidden rounded-[2rem_2rem_.8rem_2rem] bg-[#39322c] px-6 py-8 text-[#f8f2e8] sm:px-9 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 bg-[url('/textures/papel-algodon.png')] bg-cover opacity-[.07] mix-blend-screen" />
-        <span className="pointer-events-none absolute -bottom-16 right-5 font-display text-[11rem] leading-none text-white/[.045]">&</span>
-        <div className="relative z-10">
-          <p className="text-xs uppercase tracking-[.24em] text-[#d6bf98]">{fechaLarga(boda)}</p>
-          <h1 className="mt-3 font-display text-3xl sm:text-4xl">Hola, {nombrePareja(boda)}</h1>
-          <p className="mt-3 text-sm text-white/60">{boda.lugar || "Todo lo importante de vuestra boda, de un vistazo."}</p>
-        </div>
+    <div className="space-y-6">
+      <header>
+        <p className="text-xs uppercase tracking-[0.16em] text-muted">{fechaLarga(boda)}</p>
+        <h1 className="font-fraunces mt-2 text-3xl sm:text-4xl">Hola, {nombrePareja(boda)}</h1>
+        <p className="mt-2 text-sm text-muted">
+          {boda.lugar || "Todo lo importante de vuestra boda, de un vistazo."}
+        </p>
       </header>
 
-      <div data-tour="panel-resumen" className="grid gap-4 lg:grid-cols-[.72fr_1.28fr]">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
-          <FechaPrincipal fecha={boda.fecha} dias={dias} />
-          <DatoPrincipal label="Invitados previstos" value={String(invitadosSi + invitadosPendientes)} sub={`${invitadosNo} ${invitadosNo === 1 ? "ha indicado" : "han indicado"} que no ${invitadosNo === 1 ? "viene" : "vienen"}`} className="rounded-[.65rem_1.6rem_1.6rem_1.6rem] bg-[#e4e6dc]" />
-        </div>
-        <Link href="/panel/gestion/presupuesto" className="group">
-          <div className="relative h-full overflow-hidden rounded-[2rem_.8rem_2rem_2rem] border border-[#d2bd99] bg-[#d9c7a8] p-5 transition group-hover:border-[#927444] sm:p-7">
-            <span className="pointer-events-none absolute -bottom-12 -right-1 font-display text-[9rem] leading-none text-[#6f5832]/[.08]">€</span>
-            <div className="flex items-start justify-between gap-4">
-              <div><p className="text-xs uppercase tracking-[.18em] text-[#7b694e]">Presupuesto de la boda</p><p className="mt-3 font-display text-4xl sm:text-5xl">{presupuestoTotal ? eur(presupuestoTotal) : "Por definir"}</p></div>
-              <span className="hidden rounded-full border border-[#b9a889] px-3 py-1.5 text-xs text-[#6e5d43] sm:block">Ver presupuesto →</span>
-            </div>
-            <div className="mt-7 h-1.5 overflow-hidden rounded-full bg-white/40"><div className="h-full rounded-full bg-[#745d38]" style={{width: `${presupuestoTotal ? Math.min(100, (asignado / presupuestoTotal) * 100) : 0}%`}} /></div>
-            <div className="mt-8 grid grid-cols-3 gap-3 border-t border-[#cfc0a7] pt-5">
-              <DatoPresupuesto label="Asignado" value={asignado} />
-              <DatoPresupuesto label="Gastado" value={gastado} />
-              <DatoPresupuesto label="Sin asignar" value={sinAsignar} accent />
-            </div>
-          </div>
-        </Link>
+      {/* datos principales */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <CardShell>
+          <Kicker>Cuenta atrás</Kicker>
+          <p className="font-fraunces mt-2 text-3xl sm:text-4xl">
+            {dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`}
+          </p>
+          <label className="mt-3 block">
+            <span className="block text-xs font-medium text-muted">Fecha de la boda</span>
+            <input
+              type="date"
+              value={boda.fecha}
+              onChange={(e) => saveBoda({ fecha: e.target.value })}
+              className="mt-1 w-full max-w-full border-0 border-b border-line bg-transparent p-0 pb-1 font-fraunces text-lg outline-none focus:border-[#5a6b4d]"
+            />
+          </label>
+        </CardShell>
+
+        <CardShell>
+          <Kicker>Invitados previstos</Kicker>
+          <p className="font-fraunces mt-2 text-3xl sm:text-4xl">{previstos}</p>
+          <p className="mt-2 text-sm text-muted">
+            {invitados.length} en la lista · {invitadosNo} {invitadosNo === 1 ? "no viene" : "no vienen"}
+          </p>
+        </CardShell>
+
+        <CardShell>
+          <Kicker>Regalos recibidos</Kicker>
+          <p className="font-fraunces mt-2 text-3xl sm:text-4xl">{eur(totalAportado)}</p>
+          <p className="mt-2 text-sm text-muted">
+            {aportaciones.length} {aportaciones.length === 1 ? "aportación" : "aportaciones"}
+            {aportacionesPendientes ? ` · ${aportacionesPendientes} por confirmar` : ""}
+          </p>
+        </CardShell>
       </div>
 
-      <div data-tour="panel-servicios">
-        <p className="text-xs uppercase tracking-[.18em] text-accent">Información general</p>
-        <h2 className="mt-1 font-display text-2xl">Así va vuestra boda</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <section className="relative overflow-hidden rounded-[2rem_.75rem_2rem_2rem] border border-[#dfcfc0] bg-[#eee4da] p-5 sm:p-6">
-            <span className="pointer-events-none absolute -right-5 -top-10 font-display text-[9rem] text-[#8e6955]/[.07]">○</span>
-            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Invitados</p><p className="mt-3 font-display text-4xl">{invitados.length}</p><p className="mt-1 text-base text-[#625b53]">personas en la lista</p></div><Link href="/panel/gestion/invitados" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
-            <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
-              <MiniDato label="Confirmados" value={invitadosSi} />
-              <MiniDato label="Pendientes" value={invitadosPendientes} />
-              <MiniDato label="No vienen" value={invitadosNo} />
+      {/* presupuesto */}
+      <Link href="/panel/gestion/presupuesto" className="group block">
+        <CardShell className="transition group-hover:border-[#c9bfa8]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <Kicker>Presupuesto de la boda</Kicker>
+              <p className="font-fraunces mt-2 text-4xl sm:text-5xl">
+                {presupuestoTotal ? eur(presupuestoTotal) : "Por definir"}
+              </p>
             </div>
-          </section>
-          <section className="relative overflow-hidden rounded-[.75rem_2rem_2rem_2rem] border border-[#ccd1c1] bg-[#e4e8dc] p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#5f5951]">Lista de regalos</p><p className="mt-3 font-display text-4xl">{eur(totalAportado)}</p><p className="mt-1 text-base text-[#625b53]">aportado hasta ahora</p></div><Link href="/panel/gestion/regalos" className="text-xs font-medium text-accent">Ver detalle →</Link></div>
-            <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
-              <MiniDato label="Regalos" value={listaRegalos?.gifts.length ?? 0} />
-              <MiniDato label="Aportaciones" value={aportaciones.length} />
-              <MiniDato label="Por confirmar" value={aportacionesPendientes} />
-            </div>
-          </section>
-        </div>
-      </div>
+            <span className="text-sm font-medium text-[#3f4d38] underline decoration-[#c3cbb6] underline-offset-4">
+              Ver presupuesto →
+            </span>
+          </div>
+          <Bar value={avancePresupuesto} className="mt-6" />
+          <div className="mt-6 grid grid-cols-3 gap-4 border-t border-line pt-5">
+            <Figure label="Asignado" value={asignado} />
+            <Figure label="Gastado" value={gastado} />
+            <Figure label="Sin asignar" value={sinAsignar} tone="accent" />
+          </div>
+        </CardShell>
+      </Link>
 
-      <Card data-tour="panel-tareas" className="overflow-hidden rounded-[2rem_.8rem_2rem_2rem] p-0 sm:p-0">
-        <div className="grid md:grid-cols-[1.2fr_.8fr]">
-          <div className="bg-[#403831] p-5 text-[#f8f2e8] sm:p-7">
-            <p className="text-xs uppercase tracking-[.18em] text-[#d3b77f]">Planificación</p>
-            <h2 className="mt-2 font-display text-2xl">Avance de la organización</h2>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-white/60">Una visión rápida del trabajo realizado. El calendario completo sigue organizado por meses en la sección de tareas.</p>
-            <div className="mt-6"><Progress value={avance} /></div>
-            <p className="mt-2 text-xs text-white/55">{Math.round(avance)}% de las tareas completadas</p>
-            <Link href="/panel/gestion/tiempos" className="mt-6 inline-flex rounded-full bg-[#eee3cf] px-5 py-2.5 text-sm font-medium text-[#3b342e] transition hover:bg-white">Abrir planificación →</Link>
+      {/* planificación */}
+      <Link href="/panel/gestion/tiempos" className="group block">
+        <CardShell className="transition group-hover:border-[#c9bfa8]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <Kicker>Planificación</Kicker>
+              <p className="font-fraunces mt-2 text-2xl sm:text-3xl">
+                {Math.round(avanceTareas)}% de las tareas hechas
+              </p>
+            </div>
+            <span className="text-sm font-medium text-[#3f4d38] underline decoration-[#c3cbb6] underline-offset-4">
+              Abrir planificación →
+            </span>
           </div>
-          <div className="grid grid-cols-3 border-t border-line bg-[#f7f2e9] md:grid-cols-1 md:border-l md:border-t-0">
-            <ResumenEstado label="Completadas" value={completadas} color="bg-[#547052]" />
-            <ResumenEstado label="En proceso" value={enProceso} color="bg-[#a9864d]" />
-            <ResumenEstado label="Pendientes" value={pendientes} color="bg-[#c8c2b8]" />
+          <Bar value={avanceTareas} className="mt-6" />
+          <div className="mt-6 grid grid-cols-3 gap-4 border-t border-line pt-5">
+            <EstadoFigure label="Completadas" value={completadas} color="#5a6b4d" />
+            <EstadoFigure label="En proceso" value={enProceso} color="#a9864d" />
+            <EstadoFigure label="Pendientes" value={pendientes} color="#c8c2b8" />
           </div>
-        </div>
-      </Card>
+        </CardShell>
+      </Link>
+
+      {/* invitados y regalos */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DetalleCard
+          href="/panel/gestion/invitados"
+          kicker="Invitados"
+          titulo={`${invitados.length} en la lista`}
+          filas={[
+            ["Confirmados", invitadosSi],
+            ["Pendientes", invitadosPendientes],
+            ["No vienen", invitadosNo],
+          ]}
+        />
+        <DetalleCard
+          href="/panel/gestion/regalos"
+          kicker="Lista de regalos"
+          titulo={`${listaRegalos?.gifts.length ?? 0} ${
+            (listaRegalos?.gifts.length ?? 0) === 1 ? "regalo" : "regalos"
+          }`}
+          filas={[
+            ["Aportado", eur(totalAportado)],
+            ["Aportaciones", aportaciones.length],
+            ["Por confirmar", aportacionesPendientes],
+          ]}
+        />
+      </div>
     </div>
   );
 }
 
-function ResumenEstado({ label, value, color }: { label: string; value: number; color: string }) {
-  return <div className="border-l border-line p-4 first:border-l-0 md:border-l-0 md:border-t md:first:border-t-0 sm:p-5"><span className={`block h-2 w-2 rounded-full ${color}`} /><p className="mt-3 font-display text-2xl">{value}</p><p className="mt-1 text-xs text-muted">{label}</p></div>;
+function CardShell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      data-ui="card"
+      className={`rounded-xl border border-line bg-surface p-5 sm:p-6 ${className}`}
+    >
+      {children}
+    </div>
+  );
 }
 
-function DatoPresupuesto({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
-  return <div><p className="text-[.68rem] font-medium uppercase tracking-wider text-[#51483e] sm:text-xs">{label}</p><p className={`mt-1.5 font-display text-2xl sm:text-[1.65rem] ${accent ? "text-[#6f542b]" : "text-[#29241f]"}`}>{eur(value)}</p></div>;
+function Kicker({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs uppercase tracking-[0.16em] text-muted">{children}</p>;
 }
 
-function MiniDato({ label, value }: { label: string; value: number }) {
-  return <div className="min-w-0 pr-2"><p className="font-display text-2xl text-[#29241f] sm:text-3xl">{value}</p><p className="mt-1 text-xs font-medium leading-tight text-[#59534b] sm:text-sm">{label}</p></div>;
+function Bar({ value, className = "" }: { value: number; className?: string }) {
+  return (
+    <div className={`h-1.5 w-full overflow-hidden rounded-full bg-[#eee9df] ${className}`}>
+      <div
+        className="h-full rounded-full bg-[#5a6b4d]"
+        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+      />
+    </div>
+  );
 }
 
-function FechaPrincipal({ fecha, dias }: { fecha: string; dias: number | null }) {
-  return <div className="rounded-[1.6rem_1.6rem_.65rem_1.6rem] border border-black/[.06] bg-[#eadfce] p-4 sm:p-5"><p className="text-[.62rem] uppercase tracking-[.16em] text-[#766c60]">Cuenta atrás</p><p className="mt-2 font-display text-2xl sm:text-3xl">{dias == null ? "Sin fecha" : dias < 0 ? "¡Es hoy!" : `${dias} días`}</p><label className="mt-3 block"><span className="block text-[.68rem] font-medium text-[#625b52]">Fecha de la boda</span><input type="date" value={fecha} onChange={(e) => saveBoda({ fecha: e.target.value })} className="mt-1 w-auto max-w-full border-0 border-b border-[#b9a98e] bg-transparent p-0 pb-1 font-display text-lg text-[#29241f] outline-none focus:border-accent" /></label></div>;
+function Figure({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "accent";
+}) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted">{label}</p>
+      <p className={`font-fraunces mt-1.5 text-xl sm:text-2xl ${tone === "accent" ? "text-[#3f4d38]" : ""}`}>
+        {eur(value)}
+      </p>
+    </div>
+  );
 }
 
-function DatoPrincipal({ label, value, sub, className }: { label: string; value: string; sub: string; className: string }) {
-  return <div className={`border border-black/[.06] p-4 sm:p-5 ${className}`}><p className="text-[.62rem] uppercase tracking-[.16em] text-[#766c60]">{label}</p><p className="mt-2 font-display text-2xl sm:text-3xl">{value}</p><p className="mt-1 text-xs text-muted sm:text-sm">{sub}</p></div>;
+function EstadoFigure({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div>
+      <span className="block h-2 w-2 rounded-full" style={{ background: color }} />
+      <p className="font-fraunces mt-2.5 text-xl sm:text-2xl">{value}</p>
+      <p className="mt-0.5 text-xs text-muted">{label}</p>
+    </div>
+  );
+}
+
+function DetalleCard({
+  href,
+  kicker,
+  titulo,
+  filas,
+}: {
+  href: string;
+  kicker: string;
+  titulo: string;
+  filas: [string, number | string][];
+}) {
+  return (
+    <Link href={href} className="group block">
+      <CardShell className="h-full transition group-hover:border-[#c9bfa8]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <Kicker>{kicker}</Kicker>
+            <p className="font-fraunces mt-2 text-2xl sm:text-3xl">{titulo}</p>
+          </div>
+          <span className="text-xs font-medium text-[#3f4d38] underline decoration-[#c3cbb6] underline-offset-4">
+            Ver detalle →
+          </span>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-line pt-4">
+          {filas.map(([l, v]) => (
+            <div key={l}>
+              <p className="font-fraunces text-xl sm:text-2xl">{v}</p>
+              <p className="mt-0.5 text-xs text-muted">{l}</p>
+            </div>
+          ))}
+        </div>
+      </CardShell>
+    </Link>
+  );
 }

@@ -119,26 +119,37 @@ function Inicio() {
   }
 
   return (
-    <div className="grid min-h-screen bg-[#f7f3eb] lg:grid-cols-[1.08fr_.92fr]">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#ded2bf] p-12 text-[#302a24] lg:flex xl:p-16">
-        <div className="pointer-events-none absolute inset-0 bg-[url('/textures/papel-algodon.png')] bg-cover opacity-[.22] mix-blend-multiply" />
-        <div className="pointer-events-none absolute inset-y-10 right-8 w-px bg-[#8a7658]/25" />
-        <Link href="/" className="relative z-10 font-display text-2xl">
+    <div className="lp grid min-h-screen lg:grid-cols-2">
+      {/* panel de la izquierda: mismo lenguaje que la landing */}
+      <div className="relative hidden flex-col justify-between border-r border-[var(--line)] bg-[var(--paper-2)] p-12 lg:flex xl:p-16">
+        <Link href="/" className="lp-display text-2xl">
           webodas
         </Link>
-        <div className="relative z-10 max-w-2xl pr-12">
-          <div className="flex items-center gap-4 text-[#846d49]">
-            <span className="h-px w-12 bg-current" />
-            <p className="font-display text-lg italic">Todo para vuestro gran día</p>
-          </div>
-          <h1 className="mt-7 font-display text-5xl leading-[1.08] xl:text-[4.2rem]">
-            Vuestra boda,<br />a vuestra manera.
+        <div className="max-w-md">
+          <p className="lp-kicker">Organización de bodas</p>
+          <h1 className="lp-display mt-4 text-[3rem] leading-[1.02] xl:text-[3.6rem]">
+            Toda vuestra boda,
+            <br />
+            <span className="lp-display-it">en un sitio.</span>
           </h1>
-          <p className="mt-7 max-w-lg font-display text-xl leading-8 text-[#51483e]/85">
-            Un lugar donde crear vuestra web y las invitaciones, compartir los regalos y preparar cada detalle de la boda con calma.
+          <p className="mt-6 text-[1.05rem] leading-relaxed text-[var(--muted)]">
+            La web, los regalos, las invitaciones y la organización del día. Para disfrutar también
+            del camino hasta la boda.
           </p>
+          <ul className="mt-9 space-y-3 text-sm text-[var(--muted)]">
+            {[
+              "7 días de prueba, sin tarjeta",
+              "Web, regalos, invitaciones y organización",
+              "Sin comisión de webodas sobre los regalos",
+            ].map((t) => (
+              <li key={t} className="flex items-center gap-3">
+                <Check />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
-        <Link href="/" className="relative z-10 text-xs text-[#6e6254] transition hover:text-[#302a24]">
+        <Link href="/" className="text-xs text-[var(--muted)] transition hover:text-[var(--ink)]">
           ← Volver a la portada
         </Link>
       </div>
@@ -146,20 +157,20 @@ function Inicio() {
       <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-14">
         <div className="w-full max-w-md">
           <div className="mb-12 flex items-center justify-between lg:hidden">
-            <Link href="/" className="font-display text-2xl text-[#3b3028]">webodas</Link>
-            <Link href="/" className="text-xs text-[#6f7169]">Volver</Link>
+            <Link href="/" className="lp-display text-2xl">webodas</Link>
+            <Link href="/" className="text-xs text-[var(--muted)]">Volver</Link>
           </div>
-          <p className="text-xs uppercase tracking-[.24em] text-[#8a713d]">
+          <p className="lp-kicker">
             {modo === "entrar" ? "Bienvenidos de nuevo" : modo === "crear" ? "Vuestra boda empieza aquí" : "Acceso a vuestra cuenta"}
           </p>
-          <h2 className="mt-3 font-display text-4xl leading-tight text-[#3b3028] sm:text-5xl">
+          <h2 className="lp-display mt-3 text-4xl leading-tight sm:text-5xl">
             {modo === "entrar"
               ? "Bienvenidos"
               : modo === "crear"
                 ? "Cread vuestra cuenta"
                 : "Recuperar contraseña"}
           </h2>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-[#6f7169]">
+          <p className="mt-3 max-w-sm text-sm leading-6 text-[var(--muted)]">
             {modo === "entrar"
               ? "Acceded a vuestra web, regalos y toda la organización."
               : modo === "crear"
@@ -183,19 +194,19 @@ function Inicio() {
               <button
                 type="button"
                 onClick={() => cambiarModo("recuperar")}
-                className="text-sm text-[#6f7169] underline decoration-[#b9aa8c] underline-offset-4 hover:text-[#3b3028]"
+                className="text-sm text-[var(--muted)] underline decoration-[var(--rule)] underline-offset-4 hover:text-[var(--ink)]"
               >
                 ¿Has olvidado la contraseña?
               </button>
             )}
 
-            {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-            {aviso && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{aviso}</p>}
+            {error && <p className="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+            {aviso && <p className="border border-[var(--spot)]/30 bg-[var(--spot)]/10 px-3 py-2 text-sm text-[var(--spot-deep)]">{aviso}</p>}
 
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-xl bg-[#3b3028] px-4 py-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#2b231e] disabled:opacity-60"
+              className="w-full rounded-full bg-[var(--ink)] px-4 py-3.5 text-sm font-medium text-white transition hover:bg-black disabled:opacity-60"
             >
               {pending
                 ? "Un momento…"
@@ -205,15 +216,20 @@ function Inicio() {
                     ? "Crear nuestra cuenta"
                     : "Enviar enlace"}
             </button>
+            {modo === "crear" && (
+              <p className="text-center text-xs text-[var(--muted)]">
+                7 días de prueba. No pedimos tarjeta.
+              </p>
+            )}
           </form>
 
-          <p className="mt-7 text-sm text-[#6f7169]">
+          <p className="mt-7 text-sm text-[var(--muted)]">
             {modo === "recuperar" ? (
               <>
                 ¿Ya te acuerdas?{" "}
                 <button
                   onClick={() => cambiarModo("entrar")}
-                  className="font-medium text-[#3b3028] underline underline-offset-4"
+                  className="font-medium text-[var(--ink)] underline underline-offset-4"
                 >
                   Volver a entrar
                 </button>
@@ -223,7 +239,7 @@ function Inicio() {
                 {modo === "entrar" ? "¿Aún no tenéis cuenta? " : "¿Ya tenéis cuenta? "}
                 <button
                   onClick={() => cambiarModo(modo === "entrar" ? "crear" : "entrar")}
-                  className="font-medium text-[#3b3028] underline underline-offset-4"
+                  className="font-medium text-[var(--ink)] underline underline-offset-4"
                 >
                   {modo === "entrar" ? "Empezad gratis" : "Entrad"}
                 </button>
@@ -233,6 +249,23 @@ function Inicio() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Check() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="mt-0.5 h-4 w-4 shrink-0 text-[var(--green)]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 8.5l3.5 3.5L13 4" />
+    </svg>
   );
 }
 
@@ -253,10 +286,10 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-[#30362f]">{label}</span>
+      <span className="text-sm font-medium text-[var(--ink)]">{label}</span>
       <input
         {...props}
-        className="mt-2 w-full rounded-xl border border-[#d8ceba] bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-[#9a7d50] focus:ring-2 focus:ring-[#9a7d50]/10"
+        className="mt-2 w-full border border-[var(--rule)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--spot)] focus:ring-2 focus:ring-[var(--spot)]/15"
       />
     </label>
   );

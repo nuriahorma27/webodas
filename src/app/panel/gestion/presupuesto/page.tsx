@@ -27,8 +27,7 @@ export default function PresupuestoPage() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null);
   const [presupuestoTotal, setPresupuestoTotal] = useState<number | null>(null);
   const [menuCat, setMenuCat] = useState(false);
-  const [editando, setEditando] = useState(false);
-  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({});
+  const [cerradas, setCerradas] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const sync = () => {
@@ -71,17 +70,7 @@ export default function PresupuestoPage() {
         <CampoBoda campo="presupuestoTotal" label="Presupuesto total" euro />
       </div>
 
-      <div data-tour="ppto-editar" className="flex flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
-        <button
-          onClick={() => setEditando((v) => !v)}
-          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-            editando
-              ? "border-accent bg-accent text-white"
-              : "border-line hover:border-accent hover:text-accent"
-          }`}
-        >
-          {editando ? "Listo" : "✎ Editar"}
-        </button>
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
         <button
           onClick={() => descargarPresupuestoExcel(partidas, presupuestoTotal)}
           className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
@@ -90,7 +79,8 @@ export default function PresupuestoPage() {
         </button>
         <button
           onClick={() => {
-            if (confirm("¿Volver al presupuesto estándar? Se pierden tus cambios.")) resetPartidas();
+            if (confirm("¿Volver al presupuesto estándar? Se pierden vuestros cambios."))
+              resetPartidas();
           }}
           className="text-xs text-muted underline hover:text-foreground"
         >
@@ -134,117 +124,109 @@ export default function PresupuestoPage() {
         {categorias.map((cat, ci) => {
           const filas = partidas.filter((p) => p.categoria === cat);
           const ct = totales(filas);
-          const abierta = editando || (abiertas[cat] ?? false);
+          const abierta = !(cerradas[cat] ?? false);
           return (
             <Card key={cat} className="p-0">
               <div
-                className={`flex items-center justify-between gap-3 px-5 py-3 ${
+                className={`flex items-center gap-2 px-4 py-3 sm:px-5 ${
                   abierta ? "border-b border-line" : ""
                 }`}
               >
-                {!editando && (
+                <button
+                  type="button"
+                  onClick={() => setCerradas((s) => ({ ...s, [cat]: abierta }))}
+                  aria-label={abierta ? "Contraer" : "Desplegar"}
+                  className="shrink-0 text-muted transition-transform"
+                  style={{ transform: abierta ? "rotate(90deg)" : "none" }}
+                >
+                  ▸
+                </button>
+                <input
+                  defaultValue={cat}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && v !== cat) renameCategoria(cat, v);
+                    else e.target.value = cat;
+                  }}
+                  className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
+                />
+                <span className="shrink-0 text-sm text-muted">
+                  {eur(ct.pagado)} / {eur(ct.estimado)}
+                </span>
+                <div className="flex shrink-0 flex-col leading-none text-muted">
                   <button
-                    type="button"
-                    onClick={() => setAbiertas((s) => ({ ...s, [cat]: !abierta }))}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    onClick={() => moveCategoria(cat, -1)}
+                    disabled={ci === 0}
+                    className="text-[0.7rem] hover:text-foreground disabled:opacity-25"
+                    title="Subir categoría"
                   >
-                    <span
-                      className="shrink-0 text-muted transition-transform"
-                      style={{ transform: abierta ? "rotate(90deg)" : "none" }}
-                      aria-hidden
-                    >
-                      ▸
-                    </span>
-                    <h3 className="min-w-0 flex-1 truncate font-display text-lg">{cat}</h3>
-                    <span className="shrink-0 text-sm text-muted">
-                      {eur(ct.pagado)} / {eur(ct.estimado)}
-                    </span>
+                    ▲
                   </button>
-                )}
-                {editando && (
-                  <div className="flex shrink-0 flex-col leading-none text-muted">
-                    <button
-                      onClick={() => moveCategoria(cat, -1)}
-                      disabled={ci === 0}
-                      className="text-xs hover:text-foreground disabled:opacity-25"
-                      title="Subir categoría"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveCategoria(cat, 1)}
-                      disabled={ci === categorias.length - 1}
-                      className="text-xs hover:text-foreground disabled:opacity-25"
-                      title="Bajar categoría"
-                    >
-                      ▼
-                    </button>
-                  </div>
-                )}
-                {editando && (
-                  <>
-                    <input
-                      defaultValue={cat}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== cat) renameCategoria(cat, v);
-                        else e.target.value = cat;
-                      }}
-                      className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none focus:border-b focus:border-accent"
-                    />
-                    <span className="shrink-0 text-sm text-muted">
-                      {eur(ct.pagado)} / {eur(ct.estimado)}
-                    </span>
-                    <button
-                      onClick={() => {
-                        if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`))
-                          removeCategoria(cat);
-                      }}
-                      className="shrink-0 text-xs text-muted hover:text-red-600"
-                      title="Eliminar categoría"
-                    >
-                      Eliminar
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className={`overflow-x-auto ${abierta ? "" : "hidden"}`}>
-                <table className="w-full text-sm">
-                  <thead className="text-left text-xs uppercase tracking-wider text-muted">
-                    <tr>
-                      <th className="px-3 py-2 font-medium sm:px-5">Concepto</th>
-                      <th className="hidden px-5 py-2 font-medium md:table-cell">Proveedor</th>
-                      <th className="px-2 py-2 text-right font-medium sm:px-3">Estimado</th>
-                      <th className="px-2 py-2 text-right font-medium sm:px-3">Pagado</th>
-                      <th className="hidden w-32 px-3 py-2 font-medium lg:table-cell">Avance</th>
-                      <th className="w-8 px-2 py-2 sm:px-3" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {filas.map((p) => (
-                      <Fila key={p.id} p={p} editando={editando} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {editando && (
-                <div className="px-5 py-2.5">
                   <button
-                    onClick={() => addPartida(cat)}
-                    className="text-sm font-medium text-accent"
+                    onClick={() => moveCategoria(cat, 1)}
+                    disabled={ci === categorias.length - 1}
+                    className="text-[0.7rem] hover:text-foreground disabled:opacity-25"
+                    title="Bajar categoría"
                   >
-                    + Añadir partida
+                    ▼
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    if (confirm(`¿Eliminar la categoría "${cat}" y todas sus partidas?`))
+                      removeCategoria(cat);
+                  }}
+                  className="shrink-0 text-xs text-muted hover:text-red-600"
+                  title="Eliminar categoría"
+                >
+                  Eliminar
+                </button>
+              </div>
+
+              {abierta && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-left text-xs uppercase tracking-wider text-muted">
+                        <tr>
+                          <th className="px-3 py-2 font-medium sm:px-5">Concepto</th>
+                          <th className="px-2 py-2 text-right font-medium sm:px-3">Estimado</th>
+                          <th className="px-2 py-2 text-right font-medium sm:px-3">Pagado</th>
+                          <th className="hidden w-32 px-3 py-2 font-medium lg:table-cell">Avance</th>
+                          <th className="w-8 px-2 py-2 sm:px-3" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {filas.map((p) => (
+                          <Fila key={p.id} p={p} />
+                        ))}
+                        {filas.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-5 py-3 text-muted">
+                              Sin partidas todavía.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="px-4 py-2.5 sm:px-5">
+                    <button
+                      onClick={() => addPartida(cat)}
+                      className="text-sm font-medium text-accent"
+                    >
+                      + Añadir partida
+                    </button>
+                  </div>
+                </>
               )}
             </Card>
           );
         })}
       </div>
 
-      <div className={`relative ${editando ? "" : "hidden"}`}>
+      <div className="relative">
         <button
           onClick={() => setMenuCat((v) => !v)}
           className="w-full rounded-lg border border-dashed border-line py-3 text-sm font-medium text-muted hover:border-accent hover:text-accent"
@@ -255,7 +237,7 @@ export default function PresupuestoPage() {
           <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
             {estandarDisponibles.length > 0 && (
               <>
-                <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-muted">
+                <p className="px-4 pb-1 pt-3 text-xs uppercase tracking-wider text-muted">
                   Categorías habituales
                 </p>
                 {estandarDisponibles.map((c) => (
@@ -286,7 +268,7 @@ export default function PresupuestoPage() {
   );
 }
 
-function Fila({ p, editando }: { p: Partida; editando: boolean }) {
+function Fila({ p }: { p: Partida }) {
   const num = (v: string) => {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
@@ -298,28 +280,6 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
   const mini =
     "w-16 rounded border border-line bg-transparent px-1.5 py-0.5 text-right text-xs outline-none focus:border-accent";
 
-  if (!editando) {
-    return (
-      <tr>
-        <td className="px-5 py-2">
-          <span className="font-medium">{p.concepto || "—"}</span>
-          {p.tipo === "menu" && (p.precioUnidad || p.cantidad) ? (
-            <span className="ml-1 text-xs text-muted">
-              ({Math.round(p.precioUnidad || 0)} € × {Math.round(p.cantidad || 0)})
-            </span>
-          ) : null}
-        </td>
-        <td className="hidden px-5 py-2 text-muted md:table-cell">{p.proveedor || "—"}</td>
-        <td className="px-2 py-2 text-right sm:px-3">{est ? eur(est) : "—"}</td>
-        <td className="px-2 py-2 text-right sm:px-3">{p.pagado ? eur(p.pagado) : "—"}</td>
-        <td className="hidden px-3 py-2 lg:table-cell">
-          <Progress value={pct} />
-        </td>
-        <td />
-      </tr>
-    );
-  }
-
   return (
     <tr>
       <td className="px-3 py-2 sm:px-5">
@@ -328,14 +288,6 @@ function Fila({ p, editando }: { p: Partida; editando: boolean }) {
           placeholder="Concepto"
           onBlur={(e) => updatePartida(p.id, { concepto: e.target.value })}
           className={`${cell} font-medium`}
-        />
-      </td>
-      <td className="hidden px-5 py-2 md:table-cell">
-        <input
-          defaultValue={p.proveedor}
-          placeholder="—"
-          onBlur={(e) => updatePartida(p.id, { proveedor: e.target.value })}
-          className={`${cell} text-muted`}
         />
       </td>
       <td className="px-2 py-2 text-right align-middle sm:px-3">

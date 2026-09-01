@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbf9f6;
+  /* Paleta única de webodas (misma que la web pública .lp). */
+  --background: #fdfbf7;
   --surface: #ffffff;
   --foreground: #1c1a17;
-  --muted: #6f6a62;
-  --line: #e7e1d8;
-  --accent: #8a6d3b;
-  --accent-soft: #f2ece1;
+  --muted: #6b6459;
+  --line: #e7e1d5;
+  --accent: #5a6b4d; /* verde eucalipto */
+  --accent-deep: #3f4d38;
+  --accent-soft: #eef1ea;
 }
 
 @theme inline {
@@ -17,9 +19,10 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
   --color-accent-soft: var(--accent-soft);
   --font-sans: var(--font-geist-sans);
-  --font-display: var(--font-cormorant);
+  --font-display: var(--font-fraunces);
 }
 
 body {
@@ -29,12 +32,21 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-cormorant), Georgia, serif;
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.018em;
+}
+
+/* Fraunces: titulares y cifras del panel y de la web pública. */
+.font-fraunces {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 
 /* Gestión: una misma gramática visual en todas las herramientas. */
 .gestion-heading {
-  border-left: 3px solid #a58b5b;
+  border-left: 3px solid var(--accent);
   padding-left: 1rem;
 }
 .gestion-content [data-ui="card"] {
@@ -64,10 +76,141 @@ body {
   }
 }
 
-/* ---------- Landing pública ---------- */
+/* ---------- Web pública ----------
+   Referencia: builders de boda premium (Joy) + marketing SaaS con oficio.
+   Fondo casi blanco y mucho aire; la calidez la ponen las acuarelas y las
+   capturas reales del producto, no el color de fondo ni adornos.  */
 html {
   scroll-behavior: smooth;
 }
+
+.lp {
+  --paper: #fdfbf7;
+  --paper-2: #f4f0e7;
+  --ink: #1c1a17;
+  --muted: #6b6459;
+  --line: #e7e1d5;
+  --green: #5a6b4d;
+  --green-deep: #3f4d38;
+  /* Alias de compatibilidad para /inicio y páginas legales. */
+  --rule: var(--line);
+  --spot: var(--green);
+  --spot-deep: var(--green-deep);
+  --paper-deep: var(--paper-2);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.lp ::selection {
+  background: var(--green);
+  color: #fff;
+}
+
+/* Display: Fraunces, en peso normal y con tracking apretado. Se usa poco. */
+.lp-display {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: -0.021em;
+  line-height: 1.04;
+}
+.lp-display-it {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+.lp-kicker,
+.lp-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--green-deep);
+}
+/* Alias: lp-serif -> lp-display */
+.lp-serif {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.021em;
+  line-height: 1.05;
+}
+.lp-serif-it {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* CTA: negro sólido, igual que los botones dentro del producto. */
+.lp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: #fff;
+  padding: 0.9rem 1.75rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.lp-cta:hover {
+  background: #000;
+  transform: translateY(-1px);
+}
+.lp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--green-deep);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--green) 40%, transparent);
+  text-underline-offset: 4px;
+}
+.lp-link:hover {
+  text-decoration-color: var(--green);
+}
+
+/* Marco de navegador para las capturas reales del producto. */
+.lp-frame {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow:
+    0 1px 0 rgba(28, 26, 23, 0.04),
+    0 44px 90px -50px rgba(50, 43, 32, 0.5);
+}
+.lp-frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: #faf8f4;
+}
+.lp-frame-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #d9d3c6;
+}
+.lp-frame-url {
+  margin-left: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* Ramilletes botánicos (public/frames): el único adorno, muy sutil. */
+.lp-sprig {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .lp-rise {
     animation: lp-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;

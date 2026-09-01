@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bodoni_Moda, Cormorant_Garamond, Geist, Parisienne } from "next/font/google";
+import { Bodoni_Moda, Cormorant_Garamond, Fraunces, Geist, Parisienne } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,6 +15,13 @@ const cormorant = Cormorant_Garamond({
 
 const bodoni = Bodoni_Moda({
   variable: "--font-bodoni",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  style: ["normal", "italic"],
   subsets: ["latin"],
 });
 
@@ -33,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${cormorant.variable} ${bodoni.variable} ${parisienne.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${cormorant.variable} ${bodoni.variable} ${fraunces.variable} ${parisienne.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

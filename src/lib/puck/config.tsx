@@ -52,6 +52,18 @@ const imgSizeOptions = [
   { label: "Completa", value: "full" },
 ];
 
+// ¿Un color de fondo es oscuro? (para elegir texto claro automáticamente)
+function esOscuro(hex?: string): boolean {
+  if (!hex) return false;
+  const m = hex.trim().replace("#", "");
+  if (m.length !== 3 && m.length !== 6) return false;
+  const f = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
+  const r = parseInt(f.slice(0, 2), 16);
+  const g = parseInt(f.slice(2, 4), 16);
+  const b = parseInt(f.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+}
+
 // Cada "tipo" de texto define su tamaño y grosor automáticamente.
 const TEXT_VARIANTS: Record<
   string,
@@ -484,29 +496,30 @@ export const puckConfig: Config<Props, RootProps> = {
   components: {
     Hero: {
       label: "Portada",
+      // Orden y agrupación: primero los textos, luego la foto (y solo los
+      // ajustes de foto que aplican), y al final los colores.
       fields: {
-        subtitle: { type: "text", label: "Línea superior (pequeña)" },
         coupleNames: { type: "text", label: "Título grande" },
-        date: { type: "text", label: "Línea inferior" },
+        subtitle: { type: "text", label: "Línea de arriba (pequeña)" },
+        date: { type: "text", label: "Línea de abajo" },
         align: {
           type: "radio",
-          label: "Alineación",
+          label: "Alineación del texto",
           options: [
             { label: "Centro", value: "center" },
             { label: "Izquierda", value: "left" },
           ],
         },
-        textColor: {
+        image: {
           type: "custom",
-          label: "Color del texto",
+          label: "Foto",
           render: ({ onChange, value }) => (
-            <ColorField value={value as string} onChange={onChange} label="Color del texto" />
+            <ImageUploadField value={value as string} onChange={onChange} label="Foto" />
           ),
         },
-        colorBg: colorFields.colorBg,
         imageMode: {
           type: "select",
-          label: "Foto",
+          label: "Dónde va la foto",
           options: [
             { label: "Sin foto", value: "none" },
             { label: "De fondo", value: "background" },
@@ -516,14 +529,14 @@ export const puckConfig: Config<Props, RootProps> = {
         },
         imageSize: {
           type: "select",
-          label: "Tamaño de la foto (izquierda/derecha)",
+          label: "Tamaño de la foto",
           options: imgSizeOptions,
         },
         imageOffset: {
           type: "custom",
-          label: "Mover la foto",
+          label: "Encuadre de la foto",
           render: ({ onChange, value }) => (
-            <NudgeField value={value as Offset} onChange={onChange} label="Mover la foto" />
+            <NudgeField value={value as Offset} onChange={onChange} label="Encuadre de la foto" />
           ),
         },
         overlay: {
@@ -538,13 +551,29 @@ export const puckConfig: Config<Props, RootProps> = {
             />
           ),
         },
-        image: {
+        textColor: {
           type: "custom",
-          label: "Imagen",
+          label: "Color del texto",
           render: ({ onChange, value }) => (
-            <ImageUploadField value={value as string} onChange={onChange} label="Imagen" />
+            <ColorField value={value as string} onChange={onChange} label="Color del texto" />
           ),
         },
+        colorBg: colorFields.colorBg,
+      },
+      resolveFields: (data, { fields }) => {
+        const p = (data.props ?? {}) as Record<string, unknown>;
+        const mode = (p.imageMode as string) ?? "background";
+        const hayFoto = !!p.image && mode !== "none";
+        const f: Record<string, unknown> = { ...fields };
+        if (!hayFoto) {
+          delete f.imageSize;
+          delete f.imageOffset;
+          delete f.overlay;
+        } else {
+          if (mode !== "left" && mode !== "right") delete f.imageSize;
+          if (mode !== "background") delete f.overlay;
+        }
+        return f as typeof fields;
       },
       defaultProps: {
         coupleNames: "Ana & Leo",
@@ -562,7 +591,7 @@ export const puckConfig: Config<Props, RootProps> = {
       render: ({ coupleNames, date, subtitle, image, align, textColor, colorBg, imageMode, imageSize, imageOffset, overlay }) => {
         const mode = imageMode ?? "background";
         const hasImg = Boolean(image) && mode !== "none";
-        const onDark = hasImg && mode === "background";
+        const onDark = (hasImg && mode === "background") || esOscuro(colorBg);
         const isz = IMG_SIZE[imageSize] ?? IMG_SIZE.full;
         const fullImg = (imageSize ?? "full") === "full";
         const imgTransform = offsetTransform(imageOffset);
@@ -585,13 +614,19 @@ export const puckConfig: Config<Props, RootProps> = {
           )}
           {coupleNames && (
             <h1
-              style={{ fontSize: "calc(64px * var(--wf-scale, 1))", fontWeight: 500, margin: "12px 0" }}
+              style={{
+                fontSize: "calc(clamp(2.6rem, 7vw, 4.6rem) * var(--wf-scale, 1))",
+                fontWeight: 500,
+                lineHeight: 1.03,
+                letterSpacing: "-0.005em",
+                margin: "0.35em 0 0.3em",
+              }}
             >
               {parseInline(coupleNames)}
             </h1>
           )}
           {date && (
-            <p style={{ fontSize: "calc(22px * var(--wf-scale, 1))", letterSpacing: "0.1em" }}>
+            <p style={{ fontSize: "calc(21px * var(--wf-scale, 1))", letterSpacing: "0.08em" }}>
               {parseInline(date)}
             </p>
           )}
@@ -609,9 +644,9 @@ export const puckConfig: Config<Props, RootProps> = {
               justifyContent: "center",
               textAlign: align === "left" ? "left" : "center",
               color: textColor || (onDark ? "#fff" : "var(--wf-accent)"),
-              padding: "64px clamp(24px, 6vw, 72px)",
+              padding: "72px clamp(24px, 6vw, 72px)",
               fontFamily: "var(--wf-heading)",
-              minHeight: 420,
+              minHeight: 460,
             }}
           >
             {texts}
@@ -642,7 +677,7 @@ export const puckConfig: Config<Props, RootProps> = {
                   style={{
                     width: "100%",
                     maxWidth: fullImg ? "100%" : isz.w,
-                    height: fullImg ? 460 : isz.h,
+                    height: fullImg ? 560 : isz.h,
                     objectFit: "cover",
                     borderRadius: fullImg ? 0 : 4,
                     transform: imgTransform,
@@ -656,23 +691,24 @@ export const puckConfig: Config<Props, RootProps> = {
         }
 
         // Foto de fondo (o sin foto).
+        const conFoto = hasImg && mode === "background";
         return (
           <div
             style={{
-              minHeight: 480,
+              minHeight: 560,
               display: "flex",
               flexDirection: "column",
               alignItems: align === "left" ? "flex-start" : "center",
               justifyContent: "center",
               textAlign: align === "left" ? "left" : "center",
               color: textColor || (onDark ? "#fff" : "var(--wf-accent)"),
-              padding: "24px clamp(24px, 8vw, 96px)",
-              backgroundImage: onDark
+              padding: "48px clamp(24px, 8vw, 96px)",
+              backgroundImage: conFoto
                 ? `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url(${image})`
                 : undefined,
-              backgroundColor: onDark ? undefined : colorBg || "var(--wf-bg)",
+              backgroundColor: colorBg || "var(--wf-bg)",
               backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundPosition: bgPos,
               fontFamily: "var(--wf-heading)",
             }}
           >
@@ -1366,17 +1402,59 @@ export const puckConfig: Config<Props, RootProps> = {
         ...colorDefaults,
       },
       render: ({ title, targetDate, colorText, colorBg }) => {
-        const days = Math.max(
-          0,
-          Math.ceil((new Date(targetDate).getTime() - Date.now()) / 86400000),
-        );
+        const diff = new Date(targetDate).getTime() - Date.now();
+        const days = Math.ceil(diff / 86400000);
+        const oscuro = esOscuro(colorBg);
+        const col = colorText || (oscuro ? "#fff" : undefined);
+        const big =
+          days > 1
+            ? `${days}`
+            : days === 1
+              ? "Mañana"
+              : days === 0
+                ? "¡Hoy!"
+                : "¡Ya nos casamos!";
         return (
-          <div style={{ background: colorBg || "color-mix(in srgb, var(--wf-accent) 8%, transparent)" }}>
-            <div style={{ ...section, color: colorText || undefined }}>
-              <h2 style={{ ...heading, color: colorText || heading.color }}>{parseInline(title)}</h2>
-              <p style={{ fontSize: "calc(48px * var(--wf-scale, 1))", fontFamily: "var(--wf-heading)" }}>
-                {days} días
+          <div style={{ background: colorBg || "color-mix(in srgb, var(--wf-accent) 7%, transparent)" }}>
+            <div style={{ ...section, color: col }}>
+              <h2
+                style={{
+                  ...heading,
+                  color: col || heading.color,
+                  fontSize: "calc(15px * var(--wf-scale, 1))",
+                  letterSpacing: "0.28em",
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                {parseInline(title)}
+              </h2>
+              <p
+                style={{
+                  fontSize: `calc(${days > 1 ? "clamp(4rem, 16vw, 8rem)" : "clamp(2.4rem, 8vw, 4rem)"} * var(--wf-scale, 1))`,
+                  fontFamily: "var(--wf-heading)",
+                  fontWeight: 500,
+                  lineHeight: 1,
+                  fontVariantNumeric: "lining-nums tabular-nums",
+                  marginTop: "0.15em",
+                }}
+              >
+                {big}
               </p>
+              {days > 1 && (
+                <p
+                  style={{
+                    fontFamily: "var(--wf-body)",
+                    fontSize: "calc(16px * var(--wf-scale, 1))",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    marginTop: "0.4em",
+                    opacity: 0.7,
+                  }}
+                >
+                  días
+                </p>
+              )}
             </div>
           </div>
         );
@@ -1424,8 +1502,10 @@ export const puckConfig: Config<Props, RootProps> = {
             style={{
               display: "grid",
               gridTemplateColumns: list.length === 1 ? "1fr" : cols,
-              gap: 8,
-              padding: 8,
+              gap: 16,
+              maxWidth: 1100,
+              margin: "0 auto",
+              padding: "64px clamp(20px, 5vw, 40px)",
               background: colorBg || undefined,
             }}
           >
@@ -1436,14 +1516,15 @@ export const puckConfig: Config<Props, RootProps> = {
                   key={i}
                   src={it.src}
                   alt=""
-                  style={{ width: "100%", height: 320, objectFit: "cover" }}
+                  style={{ width: "100%", height: 300, objectFit: "cover", borderRadius: 4 }}
                 />
               ) : (
                 <div
                   key={i}
                   style={{
                     width: "100%",
-                    height: 320,
+                    height: 300,
+                    borderRadius: 4,
                     background: "color-mix(in srgb, var(--wf-accent) 12%, transparent)",
                   }}
                 />
@@ -1979,9 +2060,9 @@ export const plantillaEditorial = {
       fontHeading: "Cormorant Garamond",
       fontBody: "Work Sans",
       size: "Normal",
-      colorText: "#3d3a34",
-      colorBackground: "#f6f7f1",
-      colorAccent: "#b5851f",
+      colorText: "#2f2b24",
+      colorBackground: "#faf8f2",
+      colorAccent: "#3f3a31",
       navEnabled: "si",
       navTitle: "",
       navLinks: [
@@ -1999,13 +2080,14 @@ export const plantillaEditorial = {
         coupleNames: "Marta & Javier",
         date: "6 de junio de 2026",
         subtitle: "Nos casamos",
-        image: "/demo/playa.jpg",
+        image: "/demo/quinta.jpg",
         imageMode: "right",
-        imageSize: "l",
+        imageSize: "full",
         imageOffset: { x: 0, y: 0 },
         overlay: 0,
         align: "left",
         textColor: "",
+        colorBg: "",
       },
     },
     {
@@ -2025,16 +2107,12 @@ export const plantillaEditorial = {
         ],
       },
     },
-    { type: "Countdown", props: { id: "cd-1", title: "Falta poco", targetDate: "2026-06-06" } },
+    { type: "Countdown", props: { id: "cd-1", title: "Falta poco", targetDate: "2027-06-05", colorText: "", colorBg: "" } },
     {
       type: "Gallery",
       props: {
         id: "gal-1",
-        images: [
-          { src: "/demo/playa.jpg" },
-          { src: "/demo/quinta.jpg" },
-          { src: "/demo/iglesia.jpg" },
-        ],
+        images: [{ src: "/demo/quinta.jpg" }, { src: "/demo/playa.jpg" }, { src: "/demo/iglesia.jpg" }],
         columnas: "auto",
         colorText: "",
         colorBg: "",
@@ -2055,7 +2133,7 @@ export const plantillaEditorial = {
       props: {
         id: "rsvp-1",
         title: "¿Nos acompañas?",
-        text: "Confírmanos tu asistencia antes del 1 de agosto de 2026.",
+        text: "Confírmanos tu asistencia antes del 1 de mayo de 2027.",
         buttonLabel: "Confirmar asistencia",
         buttonUrl: "",
         questions: [
@@ -2068,7 +2146,7 @@ export const plantillaEditorial = {
   ],
 };
 
-// --- Plantilla "Jardín": botánica, tonos verdes ---
+// --- Plantilla "Jardín": botánica, foto grande ---
 export const plantillaJardin = {
   root: {
     props: {
@@ -2076,8 +2154,15 @@ export const plantillaJardin = {
       fontBody: "Work Sans",
       size: "Normal",
       colorText: "#33372f",
-      colorBackground: "#f6f7f1",
-      colorAccent: "#4b6b43",
+      colorBackground: "#f4f2e9",
+      colorAccent: "#3f4d38",
+      navEnabled: "si",
+      navTitle: "",
+      navLinks: [
+        { label: "La boda", href: "#agenda" },
+        { label: "Cómo llegar", href: "#ubicacion" },
+        { label: "Confirmar", href: "#rsvp" },
+      ],
     },
   },
   content: [
@@ -2088,13 +2173,14 @@ export const plantillaJardin = {
         subtitle: "Nos casamos",
         coupleNames: "Marta & Julen",
         date: "6 de junio de 2026",
-        image: "",
+        image: "/demo/quinta.jpg",
         align: "left",
         textColor: "",
         colorBg: "",
-        imageMode: "right",
+        imageMode: "background",
         imageSize: "full",
         imageOffset: { x: 0, y: 0 },
+        overlay: 42,
       },
     },
     {
@@ -2103,7 +2189,7 @@ export const plantillaJardin = {
         id: "j-mt",
         title: "Nuestra historia",
         text: "Empezamos plantando un huerto juntos. Cinco años después seguimos cuidándolo, y ahora también esto.",
-        image: "",
+        image: "/demo/playa.jpg",
         imagePosition: "left",
         buttonLabel: "",
         buttonUrl: "",
@@ -2120,37 +2206,21 @@ export const plantillaJardin = {
         colorText: "",
         colorBg: "",
         items: [
-          { image: "", imgSide: "left", eyebrow: "12:00", itemTitle: "Ceremonia en el jardín", text: "Bajo los olivos centenarios.", linkLabel: "", linkUrl: "" },
-          { image: "", imgSide: "right", eyebrow: "14:00", itemTitle: "Comida al aire libre", text: "Mesa larga entre los árboles.", linkLabel: "", linkUrl: "" },
-          { image: "", imgSide: "left", eyebrow: "18:00", itemTitle: "Fiesta", text: "Hasta que el cuerpo aguante.", linkLabel: "", linkUrl: "" },
+          { image: "/demo/iglesia.jpg", imgSide: "left", eyebrow: "12:00", itemTitle: "Ceremonia en el jardín", text: "Bajo los olivos centenarios.", linkLabel: "", linkUrl: "" },
+          { image: "/demo/quinta.jpg", imgSide: "right", eyebrow: "14:00", itemTitle: "Comida al aire libre", text: "Mesa larga entre los árboles.", linkLabel: "", linkUrl: "" },
+          { image: "/demo/playa.jpg", imgSide: "left", eyebrow: "18:00", itemTitle: "Fiesta", text: "Hasta que el cuerpo aguante.", linkLabel: "", linkUrl: "" },
         ],
       },
     },
-    {
-      type: "Schedule",
-      props: {
-        id: "j-sch",
-        title: "Agenda",
-        estilo: "linea",
-        image: "",
-        colorText: "",
-        colorBg: "",
-        items: [
-          { time: "12:00", label: "Ceremonia", note: "" },
-          { time: "13:00", label: "Aperitivo", note: "" },
-          { time: "14:30", label: "Banquete", note: "" },
-          { time: "18:00", label: "Baile", note: "" },
-        ],
-      },
-    },
-    { type: "Gallery", props: { id: "j-gal", images: [{ src: "" }, { src: "" }, { src: "" }], columnas: "auto", colorText: "", colorBg: "" } },
+    { type: "Countdown", props: { id: "j-cd", title: "Falta poco", targetDate: "2027-06-05", colorText: "", colorBg: "" } },
+    { type: "Gallery", props: { id: "j-gal", images: [{ src: "/demo/quinta.jpg" }, { src: "/demo/iglesia.jpg" }, { src: "/demo/playa.jpg" }], columnas: "auto", colorText: "", colorBg: "" } },
     {
       type: "Location",
       props: { id: "j-loc", title: "Cómo llegar", venue: "Jardines de la Vega", address: "Camino del Río s/n, Aranjuez", mapsUrl: "https://maps.google.com", colorText: "", colorBg: "" },
     },
     {
       type: "RSVP",
-      props: { id: "j-rsvp", title: "¿Vienes?", text: "Confírmanos antes del 1 de mayo.", buttonLabel: "Confirmar", buttonUrl: "", colorText: "", colorBg: "", questions: [{ label: "Menú", qtype: "opcion", options: "Normal, Vegetariano, Vegano" }, { label: "Alergias", qtype: "texto", options: "" }] },
+      props: { id: "j-rsvp", title: "¿Vienes?", text: "Confírmanos antes del 1 de mayo de 2027.", buttonLabel: "Confirmar", buttonUrl: "", colorText: "", colorBg: "", questions: [{ label: "Menú", qtype: "opcion", options: "Normal, Vegetariano, Vegano" }, { label: "Alergias", qtype: "texto", options: "" }] },
     },
   ],
 };
@@ -2162,9 +2232,16 @@ export const plantillaModerna = {
       fontHeading: "Montserrat",
       fontBody: "Work Sans",
       size: "Normal",
-      colorText: "#1c1a17",
+      colorText: "#141414",
       colorBackground: "#ffffff",
-      colorAccent: "#1c1a17",
+      colorAccent: "#141414",
+      navEnabled: "no",
+      navTitle: "",
+      navLinks: [
+        { label: "La boda", href: "#agenda" },
+        { label: "Cómo llegar", href: "#ubicacion" },
+        { label: "Confirmar", href: "#rsvp" },
+      ],
     },
   },
   content: [
@@ -2177,11 +2254,12 @@ export const plantillaModerna = {
         date: "Madrid",
         image: "",
         align: "left",
-        textColor: "",
-        colorBg: "#111111",
+        textColor: "#ffffff",
+        colorBg: "#141414",
         imageMode: "none",
         imageSize: "full",
         imageOffset: { x: 0, y: 0 },
+        overlay: 0,
       },
     },
     {
@@ -2195,14 +2273,7 @@ export const plantillaModerna = {
         imageOffset: { x: 0, y: 0 },
         texts: [
           { variant: "h1", content: "La historia", format: {}, align: "left", colorText: "" },
-          {
-            variant: "p",
-            content:
-              "Diez años, dos ciudades y un montón de billetes de tren. Ahora, por fin, la misma dirección.",
-            format: {},
-            align: "left",
-            colorText: "",
-          },
+          { variant: "p", content: "Diez años, dos ciudades y un montón de billetes de tren. Ahora, por fin, la misma dirección.", format: {}, align: "left", colorText: "" },
         ],
       },
     },
@@ -2222,14 +2293,15 @@ export const plantillaModerna = {
         ],
       },
     },
-    { type: "Countdown", props: { id: "m-cd", title: "Faltan", targetDate: "2026-09-12", colorText: "", colorBg: "#111111" } },
+    { type: "Countdown", props: { id: "m-cd", title: "Faltan", targetDate: "2027-09-11", colorText: "#ffffff", colorBg: "#141414" } },
+    { type: "Gallery", props: { id: "m-gal", images: [{ src: "/demo/quinta.jpg" }, { src: "/demo/iglesia.jpg" }, { src: "/demo/playa.jpg" }], columnas: "3", colorText: "", colorBg: "" } },
     {
       type: "Location",
       props: { id: "m-loc", title: "Dónde", venue: "Espacio Nómada", address: "Calle de la Industria 12, Madrid", mapsUrl: "https://maps.google.com", colorText: "", colorBg: "" },
     },
     {
       type: "RSVP",
-      props: { id: "m-rsvp", title: "Confirma", text: "Antes del 1 de agosto.", buttonLabel: "Voy", buttonUrl: "", colorText: "", colorBg: "", questions: [{ label: "Menú", qtype: "opcion", options: "Normal, Vegetariano" }, { label: "¿Autobús?", qtype: "si-no", options: "" }] },
+      props: { id: "m-rsvp", title: "Confirma", text: "Antes del 1 de agosto de 2027.", buttonLabel: "Voy", buttonUrl: "", colorText: "", colorBg: "", questions: [{ label: "Menú", qtype: "opcion", options: "Normal, Vegetariano" }, { label: "¿Autobús?", qtype: "si-no", options: "" }] },
     },
   ],
 };

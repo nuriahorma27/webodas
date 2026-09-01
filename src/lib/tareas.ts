@@ -163,6 +163,8 @@ export const FASES = [
   "4-5 meses antes",
   "2-3 meses antes",
   "Último mes",
+  "Última semana",
+  "El día de la boda",
   "Sin fecha asignada",
 ];
 
@@ -175,6 +177,8 @@ export const FASE_MESES: Record<string, number> = {
   "4-5 meses antes": 5,
   "2-3 meses antes": 3,
   "Último mes": 1,
+  "Última semana": 0.25,
+  "El día de la boda": 0,
   "Sin fecha asignada": Infinity,
 };
 
@@ -249,6 +253,9 @@ const DATA: Record<string, Def[]> = {
     ["Comprar la lencería y la ropa interior", "2-3 meses antes", "compra"],
     ["Comprar alpargatas para la fiesta", "2-3 meses antes", "compra"],
     ["Preparar el neceser para retoques", "Último mes", "compra"],
+    ["Preparar el kit de emergencia (tiritas, hilo, imperdibles, pastillas)", "Última semana", "compra"],
+    ["Dejar el vestido colgado y aireado, con los zapatos y complementos juntos", "Última semana", "simple"],
+    ["Llevar al alojamiento el neceser, la maleta y la ropa del día siguiente", "Última semana", "simple"],
   ],
   "El novio": [
     ["Contratar o comprar el traje del novio", "6-7 meses antes", "proveedor"],
@@ -256,6 +263,7 @@ const DATA: Record<string, Def[]> = {
     ["Comprar los zapatos del novio", "4-5 meses antes", "compra"],
     ["Comprar los complementos del novio (corbata, gemelos)", "4-5 meses antes", "compra"],
     ["Reservar la barbería para antes de la boda", "Último mes", "lugarFecha"],
+    ["Dejar el traje listo y probárselo por última vez", "Última semana", "simple"],
   ],
   Papelería: [
     ["Encargar las invitaciones", "4-5 meses antes", "proveedor"],
@@ -283,8 +291,9 @@ const DATA: Record<string, Def[]> = {
     ["Fiesta preboda", "2-3 meses antes", "lugarFecha"],
   ],
   "Viaje de novios": [
-    ["Reservar el viaje de luna de miel", "6-7 meses antes", "viaje"],
+    ["Reservar el viaje de novios", "6-7 meses antes", "viaje"],
     ["Pasaportes / visados / vacunas", "4-5 meses antes", "simple"],
+    ["Hacer la maleta del viaje de novios", "Última semana", "simple"],
   ],
   "Invitados y web": [
     ["Preparar la lista de invitados con sus direcciones", "12 meses antes", "invitados"],
@@ -297,6 +306,31 @@ const DATA: Record<string, Def[]> = {
     ["Cita en el registro civil (si hay boda civil)", "8-9 meses antes", "lugarFecha"],
     ["Seguro de la boda", "6-7 meses antes", "simple"],
     ["Wedding planner (si lo hay)", "12 meses antes", "proveedor"],
+    ["Pasar al DJ o al grupo la lista de imprescindibles y de prohibidas", "Último mes", "lista"],
+    ["Pasar al fotógrafo la lista de fotos y momentos importantes", "Último mes", "lista"],
+    ["Confirmar con la floristería la entrega en la iglesia y en la finca", "Último mes", "simple"],
+    ["Contactar con todos los proveedores para confirmar hora y lugar", "Última semana", "simple"],
+    ["Recoger los anillos", "Última semana", "simple"],
+    ["Hacer los pagos finales pendientes a los proveedores", "Última semana", "simple"],
+    ["Preparar los sobres de las propinas y llevar algo de efectivo", "Última semana", "compra"],
+    ["Cargar el móvil y llevar cargador el día de la boda", "Última semana", "simple"],
+    ["Llevar al sitio los detalles, el arroz o pétalos y el libro de firmas", "Última semana", "simple"],
+    ["Dar al catering el número final de comensales y el plano de mesas", "Última semana", "lista", "Se organiza en webodas · Mesas e Invitados"],
+    ["Recordar a los invitados la hora del bus y la ubicación", "Última semana", "webodas"],
+    ["Hacer el check-in y dejar lista la habitación de la noche de bodas", "Última semana", "simple"],
+    ["Contactar con los responsables del día de la boda y explicarles su cometido", "Última semana", "reparto"],
+    ["Encargar a alguien llevar los anillos a la ceremonia", "El día de la boda", "simple", "Asigna un responsable en la ficha de la tarea"],
+    ["Encargar a alguien llevar las arras", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de los autobuses (que salgan a su hora y no falte nadie)", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de avisar al coro o a los músicos cuando entre la novia", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable del arroz o los pétalos a la salida de la ceremonia", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable del libro de firmas y de recoger los regalos y sobres", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de guardar el ramo, el tocado y las cosas de la novia", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de coordinar con el fotógrafo las fotos de familia", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable del kit de emergencia y los retoques de la novia", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de las propinas al personal", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de recoger la decoración de la finca al terminar", "El día de la boda", "simple", "Asigna un responsable"],
+    ["Responsable de devolver el traje o el vestido de alquiler", "El día de la boda", "simple", "Asigna un responsable"],
   ],
 };
 

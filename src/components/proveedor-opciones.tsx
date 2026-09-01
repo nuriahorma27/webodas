@@ -20,24 +20,16 @@ export function ProveedorOpciones({
   onSave: () => void;
 }) {
   const [abierta, setAbierta] = useState<string | null>(null);
-  const [editando, setEditando] = useState<string | null>(null);
-  const [nuevoId, setNuevoId] = useState<string | null>(null);
-
-  // Quita una opción recién creada si se cierra sin ponerle nombre.
-  const descartarSiVacia = (o: ProveedorOpcion) => {
-    if (o.id === nuevoId && !o.nombre.trim()) {
-      onOpciones(opciones.filter((x) => x.id !== o.id));
-    }
-    setNuevoId(null);
-  };
 
   const upd = (optId: string, patch: Partial<ProveedorOpcion>) =>
     onOpciones(opciones.map((o) => (o.id === optId ? { ...o, ...patch } : o)));
+
   const del = (optId: string) => {
     onOpciones(opciones.filter((o) => o.id !== optId));
     if (contratado === optId) onContratado("");
     setTimeout(onSave, 0);
   };
+
   const add = () => {
     const nuevo: ProveedorOpcion = {
       id: crypto.randomUUID(),
@@ -49,162 +41,153 @@ export function ProveedorOpciones({
     };
     onOpciones([...opciones, nuevo]);
     setAbierta(nuevo.id);
-    setEditando(nuevo.id);
-    setNuevoId(nuevo.id);
+  };
+
+  const cerrar = (o: ProveedorOpcion) => {
+    // Descarta una opción recién creada que se queda sin nombre.
+    if (!o.nombre.trim() && !o.email && !o.telefono && !o.presupuesto && !o.notas) {
+      del(o.id);
+    } else {
+      onSave();
+    }
+    setAbierta(null);
   };
 
   return (
     <div className="space-y-2">
       {opciones.map((o) => {
-        const isC = contratado === o.id;
+        const contratada = contratado === o.id;
         const open = abierta === o.id;
-        const edit = editando === o.id;
+        const contactos = [o.email, o.telefono].filter(Boolean).join(" · ");
         return (
           <div
             key={o.id}
-            className={`overflow-hidden rounded-lg border ${isC ? "border-green-500" : "border-line"}`}
+            className={`overflow-hidden rounded-xl border ${
+              contratada ? "border-accent bg-accent-soft/50" : "border-line bg-surface"
+            }`}
           >
-            <div className={`flex items-center gap-3 px-3 py-2 ${isC ? "bg-green-50" : "bg-surface"}`}>
+            <button
+              onClick={() => (open ? cerrar(o) : setAbierta(o.id))}
+              className="flex w-full items-center gap-3 px-3.5 py-3 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="truncate font-medium">
+                    {o.nombre || <span className="text-muted">Nueva opción</span>}
+                  </span>
+                  {o.presupuesto && (
+                    <span className="shrink-0 text-sm text-muted">{o.presupuesto} €</span>
+                  )}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-muted">
+                  {contactos || (open ? "" : "Sin datos de contacto")}
+                </span>
+              </span>
+              <span className="shrink-0 text-muted" aria-hidden>
+                {open ? "▾" : "›"}
+              </span>
+            </button>
+
+            <div
+              className={`flex items-center justify-between gap-3 border-t px-3.5 py-2 ${
+                contratada ? "border-accent/30" : "border-line"
+              }`}
+            >
               <button
                 onClick={() => {
-                  if (open) descartarSiVacia(o);
-                  setAbierta(open ? null : o.id);
-                  setEditando(null);
+                  onContratado(contratada ? "" : o.id);
+                  setTimeout(onSave, 0);
                 }}
-                className="min-w-0 flex-1 text-left"
+                className={`inline-flex items-center gap-1.5 text-xs font-medium transition ${
+                  contratada ? "text-accent-deep" : "text-muted hover:text-foreground"
+                }`}
               >
-                <span className="text-sm font-medium">{o.nombre || "Sin nombre"}</span>
-                {o.presupuesto && (
-                  <span className="ml-2 text-sm text-muted">{o.presupuesto} €</span>
-                )}
+                <span
+                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+                    contratada ? "border-accent bg-accent text-white" : "border-current"
+                  }`}
+                >
+                  {contratada ? "✓" : ""}
+                </span>
+                {contratada ? "Contratado" : "Marcar como contratado"}
               </button>
-
-              {isC ? (
+              {!open && (
                 <button
-                  onClick={() => onContratado("")}
-                  title="Quitar como contratado"
-                  className="rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                  onClick={() => setAbierta(o.id)}
+                  className="text-xs text-muted underline hover:text-foreground"
                 >
-                  ✓ CONTRATADO
-                </button>
-              ) : (
-                <button
-                  onClick={() => onContratado(o.id)}
-                  className="rounded-full border border-green-600 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
-                >
-                  Marcar contratado
+                  Ver datos
                 </button>
               )}
-
-              <button
-                onClick={() => {
-                  if (open) descartarSiVacia(o);
-                  setAbierta(open ? null : o.id);
-                  setEditando(null);
-                }}
-                className="text-muted"
-              >
-                {open ? "▾" : "›"}
-              </button>
             </div>
 
             {open && (
               <div className="border-t border-line px-3 py-3">
-                {edit ? (
-                  <>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <label className="block sm:col-span-2">
-                        <span className="text-xs font-medium text-muted">Nombre / empresa</span>
-                        <input className={inputCls} value={o.nombre} onChange={(e) => upd(o.id, { nombre: e.target.value })} />
-                      </label>
-                      <label className="block">
-                        <span className="text-xs font-medium text-muted">Email</span>
-                        <input type="email" className={inputCls} value={o.email} onChange={(e) => upd(o.id, { email: e.target.value })} />
-                      </label>
-                      <label className="block">
-                        <span className="text-xs font-medium text-muted">Teléfono</span>
-                        <input type="tel" className={inputCls} value={o.telefono} onChange={(e) => upd(o.id, { telefono: e.target.value })} />
-                      </label>
-                      <label className="block">
-                        <span className="text-xs font-medium text-muted">Presupuesto (€)</span>
-                        <input type="number" className={inputCls} value={o.presupuesto} onChange={(e) => upd(o.id, { presupuesto: e.target.value })} />
-                      </label>
-                      <label className="block sm:col-span-2">
-                        <span className="text-xs font-medium text-muted">Qué incluye / notas</span>
-                        <textarea rows={2} className={inputCls} value={o.notas} onChange={(e) => upd(o.id, { notas: e.target.value })} />
-                      </label>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          onSave();
-                          setEditando(null);
-                          setNuevoId(null);
-                        }}
-                        className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => {
-                          descartarSiVacia(o);
-                          setEditando(null);
-                          setAbierta(null);
-                        }}
-                        className="rounded-md border border-line px-3 py-1.5 text-xs hover:bg-neutral-100"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={() => del(o.id)}
-                        className="ml-auto flex items-center gap-1 text-xs text-muted hover:text-red-600"
-                      >
-                        🗑️ Descartar
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <dl className="space-y-1 text-sm">
-                      {o.email && (
-                        <div className="flex gap-2">
-                          <dt className="text-muted">Email:</dt>
-                          <dd>{o.email}</dd>
-                        </div>
-                      )}
-                      {o.telefono && (
-                        <div className="flex gap-2">
-                          <dt className="text-muted">Teléfono:</dt>
-                          <dd>{o.telefono}</dd>
-                        </div>
-                      )}
-                      {o.presupuesto && (
-                        <div className="flex gap-2">
-                          <dt className="text-muted">Presupuesto:</dt>
-                          <dd>{o.presupuesto} €</dd>
-                        </div>
-                      )}
-                      {o.notas && <p className="whitespace-pre-wrap pt-1 text-muted">{o.notas}</p>}
-                      {!o.email && !o.telefono && !o.notas && !o.presupuesto && (
-                        <p className="text-muted">Sin datos. Pulsa editar para rellenar.</p>
-                      )}
-                    </dl>
-                    <div className="mt-3 flex items-center gap-3">
-                      <button
-                        onClick={() => setEditando(o.id)}
-                        className="flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-xs hover:bg-neutral-100"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => del(o.id)}
-                        className="ml-auto flex items-center gap-1 text-xs text-muted hover:text-red-600"
-                      >
-                        🗑️ Descartar
-                      </button>
-                    </div>
-                  </>
-                )}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="text-xs font-medium text-muted">Nombre / empresa</span>
+                    <input
+                      className={inputCls}
+                      value={o.nombre}
+                      onChange={(e) => upd(o.id, { nombre: e.target.value })}
+                      onBlur={onSave}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-muted">Email</span>
+                    <input
+                      type="email"
+                      className={inputCls}
+                      value={o.email}
+                      onChange={(e) => upd(o.id, { email: e.target.value })}
+                      onBlur={onSave}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-muted">Teléfono</span>
+                    <input
+                      type="tel"
+                      className={inputCls}
+                      value={o.telefono}
+                      onChange={(e) => upd(o.id, { telefono: e.target.value })}
+                      onBlur={onSave}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-muted">Presupuesto (€)</span>
+                    <input
+                      type="number"
+                      className={inputCls}
+                      value={o.presupuesto}
+                      onChange={(e) => upd(o.id, { presupuesto: e.target.value })}
+                      onBlur={onSave}
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="text-xs font-medium text-muted">Qué incluye / notas</span>
+                    <textarea
+                      rows={2}
+                      className={inputCls}
+                      value={o.notas}
+                      onChange={(e) => upd(o.id, { notas: e.target.value })}
+                      onBlur={onSave}
+                    />
+                  </label>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <button
+                    onClick={() => cerrar(o)}
+                    className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                  >
+                    Listo
+                  </button>
+                  <button
+                    onClick={() => del(o.id)}
+                    className="text-xs text-muted underline hover:text-red-600"
+                  >
+                    Quitar opción
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -213,7 +196,7 @@ export function ProveedorOpciones({
 
       <button
         onClick={add}
-        className="w-full rounded-md border border-dashed border-neutral-300 py-2 text-xs text-neutral-600 hover:border-neutral-500"
+        className="w-full rounded-md border border-dashed border-line py-2 text-xs font-medium text-muted transition hover:border-accent hover:text-accent"
       >
         + Añadir opción de proveedor
       </button>

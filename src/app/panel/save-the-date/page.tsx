@@ -13,6 +13,7 @@ import {
   ACABADOS,
   FUENTES,
   MARCOS,
+  PRESETS,
   type SaveTheDate,
   type AcabadoStd,
   type FuenteStd,
@@ -85,6 +86,27 @@ export default function SaveTheDatePage() {
   return (
     <div className="space-y-6">
       <PageTitle title="Save the date" />
+
+      {/* Puntos de partida */}
+      <Card className="space-y-3">
+        <div>
+          <h2 className="font-display text-lg">Elegid un punto de partida</h2>
+          <p className="text-sm text-muted">Aplica un diseño completo. Luego cambiáis lo que queráis.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setStd(p.props)}
+              title={p.nota}
+              className="rounded-lg border border-line px-3 py-2 text-left text-sm transition hover:border-accent hover:bg-accent-soft/40"
+            >
+              <span className="block font-medium">{p.label}</span>
+              <span className="block text-xs text-muted">{p.nota}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
 
       {/* En móvil no se edita: hace falta pantalla grande para colocar la imagen. */}
       <div className="rounded-xl border border-line bg-surface p-6 text-center lg:hidden">

@@ -11,11 +11,13 @@ export function RichEditor({
   onChange,
   label,
   singleLine,
+  sinColor,
 }: {
   value?: string;
   onChange: (value: string) => void;
   label?: string;
   singleLine?: boolean;
+  sinColor?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [swatches, setSwatches] = useState<string[]>([]);
@@ -143,7 +145,7 @@ export function RichEditor({
         {btn(<s>S</s>, () => exec("strikeThrough"), "Tachado")}
         {btn("↺", clearFormat, "Quitar formato de la selección")}
       </div>
-      <div className="mb-1.5 flex flex-wrap items-center gap-1">
+      <div className={`mb-1.5 flex-wrap items-center gap-1 ${sinColor ? "hidden" : "flex"}`}>
         <span className="mr-1 text-xs text-neutral-500">Color:</span>
         {swatches.map((c) => (
           <button

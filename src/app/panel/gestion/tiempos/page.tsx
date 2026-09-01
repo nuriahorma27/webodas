@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Progress } from "@/components/ui";
 import { EstadoControl } from "@/components/estado-control";
+import { PersonasToggle, personasDe } from "@/components/personas-toggle";
 import { TareaDetalleForm } from "@/components/tarea-detalle";
 import { descargarTareasExcel } from "@/lib/export-excel";
-import { loadBoda } from "@/lib/boda";
+import { loadBoda, mesesRestantes } from "@/lib/boda";
 import {
   CATEGORIAS,
   FASES,
@@ -34,6 +35,19 @@ type Vista = "tiempo" | "categoria";
 
 const campo =
   "w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent";
+
+// A qué bloque de la cuenta atrás toca prestar atención ahora.
+function faseActualDe(meses: number | null): string {
+  if (meses == null || meses >= 12) return "12 meses antes";
+  if (meses >= 9) return "10-11 meses antes";
+  if (meses >= 7) return "8-9 meses antes";
+  if (meses >= 5) return "6-7 meses antes";
+  if (meses >= 3) return "4-5 meses antes";
+  if (meses >= 1) return "2-3 meses antes";
+  if (meses >= 0.25) return "Último mes";
+  if (meses >= 0.03) return "Última semana";
+  return "El día de la boda";
+}
 
 /* ---------- fila de tarea (a nivel de módulo para no remontar al abrir) ---------- */
 
@@ -73,14 +87,12 @@ function PersonasModal({
         </div>
 
         {base.length > 0 && (
-          <p className="mt-1 text-xs text-muted">
-            Del perfil de la boda: {base.join(" · ")}
-          </p>
+          <p className="mt-1 text-xs text-muted">Del perfil de la boda: {base.join(" · ")}</p>
         )}
 
         <ul className="mt-3 divide-y divide-line">
           {custom.length === 0 && (
-            <li className="py-2 text-sm text-muted">Aún no has añadido a nadie.</li>
+            <li className="py-2 text-sm text-muted">Aún no habéis añadido a nadie.</li>
           )}
           {custom.map((r) => (
             <li key={r} className="flex items-center justify-between py-2 text-sm">
@@ -194,30 +206,23 @@ function Row({
       </div>
 
       {abierto && (
-        <div className="space-y-3 border-t border-line bg-neutral-50/60 px-4 py-4">
-          <label className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted">Responsable</span>
-            <select
-              value={t.responsable ?? ""}
-              onChange={(ev) => {
-                updateTarea(t.id, { responsable: ev.target.value });
-              }}
-              className="rounded-md border border-line bg-surface px-2.5 py-1 text-sm outline-none focus:border-accent"
-            >
-              <option value="">Sin asignar</option>
-              {responsables.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="space-y-3 border-t border-line bg-accent-soft/25 px-4 py-4">
+          <div>
+            <span className="text-xs font-medium text-muted">Responsable</span>
+            <div className="mt-1.5">
+              <PersonasToggle
+                valor={t.responsable}
+                opciones={responsables}
+                onChange={(v) => updateTarea(t.id, { responsable: v })}
+              />
+            </div>
+          </div>
           <TareaDetalleForm id={t.id} tipo={t.tipo} titulo={t.titulo} inicial={detalle ?? {}} />
         </div>
       )}
 
       {editar && (
-        <div className="space-y-3 border-t border-line bg-neutral-50/60 px-4 py-4">
+        <div className="space-y-3 border-t border-line bg-accent-soft/25 px-4 py-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs text-muted">Nombre de la tarea</span>
@@ -279,6 +284,43 @@ function Row({
   );
 }
 
+/* Fila del "día de la boda": no tiene estados, solo responsables.
+   Al asignar a alguien la fila se pone en verde. Puede haber varias personas. */
+function FilaReparto({
+  t,
+  responsables,
+}: {
+  t: Tarea;
+  responsables: string[];
+}) {
+  const asignada = personasDe(t.responsable).length > 0;
+  return (
+    <li className={`px-4 py-3 text-sm ${asignada ? "bg-accent-soft/60" : ""}`}>
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[0.6rem] ${
+            asignada ? "border-accent bg-accent text-white" : "border-line"
+          }`}
+        >
+          {asignada ? "✓" : ""}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={asignada ? "font-medium" : ""}>{t.titulo}</p>
+          <div className="mt-1.5">
+            <PersonasToggle
+              valor={t.responsable}
+              opciones={responsables}
+              onChange={(v) => updateTarea(t.id, { responsable: v })}
+              size="xs"
+            />
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function AddTarea({
   abierto,
   categoria,
@@ -304,7 +346,7 @@ function AddTarea({
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-line bg-neutral-50/60 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2 border-t border-line bg-accent-soft/25 px-4 py-3">
       <span className="text-xs text-muted">Tipo de ficha:</span>
       {TIPOS_TAREA.map((tp) => (
         <button
@@ -335,11 +377,14 @@ export default function TareasPage() {
   const [filtroResp, setFiltroResp] = useState<string>("");
   const [addEn, setAddEn] = useState<string | null>(null);
   const [nombres, setNombres] = useState<string[]>([]);
+  const [meses, setMeses] = useState<number | null>(null);
   const [respCustom, setRespCustom] = useState<string[]>([]);
   const [gestionResp, setGestionResp] = useState(false);
+  const [filtrosOpen, setFiltrosOpen] = useState(false);
   const [cats, setCats] = useState<string[]>([]);
   const [catsOcultas, setCatsOcultas] = useState<string[]>([]);
   const [grupoAbierto, setGrupoAbierto] = useState<Record<string, boolean>>({});
+  const filtrosRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sync = () => {
@@ -351,6 +396,7 @@ export default function TareasPage() {
       setCatsOcultas(loadCategoriasOcultas());
       const b = loadBoda();
       setNombres([b.p1.nombre.trim(), b.p2.nombre.trim(), "Los dos"].filter(Boolean));
+      setMeses(mesesRestantes(b));
     };
     sync();
     window.addEventListener("webodas:tareas", sync);
@@ -361,6 +407,15 @@ export default function TareasPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!filtrosOpen) return;
+    const cerrar = (e: MouseEvent) => {
+      if (filtrosRef.current && !filtrosRef.current.contains(e.target as Node)) setFiltrosOpen(false);
+    };
+    document.addEventListener("mousedown", cerrar);
+    return () => document.removeEventListener("mousedown", cerrar);
+  }, [filtrosOpen]);
+
   const responsables = useMemo(
     () => [...new Set([...nombres, ...respCustom])],
     [nombres, respCustom],
@@ -370,15 +425,14 @@ export default function TareasPage() {
 
   const estadoDe = (id: string): Estado => estados[id] ?? "sin";
   const visibles = filtroResp
-    ? tareas.filter((t) => (t.responsable ?? "") === filtroResp)
+    ? tareas.filter((t) => personasDe(t.responsable).includes(filtroResp))
     : tareas;
-  const total = visibles.length;
-  const cuenta = {
-    sin: visibles.filter((t) => estadoDe(t.id) === "sin").length,
-    proceso: visibles.filter((t) => estadoDe(t.id) === "proceso").length,
-    hecho: visibles.filter((t) => estadoDe(t.id) === "hecho").length,
-  };
-  const hechas = cuenta.hecho;
+  // Las tareas del día de la boda solo se asignan; no cuentan para el progreso.
+  const contables = visibles.filter((t) => t.fase !== "El día de la boda");
+  const hechas = contables.filter((t) => estadoDe(t.id) === "hecho").length;
+  const pct = contables.length ? Math.round((hechas / contables.length) * 100) : 0;
+  const faseActual = faseActualDe(meses);
+  const filtroActivo = filtroResp !== "" || vista !== "tiempo";
 
   const toggleOpen = (id: string) => {
     setEditando(null);
@@ -389,6 +443,7 @@ export default function TareasPage() {
     setEditando((cur) => (cur === id ? null : id));
   };
 
+  /* ---------- vista "Por categoría": lista de tarjetas (se mantiene) ---------- */
   const renderGrupo = (
     titulo: string,
     ts: Tarea[],
@@ -403,9 +458,7 @@ export default function TareasPage() {
       <Card key={titulo} className="p-0" data-tour="tareas-grupo">
         <button
           type="button"
-          onClick={() =>
-            setGrupoAbierto((s) => ({ ...s, [add.groupKey]: !abierto }))
-          }
+          onClick={() => setGrupoAbierto((s) => ({ ...s, [add.groupKey]: !abierto }))}
           className="flex w-full items-center gap-3 px-4 py-3 text-left"
         >
           <span
@@ -475,174 +528,359 @@ export default function TareasPage() {
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="font-display text-lg">Tareas de la boda</p>
-            <p className="text-sm text-muted">
-              {hechas} de {visibles.length} terminadas · toca una tarea para ver su ficha
-            </p>
-          </div>
-          <div data-tour="tareas-vista" className="flex gap-1 text-sm">
-            {(
-              [
-                ["tiempo", "Por tiempo"],
-                ["categoria", "Por categoría"],
-              ] as [Vista, string][]
-            ).map(([v, label]) => (
-              <button
-                key={v}
-                onClick={() => setVista(v)}
-                className={`rounded-full px-3 py-1 ${
-                  vista === v ? "bg-foreground text-white" : "border border-line text-muted"
+  /* ---------- vista "Cuenta atrás": línea temporal vertical ---------- */
+  const renderTimeline = () => {
+    const idxActual = FASES.indexOf(faseActual);
+    return (
+      <ol className="relative ml-3 space-y-3 border-l border-line pl-6 sm:ml-4 sm:pl-8">
+        {FASES.map((f, i) => {
+          const ts = visibles.filter((t) => t.fase === f);
+          if (f === "Sin fecha asignada" && ts.length === 0) return null;
+          const esDia = f === "El día de la boda";
+          const done = ts.filter((t) => estadoDe(t.id) === "hecho").length;
+          const asignadas = ts.filter((t) => personasDe(t.responsable).length > 0).length;
+          const pendientes = ts.length - done;
+          const esActual = f === faseActual;
+          const pasada = i < idxActual;
+          const groupKey = `fase-${f}`;
+          const abierto = grupoAbierto[groupKey] ?? (esActual || esDia);
+          const alerta = pasada && pendientes > 0 && !esDia;
+
+          return (
+            <li key={f} className="relative">
+              {/* nodo en la línea */}
+              <span
+                aria-hidden
+                className={`absolute top-1.5 rounded-full border-2 ${
+                  esDia
+                    ? "-left-[calc(1.5rem+5px)] h-4 w-4 border-accent bg-accent-soft sm:-left-[calc(2rem+5px)]"
+                    : "-left-[calc(1.5rem+1px)] h-3 w-3 sm:-left-[calc(2rem+1px)]"
+                } ${
+                  esDia
+                    ? ""
+                    : esActual
+                      ? "border-accent bg-accent"
+                      : alerta
+                        ? "border-[#a9864d] bg-surface"
+                        : pasada
+                          ? "border-line bg-line"
+                          : "border-line bg-surface"
+                }`}
+              />
+
+              <div
+                className={`overflow-hidden rounded-xl border ${
+                  esDia
+                    ? "border-accent/50 bg-accent-soft/30"
+                    : esActual
+                      ? "border-accent/40 bg-surface"
+                      : "border-line bg-surface"
                 }`}
               >
-                {label}
+                <button
+                  type="button"
+                  onClick={() => setGrupoAbierto((s) => ({ ...s, [groupKey]: !abierto }))}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`font-display ${esActual || esDia ? "text-xl" : "text-lg"} ${
+                          pasada && !alerta && !esDia ? "text-muted" : ""
+                        }`}
+                      >
+                        {f}
+                      </span>
+                      {esDia && (
+                        <span className="rounded-full border border-accent px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-accent-deep">
+                          Para delegar
+                        </span>
+                      )}
+                      {esActual && !esDia && (
+                        <span className="rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-white">
+                          Ahora
+                        </span>
+                      )}
+                      {alerta && (
+                        <span className="rounded-full bg-[#f4ead6] px-2 py-0.5 text-[0.65rem] font-medium text-[#8a6a34]">
+                          {pendientes} sin hacer
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted">
+                      {esDia
+                        ? `${asignadas} de ${ts.length} con responsable · se reparten entre familiares y amigos`
+                        : ts.length === 0
+                          ? "Sin tareas"
+                          : done === ts.length
+                            ? `Todo hecho · ${ts.length}`
+                            : `${done} de ${ts.length} hechas`}
+                    </span>
+                  </span>
+                  <span
+                    className="ml-auto shrink-0 text-muted transition-transform"
+                    style={{ transform: abierto ? "rotate(90deg)" : "none" }}
+                    aria-hidden
+                  >
+                    ▸
+                  </span>
+                </button>
+
+                {ts.length > 0 && (
+                  <div className="px-4 pb-1">
+                    <Progress value={esDia ? (asignadas / ts.length) * 100 : (done / ts.length) * 100} />
+                  </div>
+                )}
+
+                {abierto && f === "El día de la boda" && (
+                  <>
+                    <p className="border-t border-line bg-accent-soft/25 px-4 py-3 text-xs leading-relaxed text-muted">
+                      Estas tareas no las hacéis vosotros, sino que se reparten entre familiares y
+                      amigos de confianza para que no tengáis que preocuparos de nada el día de la
+                      boda. <strong className="text-foreground">Asigna un responsable a cada tarea</strong>{" "}
+                      (aquí no se marcan como terminadas). Podéis añadir personas desde «Configuración
+                      → + Nuevo». Cuando una tarea tiene responsable se pone en verde.
+                    </p>
+                    <ul className="divide-y divide-line border-t border-line">
+                      {ts.map((t) => (
+                        <FilaReparto key={t.id} t={t} responsables={responsables} />
+                      ))}
+                      {ts.length === 0 && (
+                        <li className="px-4 py-3 text-sm text-muted">Nada por aquí todavía.</li>
+                      )}
+                    </ul>
+                    <AddTarea
+                      abierto={addEn === groupKey}
+                      categoria={cats[0] ?? "Otros"}
+                      fase={f}
+                      onOpen={() => setAddEn(groupKey)}
+                      onClose={() => setAddEn(null)}
+                      onAdded={(id) => {
+                        setAddEn(null);
+                        setEditando(null);
+                        setAbierta(id);
+                      }}
+                    />
+                  </>
+                )}
+
+                {abierto && f !== "El día de la boda" && (
+                  <>
+                    <ul className="mt-2 divide-y divide-line border-t border-line">
+                      {ts.map((t) => (
+                        <Row
+                          key={t.id}
+                          t={t}
+                          meta={t.categoria}
+                          estado={estadoDe(t.id)}
+                          abierto={abierta === t.id}
+                          editar={editando === t.id}
+                          detalle={detalles[t.id]}
+                          responsables={responsables}
+                          onToggleOpen={() => toggleOpen(t.id)}
+                          onToggleEdit={() => toggleEdit(t.id)}
+                        />
+                      ))}
+                      {ts.length === 0 && (
+                        <li className="px-4 py-3 text-sm text-muted">Nada por aquí todavía.</li>
+                      )}
+                    </ul>
+                    <AddTarea
+                      abierto={addEn === groupKey}
+                      categoria={cats[0] ?? "Otros"}
+                      fase={f}
+                      onOpen={() => setAddEn(groupKey)}
+                      onClose={() => setAddEn(null)}
+                      onAdded={(id) => {
+                        setAddEn(null);
+                        setEditando(null);
+                        setAbierta(id);
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* cabecera mínima */}
+      <div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl">Tareas de la boda</h2>
+            <p className="mt-1 text-sm text-muted">
+              Vais por el <span className="font-medium text-foreground">{pct}%</span> · {hechas} de{" "}
+              {contables.length} hechas
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div ref={filtrosRef} className="relative">
+              <button
+                onClick={() => setFiltrosOpen((v) => !v)}
+                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition ${
+                  filtroActivo
+                    ? "border-accent text-accent"
+                    : "border-line text-muted hover:text-foreground"
+                }`}
+              >
+                Configuración
+                {filtroActivo && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                <span aria-hidden className="text-xs">▾</span>
               </button>
-            ))}
+
+              {filtrosOpen && (
+                <div className="absolute right-0 z-40 mt-1.5 w-64 rounded-xl border border-line bg-surface p-3 shadow-lg">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Ver</p>
+                  <div className="mt-1.5 flex gap-1.5">
+                    {(
+                      [
+                        ["tiempo", "Cuenta atrás"],
+                        ["categoria", "Por categoría"],
+                      ] as [Vista, string][]
+                    ).map(([v, label]) => (
+                      <button
+                        key={v}
+                        onClick={() => setVista(v)}
+                        className={`flex-1 rounded-md px-2 py-1.5 text-xs ${
+                          vista === v
+                            ? "bg-foreground text-white"
+                            : "border border-line text-muted hover:text-foreground"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted">
+                    Responsable
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setFiltroResp("")}
+                      className={`rounded-full px-2.5 py-1 text-xs ${
+                        filtroResp === ""
+                          ? "bg-foreground text-white"
+                          : "border border-line text-muted"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {responsables.map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setFiltroResp(r)}
+                        className={`rounded-full px-2.5 py-1 text-xs ${
+                          filtroResp === r
+                            ? "bg-foreground text-white"
+                            : "border border-line text-muted"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setGestionResp(true)}
+                      className="rounded-full border border-dashed border-line px-2.5 py-1 text-xs text-muted hover:text-accent"
+                    >
+                      + Nuevo
+                    </button>
+                  </div>
+
+                  <div className="mt-3 border-t border-line pt-2">
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "¿Volver a la lista de tareas estándar? Se pierden vuestros cambios en la lista (no los estados).",
+                          )
+                        ) {
+                          resetTareas();
+                          setFiltrosOpen(false);
+                        }
+                      }}
+                      className="text-xs text-muted underline hover:text-foreground"
+                    >
+                      Restablecer lista estándar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => descargarTareasExcel(visibles, estados, detalles)}
+              className="rounded-md border border-line px-3 py-1.5 text-sm text-muted transition hover:border-accent hover:text-accent"
+            >
+              ↓ Excel
+            </button>
           </div>
         </div>
 
-        <div data-tour="tareas-responsable" className="mt-3 flex flex-wrap items-center gap-1.5 text-sm">
-          <span className="text-xs text-muted">Responsable:</span>
-          <button
-            onClick={() => setFiltroResp("")}
-            className={`rounded-full px-2.5 py-0.5 text-xs ${
-              filtroResp === "" ? "bg-foreground text-white" : "border border-line text-muted"
-            }`}
-          >
-            Todos
-          </button>
-          {responsables.map((r) => (
-            <button
-              key={r}
-              onClick={() => setFiltroResp(r)}
-              className={`rounded-full px-2.5 py-0.5 text-xs ${
-                filtroResp === r ? "bg-foreground text-white" : "border border-line text-muted"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-          <button
-            onClick={() => setGestionResp(true)}
-            className="rounded-full border border-dashed border-line px-2.5 py-0.5 text-xs text-muted hover:text-accent"
-          >
-            Gestionar personas
-          </button>
+        <div className="mt-3">
+          <Progress value={pct} />
         </div>
-
-        {gestionResp && (
-          <PersonasModal
-            base={nombres}
-            custom={respCustom}
-            onClose={() => setGestionResp(false)}
-            onRemove={(r) => {
-              removeResponsableCustom(r);
-              if (filtroResp === r) setFiltroResp("");
-            }}
-          />
-        )}
-
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-          {(
-            [
-              ["Sin empezar", cuenta.sin, "bg-slate-300"],
-              ["En proceso", cuenta.proceso, "bg-amber-300"],
-              ["Terminadas", cuenta.hecho, "bg-emerald-400"],
-            ] as [string, number, string][]
-          ).map(([label, n, color]) => {
-            const pct = total ? Math.round((n / total) * 100) : 0;
-            return (
-              <div key={label}>
-                <div className="flex items-baseline justify-between text-xs">
-                  <span className="text-muted">{label}</span>
-                  <span className="font-medium">
-                    {n} · {pct}%
-                  </span>
-                </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-line">
-                  <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-3 flex items-center gap-4">
-          <button
-            onClick={() => descargarTareasExcel(visibles, estados, detalles)}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:border-accent hover:text-accent"
-          >
-            ↓ Descargar en Excel
-          </button>
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  "¿Volver a la lista de tareas estándar? Se pierden tus cambios en la lista (no los estados).",
-                )
-              ) {
-                resetTareas();
-              }
-            }}
-            className="text-xs text-muted underline hover:text-foreground"
-          >
-            Restablecer lista estándar
-          </button>
-        </div>
-      </Card>
-
-      <div className="space-y-4">
-        {(() => {
-          // Abrir por defecto solo el primer grupo con tareas pendientes.
-          let yaAbierto = false;
-          const defaultOpen = (ts: Tarea[]) => {
-            if (yaAbierto) return false;
-            const pendientes = ts.some((t) => estadoDe(t.id) !== "hecho");
-            if (pendientes) {
-              yaAbierto = true;
-              return true;
-            }
-            return false;
-          };
-          return vista === "tiempo"
-            ? FASES.map((f) => {
-                const ts = visibles.filter((t) => t.fase === f);
-                return renderGrupo(
-                  f,
-                  ts,
-                  (t) => t.categoria,
-                  { groupKey: `fase-${f}`, categoria: cats[0] ?? "Otros", fase: f },
-                  defaultOpen(ts),
-                );
-              })
-            : cats.map((c) => {
-                const ts = visibles
-                  .filter((t) => t.categoria === c)
-                  .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase));
-                return renderGrupo(
-                  c,
-                  ts,
-                  (t) => t.fase,
-                  { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
-                  defaultOpen(ts),
-                  () => {
-                    if (
-                      confirm(
-                        `¿Eliminar la categoría "${c}" y todas sus tareas? Podrás recuperarla luego.`,
-                      )
-                    ) {
-                      ocultarCategoria(c);
-                      if (filtroResp) setFiltroResp("");
-                    }
-                  },
-                );
-              });
-        })()}
       </div>
+
+      {gestionResp && (
+        <PersonasModal
+          base={nombres}
+          custom={respCustom}
+          onClose={() => setGestionResp(false)}
+          onRemove={(r) => {
+            removeResponsableCustom(r);
+            if (filtroResp === r) setFiltroResp("");
+          }}
+        />
+      )}
+
+      {vista === "tiempo" ? (
+        renderTimeline()
+      ) : (
+        <div className="space-y-4">
+          {(() => {
+            let yaAbierto = false;
+            const defaultOpen = (ts: Tarea[]) => {
+              if (yaAbierto) return false;
+              const pendientes = ts.some((t) => estadoDe(t.id) !== "hecho");
+              if (pendientes) {
+                yaAbierto = true;
+                return true;
+              }
+              return false;
+            };
+            return cats.map((c) => {
+              const ts = visibles
+                .filter((t) => t.categoria === c)
+                .sort((a, b) => FASES.indexOf(a.fase) - FASES.indexOf(b.fase));
+              return renderGrupo(
+                c,
+                ts,
+                (t) => t.fase,
+                { groupKey: `cat-${c}`, categoria: c, fase: "Sin fecha asignada" },
+                defaultOpen(ts),
+                () => {
+                  if (
+                    confirm(
+                      `¿Eliminar la categoría "${c}" y todas sus tareas? Podréis recuperarla luego.`,
+                    )
+                  ) {
+                    ocultarCategoria(c);
+                    if (filtroResp) setFiltroResp("");
+                  }
+                },
+              );
+            });
+          })()}
+        </div>
+      )}
 
       {vista === "categoria" && catsOcultas.length > 0 && (
         <p className="text-xs text-muted">
@@ -650,10 +888,7 @@ export default function TareasPage() {
           {catsOcultas.map((c, i) => (
             <span key={c}>
               {i > 0 && ", "}
-              <button
-                onClick={() => recuperarCategoria(c)}
-                className="underline hover:text-accent"
-              >
+              <button onClick={() => recuperarCategoria(c)} className="underline hover:text-accent">
                 {c}
               </button>
             </span>

@@ -95,7 +95,7 @@ export const proveedores = [
 ];
 
 export const regalos = [
-  { nombre: "Aportación luna de miel", objetivo: 2000, aportado: 1150, tipo: "Hucha" },
+  { nombre: "Aportación viaje de novios", objetivo: 2000, aportado: 1150, tipo: "Hucha" },
   { nombre: "Batería de cocina", objetivo: 320, aportado: 320, tipo: "Producto" },
   { nombre: "Robot de cocina", objetivo: 600, aportado: 240, tipo: "Producto" },
   { nombre: "Juego de sábanas", objetivo: 180, aportado: 0, tipo: "Producto" },

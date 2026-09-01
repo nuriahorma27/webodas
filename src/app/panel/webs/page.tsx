@@ -75,7 +75,7 @@ export default function WebsPage() {
   }, []);
 
   const empezarDeNuevo = () => {
-    if (!confirm("Vas a descartar tu web actual y volver a elegir plantilla. ¿Seguro?")) return;
+    if (!confirm("Vais a descartar vuestra web actual y volver a elegir plantilla. ¿Seguro?")) return;
     try {
       localStorage.removeItem("webodas:site:demo");
     } catch {
@@ -86,12 +86,12 @@ export default function WebsPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle title="Webs para tus invitados" />
+      <PageTitle title="Webs para vuestros invitados" />
 
       {/* WEB DE BODA */}
       {hasWeb === null ? null : hasWeb ? (
         <div className="space-y-3">
-          <h2 className="font-display text-xl">Tu web de boda</h2>
+          <h2 className="font-display text-xl">Vuestra web de boda</h2>
           <Card className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -116,7 +116,7 @@ export default function WebsPage() {
             </div>
             {slug ? (
               <div className="space-y-2">
-                <CompartirEnlace path={`/${slug}`} label="Enlace para tus invitados" />
+                <CompartirEnlace path={`/${slug}`} label="Enlace para vuestros invitados" />
                 <EditarEnlace slug={slug} onChange={setSlug} />
               </div>
             ) : (
@@ -127,14 +127,14 @@ export default function WebsPage() {
             onClick={empezarDeNuevo}
             className="text-xs text-muted underline hover:text-foreground"
           >
-            Descartar y empezar otra web
+            Descartar y empezar otra
           </button>
         </div>
       ) : (
         <div>
-          <h2 className="font-display text-xl">Crea tu web de boda</h2>
+          <h2 className="font-display text-xl">Cread vuestra web de boda</h2>
           <p className="mt-1 text-sm text-muted">
-            Elige una plantilla para empezar (podrás cambiar todo) o parte de cero.
+            Elegís una plantilla para empezar (podréis cambiarlo todo) o partís de cero.
           </p>
           <div
             data-tour="webs-plantillas"
@@ -180,7 +180,7 @@ export default function WebsPage() {
             </div>
           </div>
           {stdPublicada && slug && (
-            <CompartirEnlace path={`/${slug}/save-the-date`} label="Enlace para tus invitados" />
+            <CompartirEnlace path={`/${slug}/save-the-date`} label="Enlace para vuestros invitados" />
           )}
         </Card>
       </div>

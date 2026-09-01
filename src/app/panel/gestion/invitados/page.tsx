@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Card, Stat } from "@/components/ui";
 import { leerNombresExcel } from "@/lib/import-excel";
 import {
@@ -76,13 +76,16 @@ function CeldaTexto({
       inputMode={numero ? "numeric" : undefined}
       defaultValue={value}
       title={value || undefined}
+      placeholder="—"
       onBlur={(e) => onSave(e.target.value.trim())}
-      className={`w-full min-w-[7rem] truncate bg-transparent px-2.5 py-2 text-sm outline-none focus:bg-accent-soft/30 ${align} ${
-        muted ? "text-muted" : ""
+      className={`w-full min-w-[6rem] truncate rounded bg-transparent px-3 py-2 text-sm outline-none transition placeholder:text-muted/40 hover:bg-accent-soft/25 focus:bg-accent-soft/40 ${align} ${
+        muted && value ? "text-muted" : ""
       }`}
     />
   );
 }
+
+const CONFIG_SENTINEL = "__config__";
 
 function CeldaSelect({
   value,
@@ -90,29 +93,89 @@ function CeldaSelect({
   onSave,
   tone = "",
   muted = false,
+  onConfig,
+  configLabel = "Configurar…",
 }: {
   value: string;
   opciones: string[];
   onSave: (v: string) => void;
   tone?: string;
   muted?: boolean;
+  onConfig?: () => void;
+  configLabel?: string;
 }) {
   const lista = value && !opciones.includes(value) ? [...opciones, value] : opciones;
   return (
-    <select
-      value={value}
-      title={value || undefined}
-      onChange={(e) => onSave(e.target.value)}
-      className={`w-full min-w-[6rem] bg-transparent px-2 py-2 text-sm outline-none focus:bg-accent-soft/30 ${
-        tone || (muted ? "text-muted" : "")
-      }`}
-    >
-      {lista.map((o) => (
-        <option key={o || "—"} value={o}>
-          {o || "—"}
-        </option>
-      ))}
-    </select>
+    <label className="group/cell relative block">
+      <select
+        value={value}
+        title={value || undefined}
+        onChange={(e) => {
+          if (e.target.value === CONFIG_SENTINEL) onConfig?.();
+          else onSave(e.target.value);
+        }}
+        className={`w-full min-w-[5rem] cursor-pointer appearance-none rounded bg-transparent px-3 py-2 pr-6 text-sm outline-none transition hover:bg-accent-soft/25 focus:bg-accent-soft/40 ${
+          value ? tone || (muted ? "text-muted" : "") : "text-muted/45"
+        }`}
+      >
+        {lista.map((o) => (
+          <option key={o || "vacio"} value={o}>
+            {o || "—"}
+          </option>
+        ))}
+        {onConfig && (
+          <option value={CONFIG_SENTINEL} className="text-accent">
+            {configLabel}
+          </option>
+        )}
+      </select>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[0.55rem] text-muted opacity-0 transition group-hover/cell:opacity-70 peer-focus:opacity-100"
+      >
+        ▾
+      </span>
+    </label>
+  );
+}
+
+// Iniciales para el avatar de cada invitado.
+function iniciales(nombre: string, apellido: string) {
+  const a = (nombre.trim()[0] ?? "").toUpperCase();
+  const b = (apellido.trim()[0] ?? "").toUpperCase();
+  return (a + b) || "·";
+}
+
+const VIENE_ETIQUETA: Record<string, string> = { Sí: "Viene", No: "No viene", Pendiente: "Pendiente" };
+const VIENE_PILL: Record<string, string> = {
+  Sí: "bg-[#e6efe3] text-[#3f5a3a]",
+  No: "bg-[#f3e4e4] text-[#7b2233]",
+  Pendiente: "bg-[#f4ecda] text-[#7a5a1e]",
+};
+
+// "¿Viene?" como pastilla de color con selector nativo encima.
+function CeldaViene({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const tono = VIENE_PILL[value] ?? VIENE_PILL.Pendiente;
+  return (
+    <label className="group/v relative inline-flex">
+      <select
+        value={value}
+        onChange={(e) => onSave(e.target.value)}
+        className={`cursor-pointer appearance-none rounded-full py-1 pl-3 pr-6 text-xs font-medium outline-none ${tono}`}
+      >
+        {[...VIENE_OPCIONES].map((o) => (
+          <option key={o} value={o}>
+            {VIENE_ETIQUETA[o] ?? o}
+          </option>
+        ))}
+      </select>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[0.5rem] opacity-50"
+      >
+        ▾
+      </span>
+    </label>
   );
 }
 
@@ -189,7 +252,7 @@ function InvitadoCard({
               className="shrink-0 rounded p-1.5 text-muted hover:bg-red-50 hover:text-red-600"
               aria-label="Eliminar invitado"
             >
-              🗑
+              ✕
             </button>
           </div>
           {verFija("viene") && (
@@ -370,6 +433,25 @@ export default function InvitadosPage() {
   const r = resumenInvitados();
   const filas = filtro ? inv.filter((i) => i.viene === filtro) : inv;
 
+  // Ordenadas por grupo (en el orden configurado), y dentro por nombre.
+  const ordenGrupo = (g: string) => {
+    const idx = grupos.indexOf(g);
+    return idx === -1 ? 999 : idx;
+  };
+  const filasOrden = [...filas].sort(
+    (a, b) =>
+      ordenGrupo(a.grupo) - ordenGrupo(b.grupo) ||
+      (a.grupo || "￿").localeCompare(b.grupo || "￿") ||
+      (a.apellido || "").localeCompare(b.apellido || "") ||
+      (a.nombre || "").localeCompare(b.nombre || ""),
+  );
+  const nColsTabla =
+    3 +
+    (verFija("viene") ? 1 : 0) +
+    (verFija("subgrupo") ? 1 : 0) +
+    (verFija("tipo") ? 1 : 0) +
+    cols.length;
+
   const pendientesRespuesta = respuestas.filter((x) => !x.aplicada).length;
 
   return (
@@ -495,72 +577,91 @@ export default function InvitadosPage() {
       <Card className="hidden p-0 md:block">
         <div className="max-h-[70vh] overflow-auto">
           <table className="w-full min-w-max border-collapse text-sm">
-            <thead className="text-left text-xs uppercase tracking-wider text-muted">
-              <tr className="whitespace-nowrap [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-line [&>th]:bg-surface">
-                <th className="!z-20 left-0 w-40 px-2.5 py-2.5">Nombre</th>
-                <th className="!z-20 left-40 w-40 px-2.5 py-2.5">Apellido</th>
-                {verFija("viene") && <th className="px-2.5 py-2.5">¿Viene?</th>}
-                {verFija("grupo") && <th className="bg-emerald-50/60 px-2.5 py-2.5">Grupo</th>}
-                {verFija("subgrupo") && (
-                  <th className="bg-emerald-50/60 px-2.5 py-2.5">Subgrupo</th>
-                )}
-                {verFija("tipo") && <th className="px-2.5 py-2.5">Adulto/Niño</th>}
+            <thead className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-muted">
+              <tr className="whitespace-nowrap [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-line [&>th]:bg-[#f6f2e9] [&>th]:py-2.5">
+                <th className="!z-20 left-0 w-44 px-3">Nombre</th>
+                <th className="!z-20 left-44 w-40 px-3">Apellido</th>
+                {verFija("viene") && <th className="px-3">¿Viene?</th>}
+                {verFija("grupo") && <th className="px-3">Grupo</th>}
+                {verFija("subgrupo") && <th className="px-3">Subgrupo</th>}
+                {verFija("tipo") && <th className="px-3">Adulto / Niño</th>}
                 {cols.map((c) => (
-                  <th key={c.id} className="px-2.5 py-2.5">
+                  <th key={c.id} className="px-3">
                     {c.nombre}
                   </th>
                 ))}
-                <th className="w-10 px-2.5 py-2.5" />
+                <th className="w-10 px-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
-              {filas.map((i) => (
-                <tr key={i.id} className="group align-top hover:bg-neutral-50/70">
-                  <td className="sticky left-0 z-10 w-40 bg-surface px-0 group-hover:bg-neutral-50">
-                    <CeldaTexto
-                      value={i.nombre}
-                      onSave={(v) => updateInvitado(i.id, { nombre: v })}
-                      align="font-medium"
-                    />
+            <tbody>
+              {filasOrden.map((i, idx) => {
+                const prev = filasOrden[idx - 1];
+                const nuevoGrupo = idx === 0 || prev.grupo !== i.grupo;
+                const delGrupo = filasOrden.filter((x) => x.grupo === i.grupo);
+                const vienenDelGrupo = delGrupo.filter((x) => x.viene === "Sí").length;
+                return (
+                <Fragment key={i.id}>
+                  {nuevoGrupo && verFija("grupo") && (
+                    <tr className="bg-[#f2ede2]">
+                      <td
+                        colSpan={nColsTabla + 1}
+                        className="sticky left-0 px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-accent-deep"
+                      >
+                        {i.grupo || "Sin grupo"}
+                        <span className="ml-2 font-normal normal-case tracking-normal text-muted">
+                          {delGrupo.length} {delGrupo.length === 1 ? "persona" : "personas"}
+                          {vienenDelGrupo > 0 && ` · ${vienenDelGrupo} vienen`}
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                <tr className="group border-b border-line/60 align-middle transition hover:bg-accent-soft/35">
+                  <td className="sticky left-0 z-10 w-44 bg-surface px-0 group-hover:bg-[#f4f0e6]">
+                    <div className="flex items-center gap-2 pl-3">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[0.62rem] font-medium text-accent-deep">
+                        {iniciales(i.nombre, i.apellido)}
+                      </span>
+                      <CeldaTexto
+                        value={i.nombre}
+                        onSave={(v) => updateInvitado(i.id, { nombre: v })}
+                        align="font-medium !px-1 !min-w-0"
+                      />
+                    </div>
                   </td>
-                  <td className="sticky left-40 z-10 w-40 border-r border-line bg-surface px-0 group-hover:bg-neutral-50">
+                  <td className="sticky left-44 z-10 w-40 border-r border-line bg-surface px-0 group-hover:bg-[#f4f0e6]">
                     <CeldaTexto
                       value={i.apellido}
                       onSave={(v) => updateInvitado(i.id, { apellido: v })}
                     />
                   </td>
                   {verFija("viene") && (
-                    <td className="px-0">
-                      <CeldaSelect
+                    <td className="px-3">
+                      <CeldaViene
                         value={i.viene}
-                        opciones={[...VIENE_OPCIONES]}
                         onSave={(v) => updateInvitado(i.id, { viene: v as Viene })}
-                        tone={
-                          i.viene === "Sí"
-                            ? "text-emerald-700"
-                            : i.viene === "No"
-                              ? "text-[#7b2233]"
-                              : "text-amber-700"
-                        }
                       />
                     </td>
                   )}
                   {verFija("grupo") && (
-                    <td className="border-l border-line bg-emerald-50/40 px-0">
+                    <td className="border-l border-line/70 bg-accent-soft/20 px-0">
                       <CeldaSelect
                         value={i.grupo}
                         opciones={["", ...grupos]}
                         onSave={(v) => updateInvitado(i.id, { grupo: v })}
+                        onConfig={() => setAjustes(true)}
+                        configLabel="＋ Configurar grupos…"
                         muted
                       />
                     </td>
                   )}
                   {verFija("subgrupo") && (
-                    <td className="border-r border-line bg-emerald-50/40 px-0">
+                    <td className="border-r border-line/70 bg-accent-soft/20 px-0">
                       <CeldaSelect
                         value={i.subgrupo}
                         opciones={["", ...subgrupos]}
                         onSave={(v) => updateInvitado(i.id, { subgrupo: v })}
+                        onConfig={() => setAjustes(true)}
+                        configLabel="＋ Configurar subgrupos…"
                         muted
                       />
                     </td>
@@ -608,14 +709,17 @@ export default function InvitadosPage() {
                   <td className="w-10 px-1 text-center align-middle">
                     <button
                       onClick={() => setPorBorrar(i)}
-                      className="mx-auto grid h-8 w-8 place-items-center rounded text-muted transition hover:bg-red-50 hover:text-red-600"
+                      className="mx-auto grid h-7 w-7 place-items-center rounded text-muted opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
                       title="Eliminar invitado"
+                      aria-label="Eliminar invitado"
                     >
-                      🗑
+                      ✕
                     </button>
                   </td>
                 </tr>
-              ))}
+                </Fragment>
+                );
+              })}
               {filas.length === 0 && (
                 <tr>
                   <td colSpan={3 + COLUMNAS_FIJAS.filter((f) => verFija(f.key)).length + cols.length} className="px-5 py-8 text-center text-sm text-muted">

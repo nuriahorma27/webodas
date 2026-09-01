@@ -20,7 +20,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <CloudSync />
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
-          <Link href="/panel" className="font-display text-lg tracking-tight sm:text-xl">
+          <Link href="/panel" className="font-fraunces text-lg tracking-tight sm:text-xl">
             webodas
           </Link>
           <PanelNav />

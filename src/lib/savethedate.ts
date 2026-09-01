@@ -133,3 +133,63 @@ export const FUENTES: Record<FuenteStd, { label: string; family: string }> = {
   sans: { label: "Editorial", family: "var(--font-bodoni), Didot, serif" },
   script: { label: "Caligráfica", family: "var(--font-parisienne), 'Snell Roundhand', cursive" },
 };
+
+/* ---------- puntos de partida ---------- */
+// Cada preset fija todo el "look" de la hoja. La pareja lo elige y luego ajusta.
+
+export type StdPreset = { id: string; label: string; nota: string; props: Partial<SaveTheDate> };
+
+export const PRESETS: StdPreset[] = [
+  {
+    id: "clasico",
+    label: "Clásico",
+    nota: "Serif sobrio, sin adornos.",
+    props: {
+      colorBg: "#f6f2e9", colorText: "#33302a", marco: "ninguno", acabado: "papel",
+      fuente: "serif", posTexto: "centro", tamNombres: 1, negrita: false, cursiva: false,
+      mayusculas: false, imagen: "", textoX: 0, textoY: 0,
+    },
+  },
+  {
+    id: "azahar",
+    label: "Azahar",
+    nota: "Cenefa de azahar, tono cálido.",
+    props: {
+      colorBg: "#faf5ea", colorText: "#4b4636", marco: "azahar", colorMarco: "#8a9a5b",
+      colorFrutos: "#d59a3f", tamMarco: 1, margenMarco: 1.5, acabado: "papel",
+      fuente: "serif", posTexto: "abajo", tamNombres: 1.05, cursiva: true,
+      mayusculas: false, imagen: "", textoX: 0, textoY: 0,
+    },
+  },
+  {
+    id: "olivo",
+    label: "Olivo",
+    nota: "Verde eucalipto, cenefa de olivo.",
+    props: {
+      colorBg: "#eef0e7", colorText: "#33372f", marco: "olivo", colorMarco: "#4b5a3f",
+      colorFrutos: "#7d6a3a", tamMarco: 1, margenMarco: 1.5, acabado: "papel",
+      fuente: "serif", posTexto: "abajo", tamNombres: 1, cursiva: false,
+      mayusculas: false, imagen: "", textoX: 0, textoY: 0,
+    },
+  },
+  {
+    id: "acuarela",
+    label: "Acuarela",
+    nota: "Con una ilustración de fondo.",
+    props: {
+      colorBg: "#e9e3d6", colorText: "#3a342b", marco: "ninguno", acabado: "liso",
+      fuente: "serif", posTexto: "abajo", tamNombres: 1.1, cursiva: true, mayusculas: false,
+      imagen: "/demo/quinta.jpg", imgEscala: 1.5, imgX: 0, imgY: -8, textoX: 0, textoY: 0,
+    },
+  },
+  {
+    id: "editorial",
+    label: "Editorial",
+    nota: "Didone en mayúsculas, blanco y negro.",
+    props: {
+      colorBg: "#ffffff", colorText: "#161616", marco: "ninguno", acabado: "liso",
+      fuente: "sans", posTexto: "centro", tamNombres: 0.95, negrita: false, cursiva: false,
+      mayusculas: true, imagen: "", textoX: 0, textoY: 0,
+    },
+  },
+];

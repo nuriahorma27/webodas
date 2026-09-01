@@ -46,7 +46,7 @@ export default function ProveedoresPage() {
         <Stat label="Importe contratado" value={eur(total)} />
       </div>
 
-      <p className="rounded-xl border border-[#ddd4c7] bg-[#f3ede3] px-4 py-3 text-sm leading-relaxed text-muted">
+      <p className="rounded-xl border border-line bg-accent-soft px-4 py-3 text-sm leading-relaxed text-muted">
         Los proveedores contratados desde una tarea aparecen aquí automáticamente. También podéis
         añadir cualquier otro y guardar sus datos de contacto.
       </p>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, Stat, Progress, Button } from "@/components/ui";
+import { Card, Progress, Button } from "@/components/ui";
 import { ImagePicker } from "@/components/image-picker";
 import { RichEditor } from "@/components/rich-editor";
-import { ColorField } from "@/components/color-field";
 import {
   loadLista,
   saveLista,
@@ -33,6 +32,7 @@ export default function RegalosPage() {
   const [lista, setLista] = useState<ListaRegalos | null>(null);
   const [aportaciones, setAportaciones] = useState<Aportacion[]>([]);
   const [wizard, setWizard] = useState<"metodo" | "cuenta" | null>("metodo");
+  const [seccion, setSeccion] = useState<"seguimiento" | "config">("seguimiento");
   const wizardInicializado = useRef(false);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function RegalosPage() {
     setLista(next);
     saveLista(next);
   };
-  const setCampo = (k: "titulo" | "subtitulo" | "texto" | "colorBg" | "colorText", v: string) =>
+  const setCampo = (k: "titulo" | "subtitulo" | "texto", v: string) =>
     persist({ ...lista, [k]: v });
   const setCobro = (patch: Partial<Cobro>) =>
     persist({ ...lista, cobro: { metodo: "manual", ...lista.cobro, ...patch } });
@@ -209,176 +209,280 @@ export default function RegalosPage() {
     );
   }
 
-  /* ---------------- PASO 3: la lista ---------------- */
+  /* ---------------- LISTA LISTA: seguimiento + configuración ---------------- */
   const recaudado = lista.gifts.reduce((s, g) => s + g.aportado, 0);
   const objetivo = lista.gifts.reduce((s, g) => s + g.objetivo, 0);
+  const confirmadas = aportaciones.filter((a) => a.estado === "confirmada").length;
+  const pendientes = aportaciones.filter((a) => a.estado === "pendiente").length;
+  const metodoLabel = metodo === "stripe" ? "Con tarjeta (Stripe)" : "Transferencia / Bizum";
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#ddd4c7] bg-[#f3ede3] px-4 py-3">
-        <div className="text-sm text-muted">
-          Método de cobro: <strong className="text-foreground">{metodo === "stripe" ? "Stripe" : "Transferencia / Bizum"}</strong>
-          <button onClick={() => setWizard("metodo")} className="ml-2 font-medium text-accent underline">Cambiar</button>
-        </div>
-        <Button href="/lista/ana-y-leo" variant="ghost">Vista de invitados</Button>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl">Lista de regalos</h2>
+        <Button href="/lista/ana-y-leo" variant="ghost">
+          Ver como lo ven los invitados →
+        </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Recaudado" value={eur(recaudado)} sub={`objetivo ${eur(objetivo)}`} />
-        <Stat label="Regalos" value={`${lista.gifts.length}`} sub="en la lista" />
-        <Stat
-          label="Aportaciones"
-          value={`${aportaciones.filter((a) => a.estado === "confirmada").length}`}
-          sub={`${aportaciones.filter((a) => a.estado === "pendiente").length} por confirmar`}
-        />
+      <div className="inline-flex rounded-full border border-line bg-surface p-0.5 text-sm">
+        {(
+          [
+            ["seguimiento", "Recaudación"],
+            ["config", "Configuración"],
+          ] as ["seguimiento" | "config", string][]
+        ).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setSeccion(v)}
+            className={`rounded-full px-4 py-1.5 transition ${
+              seccion === v ? "bg-foreground text-white" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <Card className="space-y-4">
-        <h2 className="font-display text-lg">Texto de la sección</h2>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted">Texto principal</p>
-          <RichEditor value={lista.titulo} onChange={(v) => setCampo("titulo", v)} label="" singleLine />
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted">Subtexto</p>
-          <RichEditor value={lista.subtitulo} onChange={(v) => setCampo("subtitulo", v)} label="" singleLine />
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted">Texto</p>
-          <RichEditor value={lista.texto} onChange={(v) => setCampo("texto", v)} label="" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ColorField value={lista.colorBg} onChange={(v) => setCampo("colorBg", v)} label="Color de fondo" />
-          <ColorField value={lista.colorText} onChange={(v) => setCampo("colorText", v)} label="Color del texto" />
-        </div>
-      </Card>
-
-      {aportaciones.length > 0 && (
-        <Card className="p-0">
-          <div className="flex items-center justify-between p-5">
-            <h2 className="font-display text-lg">Aportaciones</h2>
-            <span className="text-sm text-muted">
-              {eur(aportaciones.filter((a) => a.estado === "confirmada").reduce((s, a) => s + a.importe, 0))} confirmadas
-            </span>
+      {seccion === "seguimiento" ? (
+        <div className="space-y-5">
+          {/* total */}
+          <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted">Recaudado hasta ahora</p>
+            <p className="mt-2 font-display text-4xl sm:text-5xl">{eur(recaudado)}</p>
+            <p className="mt-1 text-sm text-muted">
+              {objetivo > 0 ? `de un objetivo de ${eur(objetivo)}` : "sin objetivo fijado"} ·{" "}
+              {confirmadas} {confirmadas === 1 ? "aportación" : "aportaciones"}
+              {pendientes > 0 ? ` · ${pendientes} sin confirmar` : ""}
+            </p>
+            {objetivo > 0 && (
+              <div className="mt-4">
+                <Progress value={(recaudado / objetivo) * 100} />
+              </div>
+            )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-y border-line text-left text-xs uppercase tracking-wider text-muted">
-                <tr>
-                  <th className="px-5 py-2.5">Nombre</th>
-                  <th className="px-5 py-2.5">Regalo</th>
-                  <th className="px-5 py-2.5 text-right">Importe</th>
-                  <th className="px-5 py-2.5">Mensaje</th>
-                  <th className="px-5 py-2.5">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {aportaciones.map((a) => (
-                  <tr key={a.id}>
-                    <td className="px-5 py-3 font-medium">{a.nombre}</td>
-                    <td className="px-5 py-3 text-muted">{a.giftNombre}</td>
-                    <td className="px-5 py-3 text-right">{eur(a.importe)}</td>
-                    <td className="px-5 py-3 text-muted">{a.mensaje || "—"}</td>
-                    <td className="px-5 py-3">
-                      {a.estado === "confirmada" ? (
-                        <span className="text-xs text-green-700">Confirmada</span>
-                      ) : (
-                        <button
-                          onClick={async () => {
-                            confirmarAportacion(a.id);
-                            await confirmarAportacionServer(a.id, a.giftId, a.importe);
-                            setAportaciones((prev) =>
-                              prev.map((x) => (x.id === a.id ? { ...x, estado: "confirmada" } : x)),
-                            );
-                          }}
-                          className="rounded-md border border-green-600 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
-                        >
-                          Marcar recibida
-                        </button>
+
+          {/* por regalo */}
+          <div className="space-y-3">
+            <h3 className="font-display text-lg">Cada regalo</h3>
+            {lista.gifts.map((g) => {
+              const falta = Math.max(0, g.objetivo - g.aportado);
+              const pct = g.objetivo
+                ? Math.min(100, (g.aportado / g.objetivo) * 100)
+                : g.aportado > 0
+                  ? 100
+                  : 0;
+              return (
+                <div key={g.id} className="rounded-xl border border-line bg-surface p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-medium">{g.nombre}</p>
+                    <p className="text-sm">
+                      <span className="font-display text-lg">{eur(g.aportado)}</span>
+                      {g.objetivo > 0 && (
+                        <span className="text-muted"> de {eur(g.objetivo)}</span>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </p>
+                  </div>
+                  <div className="mt-2">
+                    <Progress value={pct} />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted">
+                    {g.objetivo > 0
+                      ? falta > 0
+                        ? `Faltan ${eur(falta)}`
+                        : "¡Completo!"
+                      : g.aportado > 0
+                        ? "Aportación libre"
+                        : "Sin aportaciones todavía"}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-        </Card>
-      )}
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl">Regalos</h2>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={addGift}>
-              Añadir regalo
-            </Button>
-            <button onClick={() => persist({ ...REGALOS_DEFAULT, cobro: lista.cobro })} className="text-xs text-muted underline">
-              Restablecer
+          {/* aportaciones recibidas */}
+          <div className="space-y-3">
+            <h3 className="font-display text-lg">Quién ha aportado</h3>
+            {aportaciones.length === 0 ? (
+              <p className="rounded-xl border border-line bg-surface p-4 text-sm text-muted">
+                Todavía no hay aportaciones. Aparecerán aquí cuando los invitados aporten desde
+                vuestra web.
+              </p>
+            ) : (
+              <Card className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
+                      <tr>
+                        <th className="px-5 py-2.5">Nombre</th>
+                        <th className="px-5 py-2.5">Regalo</th>
+                        <th className="px-5 py-2.5 text-right">Importe</th>
+                        <th className="px-5 py-2.5">Mensaje</th>
+                        <th className="px-5 py-2.5">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {aportaciones.map((a) => (
+                        <tr key={a.id}>
+                          <td className="px-5 py-3 font-medium">{a.nombre}</td>
+                          <td className="px-5 py-3 text-muted">{a.giftNombre}</td>
+                          <td className="px-5 py-3 text-right">{eur(a.importe)}</td>
+                          <td className="px-5 py-3 text-muted">{a.mensaje || "—"}</td>
+                          <td className="px-5 py-3">
+                            {a.estado === "confirmada" ? (
+                              <span className="text-xs text-green-700">Recibida</span>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  confirmarAportacion(a.id);
+                                  await confirmarAportacionServer(a.id, a.giftId, a.importe);
+                                  setAportaciones((prev) =>
+                                    prev.map((x) =>
+                                      x.id === a.id ? { ...x, estado: "confirmada" } : x,
+                                    ),
+                                  );
+                                }}
+                                className="rounded-md border border-green-600 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
+                              >
+                                Marcar recibida
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* método de cobro */}
+          <Card className="space-y-1.5">
+            <h3 className="font-display text-lg">Cómo recibís el dinero</h3>
+            <p className="text-sm">
+              <strong className="text-foreground">{metodoLabel}</strong>
+              {metodo === "manual" && (lista.cobro?.iban || lista.cobro?.bizum) && (
+                <span className="text-muted"> · {lista.cobro?.iban || lista.cobro?.bizum}</span>
+              )}
+            </p>
+            <button
+              onClick={() => setWizard("metodo")}
+              className="text-sm font-medium text-accent underline"
+            >
+              Cambiar método o datos
+            </button>
+          </Card>
+
+          {/* mensaje para invitados */}
+          <Card className="space-y-4">
+            <h3 className="font-display text-lg">Lo que verán vuestros invitados</h3>
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted">Título de la sección</p>
+              <RichEditor
+                value={lista.titulo}
+                onChange={(v) => setCampo("titulo", v)}
+                label=""
+                singleLine
+                sinColor
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted">Frase de bienvenida</p>
+              <RichEditor
+                value={lista.subtitulo}
+                onChange={(v) => setCampo("subtitulo", v)}
+                label=""
+                singleLine
+                sinColor
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted">Explicación (opcional)</p>
+              <RichEditor value={lista.texto} onChange={(v) => setCampo("texto", v)} label="" sinColor />
+            </div>
+            <p className="border-t border-line pt-3 text-xs text-muted">
+              Los colores se toman de vuestra web de boda; todo va a juego sin que elijáis nada.
+            </p>
+          </Card>
+
+          {/* editor de regalos */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg">Vuestros regalos</h3>
+              <Button variant="ghost" onClick={addGift}>
+                + Añadir regalo
+              </Button>
+            </div>
+
+            {lista.gifts.map((g) => (
+              <Card key={g.id} className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="sm:w-56 sm:shrink-0">
+                  <ImagePicker value={g.imagen} onChange={(v) => updGift(g.id, { imagen: v })} />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <input
+                    value={g.nombre}
+                    onChange={(e) => updGift(g.id, { nombre: e.target.value })}
+                    placeholder="Nombre del regalo"
+                    className="w-full rounded-md border border-line px-2.5 py-2 text-base font-medium outline-none focus:border-accent"
+                  />
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <label className="flex items-center gap-2 text-muted">
+                      Meta
+                      <input
+                        type="number"
+                        value={g.objetivo || ""}
+                        onChange={(e) => updGift(g.id, { objetivo: Number(e.target.value) || 0 })}
+                        placeholder="libre"
+                        className="w-24 rounded-md border border-line px-2 py-1 text-right text-foreground outline-none focus:border-accent"
+                      />
+                      €
+                    </label>
+                    <label className="flex items-center gap-2 text-muted">
+                      Tipo
+                      <select
+                        value={g.tipo}
+                        onChange={(e) => updGift(g.id, { tipo: e.target.value })}
+                        className="rounded-md border border-line px-2 py-1 text-foreground outline-none focus:border-accent"
+                      >
+                        {TIPOS_REGALO.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+                <button
+                  onClick={() => delGift(g.id)}
+                  className="self-start text-xs text-muted hover:text-red-600"
+                >
+                  Quitar
+                </button>
+              </Card>
+            ))}
+
+            <button
+              onClick={() => {
+                if (confirm("¿Volver a la lista de regalos de ejemplo?"))
+                  persist({ ...REGALOS_DEFAULT, cobro: lista.cobro });
+              }}
+              className="text-xs text-muted underline hover:text-foreground"
+            >
+              Restablecer a la lista de ejemplo
             </button>
           </div>
         </div>
-
-        {lista.gifts.map((g) => {
-          const pct = g.objetivo ? (g.aportado / g.objetivo) * 100 : 100;
-          return (
-            <Card key={g.id} className="space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <ImagePicker value={g.imagen} onChange={(v) => updGift(g.id, { imagen: v })} className="flex-1" />
-                <button onClick={() => delGift(g.id)} className="text-xs text-muted hover:text-red-600">
-                  🗑️ Quitar
-                </button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-6">
-                <label className="block sm:col-span-3">
-                  <span className="text-xs font-medium text-muted">Nombre</span>
-                  <input value={g.nombre} onChange={(e) => updGift(g.id, { nombre: e.target.value })} className={inp} />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-muted">Tipo</span>
-                  <select value={g.tipo} onChange={(e) => updGift(g.id, { tipo: e.target.value })} className={inp}>
-                    {TIPOS_REGALO.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-muted">Objetivo (€)</span>
-                  <input
-                    type="number"
-                    value={g.objetivo || ""}
-                    onChange={(e) => updGift(g.id, { objetivo: Number(e.target.value) || 0 })}
-                    className={inp}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-muted">Aportado (€)</span>
-                  <input
-                    type="number"
-                    value={g.aportado || ""}
-                    onChange={(e) => updGift(g.id, { aportado: Number(e.target.value) || 0 })}
-                    className={inp}
-                  />
-                </label>
-              </div>
-              {g.objetivo > 0 && (
-                <div>
-                  <Progress value={pct} />
-                  <p className="mt-1 text-xs text-muted">
-                    {eur(g.aportado)} de {eur(g.objetivo)}
-                  </p>
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+      )}
     </div>
   );
 }
 
 function WorkflowHeading({ step, title, description, children }: { step: string; title: string; description?: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[#ddd4c7] bg-[#f3ede3] p-5 sm:p-6">
+    <div className="rounded-2xl border border-line bg-accent-soft p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[.68rem] font-semibold uppercase tracking-[.18em] text-accent">{step}</p>

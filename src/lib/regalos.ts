@@ -50,7 +50,7 @@ export const REGALOS_DEFAULT: ListaRegalos = {
     "…pero si además queréis tener un detalle, aquí van algunas ideas. Cualquier aportación, por pequeña que sea, nos hace mucha ilusión.",
   cobro: { metodo: "manual" },
   gifts: [
-    { id: "g1", nombre: "Aportación luna de miel", imagen: "", tipo: "Hucha", objetivo: 2000, aportado: 1150 },
+    { id: "g1", nombre: "Aportación viaje de novios", imagen: "", tipo: "Hucha", objetivo: 2000, aportado: 1150 },
     { id: "g2", nombre: "Batería de cocina", imagen: "", tipo: "Producto", objetivo: 320, aportado: 320 },
     { id: "g3", nombre: "Robot de cocina", imagen: "", tipo: "Producto", objetivo: 600, aportado: 240 },
     { id: "g4", nombre: "Juego de sábanas", imagen: "", tipo: "Producto", objetivo: 180, aportado: 0 },

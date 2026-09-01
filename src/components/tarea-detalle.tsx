@@ -7,12 +7,15 @@ import {
   FIELD_SETS,
   RUTAS_WEBODAS,
   saveDetalle,
+  loadTareas,
   type TareaDetalle,
   type Campo,
   type ChecklistItem,
   type ProveedorOpcion,
+  type Tarea,
 } from "@/lib/tareas";
 import { ProveedorOpciones } from "@/components/proveedor-opciones";
+import { personasDe } from "@/components/personas-toggle";
 import { PartidaLink } from "@/components/partida-link";
 
 // Fichas que se pueden enlazar con una partida del presupuesto.
@@ -68,6 +71,10 @@ export function TareaDetalleForm({
 
   if (tipo === "invitados") {
     return <FichaInvitados id={id} d={d} upd={upd} persist={persist} />;
+  }
+
+  if (tipo === "reparto") {
+    return <FichaReparto id={id} d={d} upd={upd} persist={persist} />;
   }
 
   if (tipo === "webodas") {
@@ -251,6 +258,80 @@ function FichaInvitados({
       </Link>
       <label className="mt-3 block">
         <span className="text-xs font-medium text-muted">Notas</span>
+        <textarea
+          rows={2}
+          value={(d.notas as string) ?? ""}
+          onChange={(e) => upd("notas", e.target.value)}
+          onBlur={persist}
+          className={inputCls}
+        />
+      </label>
+    </div>
+  );
+}
+
+// Ficha "reparto": lista las tareas del día de la boda con su responsable,
+// para repartirlas y avisar a cada persona de su cometido.
+function FichaReparto({
+  d,
+  upd,
+  persist,
+}: {
+  id: string;
+  d: TareaDetalle;
+  upd: (k: string, v: string) => void;
+  persist: () => void;
+}) {
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+
+  useEffect(() => {
+    const sync = () => setTareas(loadTareas().filter((t) => t.fase === "El día de la boda"));
+    sync();
+    window.addEventListener("webodas:tareas", sync);
+    return () => window.removeEventListener("webodas:tareas", sync);
+  }, []);
+
+  const sinAsignar = tareas.filter((t) => personasDe(t.responsable).length === 0).length;
+
+  return (
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className="text-sm text-muted">
+        Repasa quién se encarga de cada cosa y avísale.
+        {sinAsignar > 0 && (
+          <span className="text-[#8a6a34]"> Faltan {sinAsignar} por asignar</span>
+        )}
+        . Los responsables se asignan en la sección «El día de la boda».
+      </p>
+
+      <ul className="mt-3 space-y-1">
+        {tareas.length === 0 && (
+          <li className="text-xs text-muted">No hay tareas en «El día de la boda».</li>
+        )}
+        {tareas.map((t) => {
+          const gente = personasDe(t.responsable);
+          const asignada = gente.length > 0;
+          return (
+            <li key={t.id} className="flex gap-2 text-xs leading-snug">
+              <span
+                aria-hidden
+                className={`mt-px shrink-0 ${asignada ? "text-accent" : "text-muted/50"}`}
+              >
+                {asignada ? "✓" : "○"}
+              </span>
+              <span className={asignada ? "" : "text-muted"}>
+                {t.titulo}
+                {" — "}
+                <span className={asignada ? "font-medium text-foreground" : "italic"}>
+                  {asignada ? gente.join(", ") : "sin asignar"}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      <label className="mt-3 block">
+        <span className="text-xs font-medium text-muted">Notas (cómo lo comunicáis, cuándo…)</span>
         <textarea
           rows={2}
           value={(d.notas as string) ?? ""}
