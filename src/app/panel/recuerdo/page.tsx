@@ -159,7 +159,7 @@ export default function RecuerdoPage() {
 
   const invById = new Map(invitados.map((i) => [i.id, i]));
   const aportOrden = [...aportaciones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
-  const aportPaginas = chunk(aportOrden, 22);
+  const aportPaginas = chunk(aportOrden, 16);
 
   /* ---- montaje de páginas ---- */
 
@@ -301,7 +301,8 @@ export default function RecuerdoPage() {
   // Presupuesto — solo lo relleno, paginado
   {
     const rom = nextRoman();
-    const grupos = chunk(pptoRows, 26);
+    // Dejamos aire para categorías, subtotales y conceptos que ocupen dos líneas.
+    const grupos = chunk(pptoRows, 20);
     grupos.forEach((rows, i) => {
       pages.push({
         titulo: "El presupuesto",
@@ -371,7 +372,7 @@ export default function RecuerdoPage() {
   // Tareas — todas las que no se han quitado, paginado
   {
     const rom = nextRoman();
-    chunk(tareaRows, 34).forEach((rows, i) => {
+    chunk(tareaRows, 26).forEach((rows, i) => {
       pages.push({
         titulo: "Los preparativos",
         roman: rom,
@@ -423,7 +424,7 @@ export default function RecuerdoPage() {
         body: <VacioNota texto="Aún no hay invitados en la lista." />,
       });
     } else {
-      chunk(invRows, 48).forEach((rows, i) => {
+      chunk(invRows, 36).forEach((rows, i) => {
         pages.push({
           titulo: "Los invitados",
           roman: rom,
@@ -513,7 +514,7 @@ export default function RecuerdoPage() {
         body: <VacioNota texto="Aún no hay mesas organizadas." />,
       });
     } else {
-      chunk(mesas.mesas, 6).forEach((grupo, i) => {
+      chunk(mesas.mesas, 4).forEach((grupo, i) => {
         pages.push({
           titulo: "Las mesas",
           roman: rom,
@@ -580,15 +581,29 @@ export default function RecuerdoPage() {
       if (document.fonts?.ready) await document.fonts.ready;
       const nodos = Array.from(cont.querySelectorAll<HTMLElement>("[data-pagina]"));
       const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      // Evita que distintos lectores de PDF o impresoras recorten el último píxel.
+      const safety = 0.8;
+      const availableW = pageW - safety * 2;
+      const availableH = pageH - safety * 2;
       for (let i = 0; i < nodos.length; i++) {
-        const png = await toPng(nodos[i], {
+        const nodo = nodos[i];
+        const sourceW = nodo.offsetWidth;
+        const sourceH = nodo.offsetHeight;
+        const png = await toPng(nodo, {
           cacheBust: true,
           pixelRatio: 2.4,
-          width: nodos[i].offsetWidth,
-          height: nodos[i].offsetHeight,
+          width: sourceW,
+          height: sourceH,
         });
         if (i > 0) pdf.addPage();
-        pdf.addImage(png, "PNG", 0, 0, 210, 297, undefined, "MEDIUM");
+        const scale = Math.min(availableW / sourceW, availableH / sourceH);
+        const imageW = sourceW * scale;
+        const imageH = sourceH * scale;
+        const x = (pageW - imageW) / 2;
+        const y = (pageH - imageH) / 2;
+        pdf.addImage(png, "PNG", x, y, imageW, imageH, undefined, "MEDIUM");
       }
       const slug = nombres
         .toLowerCase()
