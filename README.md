@@ -20,7 +20,27 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## Actividad diaria de Supabase
+
+El workflow `.github/workflows/supabase-activity.yml` consulta la tabla `weddings`
+cada día a las 08:17 UTC (09:17 en invierno y 10:17 en verano en Madrid).
+Se ejecuta en GitHub con el ordenador apagado y también se puede lanzar desde
+Actions → Actividad diaria de Supabase → Run workflow.
+
+Necesita los secretos de Actions `NEXT_PUBLIC_SUPABASE_URL` y
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, con los valores del proyecto. Usa los permisos
+anónimos existentes y respeta RLS; no modifica datos ni registra resultados o claves.
+Una respuesta vacía también cuenta como consulta correcta. Los errores de conexión
+o HTTP hacen fallar la ejecución y pueden revisarse en Actions.
+
+Esta actividad no garantiza que Supabase nunca pause el plan gratuito ni reactiva
+un proyecto pausado: hay que restaurarlo desde su panel. Véase la
+[documentación de Supabase](https://supabase.com/docs/guides/platform/free-project-pausing).
+En repositorios públicos, GitHub desactiva las tareas programadas tras 60 días sin
+actividad en el repositorio; en ese caso hay que volver a habilitar el workflow en
+Actions. Véase la [documentación de GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+## Documentación de Next.js
 
 To learn more about Next.js, take a look at the following resources:
 

@@ -1,0 +1,44 @@
+name: Actividad diaria de Supabase
+
+on:
+  schedule:
+    - cron: '17 8 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  database-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Consultar la base de datos
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const url = process.env.SUPABASE_URL;
+          const key = process.env.SUPABASE_ANON_KEY;
+          if (!url || !key) {
+            console.error('Faltan los secretos de Supabase en GitHub Actions.');
+            process.exit(1);
+          }
+          try {
+            const endpoint = new URL('/rest/v1/weddings?select=id&limit=1', url);
+            const response = await fetch(endpoint, {
+              headers: { apikey: key },
+              signal: AbortSignal.timeout(20000),
+            });
+            if (!response.ok) {
+              console.error(`La consulta a Supabase ha fallado: HTTP ${response.status}.`);
+              process.exit(1);
+            }
+            await response.arrayBuffer();
+            console.log('Consulta diaria completada.');
+          } catch (error) {
+            console.error('No se pudo contactar con Supabase:', error.cause?.code ?? error.name);
+            process.exit(1);
+          }
+          NODE
